@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ump_rms_user
+      POSTGRES_PASSWORD: change_me
+      POSTGRES_DB: ump_rms_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ump_rms_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ump_rms_user -d ump_rms_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: "3001"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ump_rms_db
+      DB_USER: ump_rms_user
+      DB_PASSWORD: change_me
+      JWT_SECRET: change-this-to-a-long-random-string
+      FRONTEND_ORIGIN: http://localhost:5173
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3001/api/v1
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  ump_rms_pgdata:
