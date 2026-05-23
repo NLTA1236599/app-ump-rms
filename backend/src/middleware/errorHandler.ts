@@ -7,5 +7,8 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     err && typeof err === 'object' && 'status' in err && typeof (err as { status: unknown }).status === 'number'
       ? (err as { status: number }).status
       : 500;
+  if (status >= 500) {
+    console.error('[API]', status, err);
+  }
   res.status(status).json({ error: message });
 }

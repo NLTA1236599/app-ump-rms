@@ -13,7 +13,7 @@ export function Button({
     'inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50';
   const styles =
     variant === 'primary'
-      ? 'bg-jira-nav text-white hover:bg-blue-800 focus:ring-blue-600'
+      ? 'bg-chrome-primary text-white shadow-sm hover:brightness-[0.92] focus:ring-chrome-primary/50'
       : variant === 'secondary'
         ? 'bg-white border border-jira-border text-slate-800 hover:bg-slate-50 focus:ring-slate-400'
         : variant === 'danger'

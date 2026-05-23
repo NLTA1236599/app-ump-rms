@@ -1,149 +1,88 @@
-import { useEffect, useState } from 'react';
-import { HeaderBar, MainLayout, Sidebar } from '../../layout/AppChrome.js';
-import { Button } from '../../ui/Button.js';
-import { Toast } from '../../ui/Toast.js';
-import { WorkspaceModal } from './WorkspaceModal.js';
-import { IssueModal } from './IssueModal.js';
-import { KanbanBoard } from './KanbanBoard.js';
-import type { Issue } from '../../../types/index.js';
-import { useWorkspaces } from '../../../hooks/useWorkspaces.js';
-import { useBoardIssues } from '../../../hooks/useBoardIssues.js';
-import { useAssignableUsers } from '../../../hooks/useAssignableUsers.js';
-import { useNotification } from '../../../hooks/useNotification.js';
+import { useMemo, useState } from 'react';
+import {
+  DashboardOverview,
+  DEFAULT_HEADER_NAV_TAB,
+  MainLayout,
+  SiteHeader,
+  type HeaderNavTabId,
+} from '../../layout/AppChrome.js';
+import {
+  createDemoProjects,
+  ProjectManagerDashboard,
+} from '../../projectManager/index.js';
+import { ProgressTrackingPage } from '../../ProgressTracking/index.js';
+import { WorkflowProcessPage } from '../../WorkflowProcess/index.js';
 
-export function TrackerBoard({
-  onLogout,
-  userLabel,
-}: {
-  userLabel: string;
-  onLogout: () => void;
-}) {
-  const { message, notify, dismiss } = useNotification();
-  const { workspaces, create } = useWorkspaces(true);
-  const [activeWs, setActiveWs] = useState<string | null>(null);
-
-  useEffect(() => {
-    setActiveWs((prev) => {
-      if (!workspaces.length) return null;
-      if (prev && workspaces.some((w) => w.id === prev)) return prev;
-      return workspaces[0].id;
-    });
-  }, [workspaces]);
-
-  const activeWorkspaceId = activeWs;
-  const wsEntity = workspaces.find((w) => w.id === activeWorkspaceId) ?? null;
-
-  const assignees = useAssignableUsers(Boolean(activeWorkspaceId));
-
-  const { issues, loading, error, createIssue, patchIssue, removeIssue, reorder } =
-    useBoardIssues(activeWorkspaceId);
-
-  const [wsModal, setWsModal] = useState(false);
-  const [issueModal, setIssueModal] = useState<{ mode: 'create' | 'edit'; issue: Issue | null } | null>(
-    null
+function PlaceholderPanel({ label }: { label: string }) {
+  return (
+    <div className="rounded-[14px] border border-chrome-divider bg-chrome-surface p-12 text-center text-chrome-text-muted shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+      Nội dung cho mục &ldquo;{label}&rdquo; đang được xây dựng.
+    </div>
   );
+}
 
-  const subtitle = wsEntity?.description ? wsEntity.description : 'Kanban from backlog → done';
+export function TrackerBoard({ onLogout }: { onLogout: () => void }) {
+  const [activeTab, setActiveTab] = useState<HeaderNavTabId | null>(DEFAULT_HEADER_NAV_TAB);
+  const [isHomeActive, setIsHomeActive] = useState(false);
+  const projectDataset = useMemo(() => createDemoProjects(), []);
 
-  const handleCreateWs = async (payload: { keyPrefix: string; name: string; description?: string }) => {
-    const ws = await create(payload);
-    setActiveWs(ws.id);
-    notify(`Workspace "${ws.name}" ready`);
-    return ws;
+  const handleHomeClick = () => {
+    setIsHomeActive(true);
+    setActiveTab(null);
   };
 
-  const reorderPersist = async (
-    ordered: Array<{ id: string; status: Issue['status']; position: number }>
-  ) => {
-    try {
-      await reorder(ordered);
-    } catch {
-      notify('Could not save board order.');
-      throw new Error('reorder failed');
+  const handleTabChange = (tabId: HeaderNavTabId) => {
+    setIsHomeActive(false);
+    setActiveTab(tabId);
+  };
+
+  const content = (() => {
+    if (isHomeActive) {
+      return <DashboardOverview onFeaturedModuleClick={() => handleTabChange('de-tai-khcn')} />;
     }
-  };
+
+    switch (activeTab) {
+      case 'de-tai-khcn':
+        return <ProjectManagerDashboard projects={projectDataset} />;
+      case 'thong-ke-so-lieu':
+        return <DashboardOverview onFeaturedModuleClick={() => handleTabChange('de-tai-khcn')} />;
+      case 'sang-kien':
+        return <PlaceholderPanel label="Sáng kiến" />;
+      case 'ho-so-y-duc':
+        return <PlaceholderPanel label="Hồ sơ Y đức" />;
+      case 'bai-bao-quoc-te':
+        return <PlaceholderPanel label="Bài báo quốc tế" />;
+      case 'gio-nckh':
+        return <ProgressTrackingPage />;
+      case 'hoi-nghi-hoi-thao':
+        return <PlaceholderPanel label="Hội nghị - Hội thảo" />;
+      case 'chuyen-giao-cong-nghe':
+        return <WorkflowProcessPage />;
+      default:
+        return <ProjectManagerDashboard projects={projectDataset} />;
+    }
+  })();
 
   return (
-    <>
-      <MainLayout
-        sidebar={
-          <Sidebar
-            workspaces={workspaces}
-            activeId={activeWorkspaceId}
-            onSelect={(id) => setActiveWs(id)}
-            onCreateWorkspace={() => setWsModal(true)}
-          />
-        }
-      >
-        <HeaderBar
-          title={wsEntity ? `${wsEntity.name} board` : 'Pick a workspace'}
-          subtitle={subtitle}
-          userLabel={userLabel}
+    <MainLayout
+      header={
+        <SiteHeader
+          activeTab={activeTab}
+          isHomeActive={isHomeActive}
+          onHomeClick={handleHomeClick}
+          onTabChange={handleTabChange}
           onLogout={onLogout}
         />
-
-        <div className="flex flex-1 flex-col gap-3 bg-jira-bg p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              disabled={!activeWorkspaceId}
-              onClick={() => setIssueModal({ mode: 'create', issue: null })}
-            >
-              + Create issue
-            </Button>
-            {loading ? <span className="text-xs text-slate-600">Loading issues…</span> : null}
-            {error ? <span className="text-xs text-red-700">{error}</span> : null}
-          </div>
-
-          {!activeWorkspaceId ? (
-            <div className="rounded-lg border border-dashed border-jira-border bg-white p-8 text-center text-slate-700">
-              Create a workspace using the sidebar to open the board.
-            </div>
-          ) : loading && issues.length === 0 ? (
-            <div className="rounded-lg border border-jira-border bg-white p-8 text-center text-slate-600">
-              Loading…
-            </div>
-          ) : (
-            <KanbanBoard
-              issues={issues}
-              onPersistOrder={async (ordered) => await reorderPersist(ordered)}
-              onOpenIssue={(issue) => setIssueModal({ mode: 'edit', issue })}
-            />
-          )}
-        </div>
-      </MainLayout>
-
-      <WorkspaceModal open={wsModal} onClose={() => setWsModal(false)} onCreate={handleCreateWs} />
-
-      <IssueModal
-        open={issueModal !== null}
-        mode={issueModal?.mode ?? 'create'}
-        issue={issueModal?.issue ?? null}
-        workspaceKey={wsEntity?.keyPrefix ?? null}
-        assignees={assignees}
-        onClose={() => setIssueModal(null)}
-        onCreate={async (draft) => {
-          await createIssue({
-            summary: draft.summary,
-            description: draft.description,
-            issueType: draft.issueType,
-            priority: draft.priority,
-            status: draft.status,
-            assigneeId: draft.assigneeId ?? undefined,
-          });
-          notify('Issue created');
-        }}
-        onSave={async (issueId, draft) => {
-          await patchIssue(issueId, draft);
-          notify('Issue updated');
-        }}
-        onDelete={async (issueId) => {
-          await removeIssue(issueId);
-          notify('Issue deleted');
-        }}
-      />
-
-      <Toast message={message} onDismiss={dismiss} />
-    </>
+      }
+    >
+      <div
+        className={[
+          'flex min-h-0 flex-1 flex-col overflow-y-auto bg-white',
+          activeTab === 'de-tai-khcn' && !isHomeActive ? '' : 'gap-3 p-4 md:p-6',
+        ].join(' ')}
+      >
+        {content}
+      </div>
+    </MainLayout>
   );
 }

@@ -1,27 +1,46 @@
-import dotenv from 'dotenv';
+import '../config/env.js';
+import bcrypt from 'bcryptjs';
 import { pool } from '../config/database.js';
-import { AuthService } from '../modules/auth/auth.service.js';
+import { createAuthService } from '../backend/compositionRoot.js';
 import { WorkspaceService } from '../modules/workspaces/workspace.service.js';
 import { IssueService } from '../modules/issues/issue.service.js';
 
-dotenv.config();
+const SALT_ROUNDS = 12;
+/** Login email nltanh@ump.edu.vn → API username `nltanh`. */
+const ADMIN_SEED_USERNAME = process.env.SEED_ADMIN_USERNAME ?? 'nltanh';
+const ADMIN_SEED_DISPLAY_NAME = process.env.SEED_ADMIN_DISPLAY_NAME ?? 'Quản trị viên';
+const ADMIN_SEED_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? 'nltanh1995#';
 
 async function main() {
-  const auth = new AuthService();
+  const auth = createAuthService();
   const workspaces = new WorkspaceService();
   const issues = new IssueService();
 
   const { rows: existing } = await pool.query('SELECT id FROM users WHERE username = $1', [
-    'admin',
+    ADMIN_SEED_USERNAME,
   ]);
   let userId: string;
   if (existing[0]) {
     userId = existing[0].id as string;
-    console.log('User admin already exists.');
+    const hash = await bcrypt.hash(ADMIN_SEED_PASSWORD, SALT_ROUNDS);
+    await pool.query(
+      `UPDATE users SET password = $1, role = $2, display_name = $3 WHERE id = $4`,
+      [hash, 'admin', ADMIN_SEED_DISPLAY_NAME, userId]
+    );
+    console.log(
+      `Updated admin "${ADMIN_SEED_USERNAME}" (đăng nhập: ${ADMIN_SEED_USERNAME}@ump.edu.vn).`
+    );
   } else {
-    const u = await auth.register('admin', 'admin123', 'admin', 'Admin');
+    const u = await auth.register(
+      ADMIN_SEED_USERNAME,
+      ADMIN_SEED_PASSWORD,
+      'admin',
+      ADMIN_SEED_DISPLAY_NAME
+    );
     userId = u.id;
-    console.log('Created admin / admin123');
+    console.log(
+      `Created admin "${ADMIN_SEED_USERNAME}" (đăng nhập: ${ADMIN_SEED_USERNAME}@ump.edu.vn).`
+    );
   }
 
   let ws = await pool.query('SELECT id FROM workspaces WHERE key_prefix = $1', ['DEMO']);

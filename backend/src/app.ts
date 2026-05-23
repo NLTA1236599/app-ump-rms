@@ -1,5 +1,5 @@
 import express from 'express';
-import cors from 'cors';
+import cors, { type CorsOptions } from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { authRoutes } from './modules/auth/auth.routes.js';
@@ -10,10 +10,19 @@ import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
+/** Comma-separated list in FRONTEND_ORIGIN (e.g. local Vite + Docker UI hostnames). */
+function resolveCorsOrigin(): CorsOptions['origin'] {
+  const raw = process.env.FRONTEND_ORIGIN?.trim();
+  if (!raw) return 'http://localhost:5173';
+  const list = raw.split(',').map((s) => s.trim()).filter(Boolean);
+  if (list.length === 0) return 'http://localhost:5173';
+  return list.length === 1 ? list[0] : list;
+}
+
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173',
+    origin: resolveCorsOrigin(),
     credentials: true,
   })
 );

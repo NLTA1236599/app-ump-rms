@@ -1,8 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { getJwtSecret } from '../backend/config/jwt.js';
 import type { JwtUserPayload } from '../types/index.js';
-
-const JWT_SECRET = process.env.JWT_SECRET ?? 'change-me-in-production';
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const token = req.headers.authorization?.split(' ')[1];
@@ -10,7 +9,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ error: 'Chưa đăng nhập' });
   }
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as JwtUserPayload;
+    const payload = jwt.verify(token, getJwtSecret()) as JwtUserPayload;
     (req as Request & { user: JwtUserPayload }).user = payload;
     next();
   } catch {

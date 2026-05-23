@@ -7,7 +7,7 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-jira-bg text-slate-600">
+      <div className="flex min-h-screen items-center justify-center bg-chrome-surface text-chrome-text-muted">
         Loading…
       </div>
     );
@@ -15,7 +15,5 @@ export default function App() {
 
   if (!user) return <Login />;
 
-  const userLabel = `${user.displayName?.trim() || user.username} · ${user.role}`;
-
-  return <TrackerBoard onLogout={logout} userLabel={userLabel} />;
+  return <TrackerBoard onLogout={logout} />;
 }

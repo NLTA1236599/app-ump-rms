@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
-import { AuthService } from './auth.service.js';
-
-const service = new AuthService();
+import { authService } from '../../backend/compositionRoot.js';
+import { mapAuthDatabaseError } from './mapAuthDatabaseError.js';
 
 export async function postRegister(req: Request, res: Response, next: NextFunction) {
   try {
@@ -9,7 +8,7 @@ export async function postRegister(req: Request, res: Response, next: NextFuncti
     if (!username || !password) {
       return res.status(400).json({ error: 'username và password là bắt buộc' });
     }
-    const user = await service.register(
+    const user = await authService.register(
       String(username),
       String(password),
       role ? String(role) : 'user',
@@ -17,7 +16,7 @@ export async function postRegister(req: Request, res: Response, next: NextFuncti
     );
     res.status(201).json({ user });
   } catch (e) {
-    next(e);
+    next(mapAuthDatabaseError(e));
   }
 }
 
@@ -27,20 +26,20 @@ export async function postLogin(req: Request, res: Response, next: NextFunction)
     if (!username || !password) {
       return res.status(400).json({ error: 'username và password là bắt buộc' });
     }
-    const { token, user } = await service.login(String(username), String(password));
+    const { token, user } = await authService.login(String(username), String(password));
     res.json({ token, user });
   } catch (e) {
-    next(e);
+    next(mapAuthDatabaseError(e));
   }
 }
 
 export async function getMe(req: Request, res: Response, next: NextFunction) {
   try {
     const u = (req as Request & { user: { id: string } }).user;
-    const user = await service.getProfile(u.id);
+    const user = await authService.getProfile(u.id);
     if (!user) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
     res.json({ user });
   } catch (e) {
-    next(e);
+    next(mapAuthDatabaseError(e));
   }
 }

@@ -1,10 +1,5 @@
-import { useState } from 'react';
-import { LoginSealPlaceholder } from './LoginSealPlaceholder.js';
-
 /** Large aqua watermark + uni name — right third of viewport (desktop). */
 export function LoginBrandingPanel() {
-  const [sealBroken, setSealBroken] = useState(false);
-
   return (
     <div
       className="pointer-events-none absolute right-[2%] top-[clamp(64px,9vh,112px)] z-[6] hidden w-[min(420px,40vw)] select-none lg:block"

@@ -1,12 +1,16 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { useAuth } from '../hooks/useAuth.js';
-
-type AuthLoginResult = Awaited<ReturnType<ReturnType<typeof useAuth>['login']>>;
+import { useAuth, type AuthLoginResult, type AuthRegisterResult } from '../hooks/useAuth.js';
 
 interface AuthContextValue {
   user: ReturnType<typeof useAuth>['user'];
   isLoading: boolean;
   login: (username: string, password: string) => Promise<AuthLoginResult>;
+  register: (
+    username: string,
+    password: string,
+    role: string,
+    displayName?: string
+  ) => Promise<AuthRegisterResult>;
   logout: ReturnType<typeof useAuth>['logout'];
 }
 
