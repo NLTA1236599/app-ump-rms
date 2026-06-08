@@ -96,11 +96,21 @@ function mapRow(headers: string[], row: unknown[]): Partial<ResearchProject> {
   };
 }
 
-export function parseExcelFile(
-  binaryStr: string | ArrayBuffer,
-): Partial<ResearchProject>[] {
-  const workbook = XLSX.read(binaryStr, { type: 'binary' });
-  const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+function readWorkbook(data: string | ArrayBuffer) {
+  if (typeof data === 'string') {
+    return XLSX.read(data, { type: 'binary' });
+  }
+  return XLSX.read(new Uint8Array(data), { type: 'array' });
+}
+
+export function parseExcelFile(data: string | ArrayBuffer): Partial<ResearchProject>[] {
+  const workbook = readWorkbook(data);
+  const sheetName = workbook.SheetNames[0];
+  if (!sheetName) return [];
+
+  const firstSheet = workbook.Sheets[sheetName];
+  if (!firstSheet) return [];
+
   const rows = XLSX.utils.sheet_to_json<unknown[]>(firstSheet, { header: 1 });
 
   if (rows.length < 2) return [];

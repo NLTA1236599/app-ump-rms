@@ -34,6 +34,7 @@ export type ProjectFilterState = {
   startYear: string;
   status: string;
   researchField: string;
+  projectType: string;
   department: string;
 };
 

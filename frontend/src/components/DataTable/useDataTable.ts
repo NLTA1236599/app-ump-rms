@@ -9,8 +9,13 @@ import type { ColumnFilters, DataTableProps, ProjectStatus } from './types.js';
 export function useDataTable({
   projects,
   onImport,
+  onImportFeedback,
   onDeleteMultiple,
-}: Pick<DataTableProps, 'projects' | 'onImport' | 'onDeleteMultiple'>) {
+  onDeleteAll,
+}: Pick<
+  DataTableProps,
+  'projects' | 'onImport' | 'onImportFeedback' | 'onDeleteMultiple' | 'onDeleteAll'
+>) {
   const [contractIdSearch, setContractIdSearch] = useState('');
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [currentPage, setCurrentPage] = useState(1);
@@ -58,6 +63,18 @@ export function useDataTable({
     setSelectedIds(new Set());
   };
 
+  const handleDeleteAll = () => {
+    if (projects.length === 0) return;
+    const confirmed = window.confirm(
+      `Bạn có chắc muốn xóa tất cả ${projects.length} bản ghi trong bảng? Thao tác này không thể hoàn tác.`,
+    );
+    if (!confirmed) return;
+
+    onDeleteAll?.();
+    setSelectedIds(new Set());
+    setCurrentPage(1);
+  };
+
   const handleSelectAll = () => {
     if (allSelected) {
       setSelectedIds(new Set());
@@ -100,12 +117,36 @@ export function useDataTable({
 
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const binaryStr = evt.target?.result;
-      if (typeof binaryStr !== 'string') return;
-      const imported = parseExcelFile(binaryStr);
-      onImport?.(imported);
+      try {
+        const buffer = evt.target?.result;
+        if (!(buffer instanceof ArrayBuffer)) {
+          onImportFeedback?.({ ok: false, message: 'Không đọc được file Excel.' });
+          return;
+        }
+
+        const imported = parseExcelFile(buffer);
+        if (imported.length === 0) {
+          onImportFeedback?.({
+            ok: false,
+            message:
+              'Không tìm thấy dữ liệu hợp lệ trong file Excel. Kiểm tra dòng tiêu đề và nội dung.',
+          });
+          return;
+        }
+
+        onImport?.(imported);
+        onImportFeedback?.({ ok: true, count: imported.length });
+      } catch {
+        onImportFeedback?.({
+          ok: false,
+          message: 'Lỗi khi nhập dữ liệu từ Excel. Vui lòng kiểm tra định dạng file (.xlsx, .xls).',
+        });
+      }
     };
-    reader.readAsBinaryString(file);
+    reader.onerror = () => {
+      onImportFeedback?.({ ok: false, message: 'Không thể đọc file. Vui lòng thử lại.' });
+    };
+    reader.readAsArrayBuffer(file);
     e.target.value = '';
   };
 
@@ -127,6 +168,7 @@ export function useDataTable({
     handleContractSearch,
     handleReset,
     handleDeleteSelected,
+    handleDeleteAll,
     handleSelectAll,
     handleSelectOne,
     handleFilterChange,

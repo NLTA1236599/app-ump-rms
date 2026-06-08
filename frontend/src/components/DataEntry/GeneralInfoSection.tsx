@@ -1,3 +1,5 @@
+import { FacultyUnitSelector } from './FacultyUnitSelector.js';
+import { ResearchFieldSelector } from './ResearchFieldSelector.js';
 import { TagSelector } from './TagSelector.js';
 import { FieldLabel } from './FieldLabel.js';
 import { SectionHeader } from './SectionHeader.js';
@@ -9,9 +11,18 @@ type Props = {
   errors: FormErrors;
   setField: <K extends keyof DataEntryFormData>(key: K, value: DataEntryFormData[K]) => void;
   toggleCategoryTag: (tag: string) => void;
+  toggleResearchField: (field: string) => void;
+  toggleFacultyUnit: (unit: string) => void;
 };
 
-export function GeneralInfoSection({ form, errors, setField, toggleCategoryTag }: Props) {
+export function GeneralInfoSection({
+  form,
+  errors,
+  setField,
+  toggleCategoryTag,
+  toggleResearchField,
+  toggleFacultyUnit,
+}: Props) {
   return (
     <section>
       <SectionHeader number={2} title="Thông tin chung & Nhân sự" />
@@ -71,14 +82,10 @@ export function GeneralInfoSection({ form, errors, setField, toggleCategoryTag }
           />
         </div>
 
-        <div className="lg:col-span-1">
-          <FieldLabel htmlFor="field">Lĩnh vực NC</FieldLabel>
-          <input
-            id="field"
-            type="text"
-            value={form.researchField}
-            onChange={(e) => setField('researchField', e.target.value)}
-            className={inputBase}
+        <div className="lg:col-span-2">
+          <ResearchFieldSelector
+            selected={form.researchFields}
+            onToggle={toggleResearchField}
           />
         </div>
         <div className="lg:col-span-1">
@@ -111,18 +118,12 @@ export function GeneralInfoSection({ form, errors, setField, toggleCategoryTag }
             className={inputBase}
           />
         </div>
-        <div className="lg:col-span-2">
-          <FieldLabel htmlFor="faculty" required>
-            Khoa / Đơn vị
-          </FieldLabel>
-          <input
-            id="faculty"
-            type="text"
-            value={form.faculty}
-            onChange={(e) => setField('faculty', e.target.value)}
-            className={`${inputBase} ${errors.faculty ? inputError : ''}`}
+        <div className="lg:col-span-4">
+          <FacultyUnitSelector
+            selected={form.facultyUnits}
+            onToggle={toggleFacultyUnit}
+            error={errors.facultyUnits}
           />
-          {errors.faculty ? <p className="mt-1 text-[10px] text-red-500">{errors.faculty}</p> : null}
         </div>
       </div>
     </section>

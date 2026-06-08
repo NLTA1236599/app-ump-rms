@@ -4,11 +4,40 @@ export const PROJECT_TYPE_TAGS = [
   'Loại C',
   'Loại D',
   'Sinh viên',
+  'HVCH',
+  'NCS',
   'Tự túc kinh phí',
   'Khác',
 ] as const;
 
 export type ProjectTypeTag = (typeof PROJECT_TYPE_TAGS)[number];
+
+export const RESEARCH_FIELD_OPTIONS = [
+  'Khoa học tự nhiên',
+  'Khoa học kỹ thuật và công nghệ',
+  'Khoa học Y, dược',
+  'Khoa học nông nghiệp',
+  'Khoa học xã hội',
+  'Khoa học nhân văn',
+] as const;
+
+export type ResearchFieldOption = (typeof RESEARCH_FIELD_OPTIONS)[number];
+
+export const FACULTY_UNIT_OPTIONS = [
+  'Trường Y',
+  'Trường Dược',
+  'Trường Điều dưỡng – Kỹ thuật Y học',
+  'Khoa Răng Hàm Mặt',
+  'Khoa Y học cổ truyền',
+  'Khoa Y tế công cộng',
+  'Khoa Khoa học cơ bản',
+  'Trung tâm Giáo dục Y học',
+  'Thư viện',
+  'Trung tâm Y sinh học phân tử',
+  'Trung tâm KCCLXNYH',
+] as const;
+
+export type FacultyUnitOption = (typeof FACULTY_UNIT_OPTIONS)[number];
 
 export const PRODUCT_ROWS: { id: string; label: string }[] = [
   { id: 'intl_paper', label: 'Bài báo quốc tế' },
@@ -46,3 +75,8 @@ export const GENDER_OPTIONS: { value: Gender; label: string }[] = [
 ];
 
 export type Gender = 'male' | 'female' | 'other';
+
+/** Roles eligible to be assigned as project supervisor (Người giám sát). */
+export const SUPERVISOR_ACCOUNT_ROLES = ['admin', 'specialist'] as const;
+
+export type SupervisorAccountRole = (typeof SUPERVISOR_ACCOUNT_ROLES)[number];

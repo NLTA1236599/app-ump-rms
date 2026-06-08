@@ -1,6 +1,7 @@
 import { DateField } from './DateField.js';
 import { FieldLabel } from './FieldLabel.js';
 import { SectionHeader } from './SectionHeader.js';
+import { formatProjectCodeInput } from './projectCodeFormat.js';
 import { inputBase, inputError } from './formStyles.js';
 import type { DataEntryFormData, FormErrors } from './types.js';
 
@@ -33,17 +34,28 @@ export function ContractSection({ form, errors, setField }: Props) {
             <p className="mt-1 text-[10px] text-red-500">{errors.contractNumber}</p>
           ) : null}
 
-          <div className="mt-3 flex flex-wrap items-end gap-3">
-            <span className="pb-2 text-[10px] font-medium uppercase text-slate-500">Ngày ký:</span>
-            <div className="min-w-[10rem] flex-1">
-              <DateField
-                id="contract-signed"
-                label="Ngày ký hợp đồng"
-                noLabel
-                valueIso={form.contractSignedAt}
-                onChangeIso={(v) => setField('contractSignedAt', v)}
-              />
-            </div>
+          <div className="mt-3">
+            <FieldLabel htmlFor="project-code">Mã đề tài</FieldLabel>
+            <input
+              id="project-code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              value={form.projectCode}
+              onChange={(e) =>
+                setField('projectCode', formatProjectCodeInput(e.target.value))
+              }
+              placeholder="2024.03.20.001"
+              className={`${inputBase} font-mono font-bold ${errors.projectCode ? inputError : ''}`}
+              aria-invalid={Boolean(errors.projectCode)}
+              aria-describedby="project-code-hint"
+            />
+            <p id="project-code-hint" className="mt-1 text-[10px] text-slate-500">
+              Định dạng: aaaa.bb.cc.ddd
+            </p>
+            {errors.projectCode ? (
+              <p className="mt-1 text-[10px] text-red-500">{errors.projectCode}</p>
+            ) : null}
           </div>
         </div>
 

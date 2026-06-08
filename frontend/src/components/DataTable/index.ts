@@ -1,3 +1,4 @@
 export { DataTablePage } from './DataTablePage.js';
 export { DataTableView } from './DataTableView.js';
-export type { DataTableProps, ResearchProject } from './types.js';
+export { ProjectEditModal } from './ProjectEditModal.js';
+export type { DataTableProps, ImportFeedback, ResearchProject } from './types.js';

@@ -23,6 +23,25 @@ export type HistoryEntry = {
   action: string;
 };
 
+export type WorkflowHistoryEntry = {
+  step: number;
+  updatedAt: string;
+  user: string;
+  isRevert?: boolean;
+};
+
+export type WorkflowStepDates = {
+  expectedStart?: string;
+  expectedEnd?: string;
+  actualStart?: string;
+  actualEnd?: string;
+};
+
+export type WorkflowTodo = {
+  step: number;
+  dates: WorkflowStepDates;
+};
+
 export type ResearchProject = {
   id: string;
   title: string;
@@ -74,6 +93,9 @@ export type ResearchProject = {
   isTransferred?: boolean;
   terminationReason?: string;
   history?: HistoryEntry[];
+  workflowStep?: number;
+  workflowHistory?: WorkflowHistoryEntry[];
+  workflowTodos?: WorkflowTodo[];
 };
 
 export type ColumnFilters = Record<string, string>;
@@ -83,13 +105,19 @@ export type BreadcrumbItem = {
   href?: string;
 };
 
+export type ImportFeedback =
+  | { ok: true; count: number }
+  | { ok: false; message: string };
+
 export type DataTableProps = {
   projects: ResearchProject[];
   onDelete: (id: string) => void;
   onEdit: (project: ResearchProject) => void;
   onView: (project: ResearchProject) => void;
   onImport?: (data: Partial<ResearchProject>[]) => void;
+  onImportFeedback?: (result: ImportFeedback) => void;
   onDeleteMultiple?: (ids: string[]) => void;
+  onDeleteAll?: () => void;
 };
 
 export type FilterableHeaderProps = {

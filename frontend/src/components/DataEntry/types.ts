@@ -3,7 +3,7 @@ import type { ProjectStatus, ExecutionProgress, Gender } from './constants.js';
 export type DataEntryFormData = {
   /** §1 */
   contractNumber: string;
-  contractSignedAt: string;
+  projectCode: string;
   gcnNumber: string;
   gcnIssuedAt: string;
   gcnPlace: string;
@@ -12,12 +12,12 @@ export type DataEntryFormData = {
   principalInvestigator: string;
   birthYear: string;
   members: string;
-  researchField: string;
+  researchFields: string[];
   researchType: string;
   categoryTags: string[];
   categoryOther: string;
   department: string;
-  faculty: string;
+  facultyUnits: string[];
   /** §3 */
   decisionReview: string;
   decisionApprove: string;
@@ -50,8 +50,9 @@ export type DataEntryFormData = {
   /** §8 */
   reminderAt: string;
   completionAt: string;
-  projectCode: string;
   principalGender: Gender;
+  principalEmail: string;
+  supervisorId: string;
   transferForward: boolean;
   liquidationReason: string;
   generalNotes: string;

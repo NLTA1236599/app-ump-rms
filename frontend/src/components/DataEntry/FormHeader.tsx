@@ -21,10 +21,10 @@ export function FormHeader({
   isSaving,
 }: FormHeaderProps) {
   const title =
-    mode === 'create' ? 'Thêm mới Đề tài Nghiên cứu' : 'Chỉnh sửa Đề tài';
+    mode === 'create' ? 'Thông tin đề tài' : 'Chỉnh sửa Đề tài';
 
   return (
-    <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-8">
+    <header className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-8">
       <h1 className="text-lg font-bold text-slate-800 md:text-xl">{title}</h1>
 
       <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
@@ -54,8 +54,11 @@ export function FormHeader({
         <button
           type="button"
           disabled={isSaving}
+          aria-busy={isSaving}
           onClick={onSave}
-          className="rounded-xl bg-blue-600 px-6 py-2 text-sm font-bold uppercase text-white shadow-lg shadow-blue-200 transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-xl bg-blue-600 px-6 py-2 text-sm font-bold uppercase text-white shadow-lg
+                     shadow-blue-200 transition-colors hover:bg-blue-700 enabled:cursor-pointer
+                     enabled:opacity-100 disabled:cursor-wait disabled:opacity-60"
         >
           {isSaving ? 'Đang lưu...' : 'LƯU THAY ĐỔI'}
         </button>

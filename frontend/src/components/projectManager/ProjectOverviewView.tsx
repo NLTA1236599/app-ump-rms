@@ -9,6 +9,8 @@ import {
   buildStats,
   buildStatusData,
   filterProjects,
+  filterProjectsByYear,
+  getChartYears,
 } from './projectAnalytics.js';
 import { StatsRow } from './StatsRow.js';
 import type { DynChartType, DynYAxis, ResearchProject } from './types.js';
@@ -24,11 +26,13 @@ export function ProjectOverviewView({ projects, chatHandler }: ProjectOverviewVi
   const [startYear, setStartYear] = useState('all');
   const [status, setStatus] = useState('all');
   const [researchField, setResearchField] = useState('all');
+  const [projectType, setProjectType] = useState('all');
   const [department, setDepartment] = useState('all');
 
   const [dynChartType, setDynChartType] = useState<DynChartType>('bar');
   const [dynXAxis, setDynXAxis] = useState('department');
   const [dynYAxis, setDynYAxis] = useState<DynYAxis>('count');
+  const [dynChartYear, setDynChartYear] = useState('all');
 
   const [expandedChart, setExpandedChart] = useState<ExpandedChartKind>(null);
 
@@ -42,16 +46,23 @@ export function ProjectOverviewView({ projects, chatHandler }: ProjectOverviewVi
         startYear,
         status,
         researchField,
+        projectType,
         department,
       }),
-    [projects, startYear, status, researchField, department]
+    [projects, startYear, status, researchField, projectType, department]
   );
+
+  const chartYears = useMemo(() => getChartYears(projects), [projects]);
 
   const statusData = useMemo(() => buildStatusData(filtered), [filtered]);
   const departmentData = useMemo(() => buildDepartmentData(filtered), [filtered]);
+  const chartFiltered = useMemo(
+    () => filterProjectsByYear(filtered, dynChartYear),
+    [filtered, dynChartYear],
+  );
   const dynamicChartData = useMemo(
-    () => buildDynamicChartData(filtered, dynXAxis, dynYAxis),
-    [filtered, dynXAxis, dynYAxis]
+    () => buildDynamicChartData(chartFiltered, dynXAxis, dynYAxis),
+    [chartFiltered, dynXAxis, dynYAxis],
   );
   const stats = useMemo(() => buildStats(filtered), [filtered]);
 
@@ -71,12 +82,15 @@ export function ProjectOverviewView({ projects, chatHandler }: ProjectOverviewVi
           <DynamicStatisticChart
             dynamicChartRef={dynamicChartRef}
             dynamicChartData={dynamicChartData}
+            availableYears={chartYears}
             dynChartType={dynChartType}
             dynXAxis={dynXAxis}
             dynYAxis={dynYAxis}
+            dynChartYear={dynChartYear}
             onDynChartType={setDynChartType}
             onDynXAxis={setDynXAxis}
             onDynYAxis={setDynYAxis}
+            onDynChartYear={setDynChartYear}
             onExpand={() => setExpandedChart('dynamic')}
           />
         </div>
@@ -87,10 +101,12 @@ export function ProjectOverviewView({ projects, chatHandler }: ProjectOverviewVi
           startYear={startYear}
           status={status}
           researchField={researchField}
+          projectType={projectType}
           department={department}
           onStartYear={setStartYear}
           onStatus={setStatus}
           onResearchField={setResearchField}
+          onProjectType={setProjectType}
           onDepartment={setDepartment}
         />
       </div>

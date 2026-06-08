@@ -1,10 +1,15 @@
 import { useMemo, useState } from 'react';
+import type { ResearchProject } from '../DataTable/types.js';
 import type { SaveTaskPayload } from './AddTaskForm.js';
 import { KanbanBoard } from './KanbanBoard.js';
 import { KanbanSectionHeader, type KanbanViewMode } from './KanbanSectionHeader.js';
 import { NotificationsPanel } from './NotificationsPanel.js';
 import { CalendarPlaceholder } from './CalendarPlaceholder.js';
 import { TaskDetailModal } from './TaskDetailModal.js';
+import {
+  buildProjectAnnouncements,
+  projectToKanbanTask,
+} from './projectProgressSync.js';
 import type { ColumnId, KanbanTask } from './types.js';
 
 function makeTaskId(): string {
@@ -15,18 +20,26 @@ function makeTaskId(): string {
   }
 }
 
+export type ProgressTrackingPageProps = {
+  projects?: ResearchProject[];
+};
+
 /**
  * Full “Tiến độ thực hiện” page body (zones 1‑3 inside the authenticated shell).
  * Matches `ProgressTracking-final-spec.md`; notification copy follows §3 canonical list.
- *
- * Matches the onboarding screenshot by defaulting the inline add‑task form open in column `review`.
  */
-export function ProgressTrackingPage() {
+export function ProgressTrackingPage({ projects = [] }: ProgressTrackingPageProps) {
   const [view, setView] = useState<KanbanViewMode>('kanban');
-  const [tasks, setTasks] = useState<KanbanTask[]>([]);
+  const [manualTasks, setManualTasks] = useState<KanbanTask[]>([]);
+
+  const projectTasks = useMemo(() => projects.map(projectToKanbanTask), [projects]);
+  const tasks = useMemo(() => [...projectTasks, ...manualTasks], [projectTasks, manualTasks]);
+  const announcements = useMemo(() => buildProjectAnnouncements(projects), [projects]);
 
   /** `review` pre‑opened aligns with screenshot evidence (first column composing a task). */
-  const [addingToColumnId, setAddingToColumnId] = useState<ColumnId | null>('review');
+  const [addingToColumnId, setAddingToColumnId] = useState<ColumnId | null>(
+    projects.length > 0 ? null : 'review',
+  );
 
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
   const focusedTask = useMemo(
@@ -45,13 +58,13 @@ export function ProgressTrackingPage() {
       categories: ['ĐỀ CƯƠNG'],
     };
 
-    setTasks((prev) => [next, ...prev]);
+    setManualTasks((prev) => [next, ...prev]);
     setFocusedTaskId(null);
   };
 
   return (
     <div className="animate-fadeIn space-y-4">
-      <NotificationsPanel />
+      <NotificationsPanel items={announcements} />
 
       <KanbanSectionHeader view={view} onViewChange={setView} />
 

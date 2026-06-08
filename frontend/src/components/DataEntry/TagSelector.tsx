@@ -14,7 +14,7 @@ export function TagSelector({ selected, otherValue, onToggle, onOtherChange, err
   const hasOther = selected.includes('Khác');
 
   return (
-    <div>
+    <div id="category-tags">
       <p className="mb-1.5 block text-xs font-medium text-slate-600">
         Loại đề tài (Tags)
         <span className="ml-0.5 text-red-500">*</span>

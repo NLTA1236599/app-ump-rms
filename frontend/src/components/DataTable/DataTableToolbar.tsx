@@ -47,6 +47,8 @@ type ActionButtonRowProps = {
   onExport: () => void;
   onReset: () => void;
   onDeleteSelected: () => void;
+  totalCount: number;
+  onDeleteAll: () => void;
 };
 
 export function ActionButtonRow({
@@ -58,6 +60,8 @@ export function ActionButtonRow({
   onExport,
   onReset,
   onDeleteSelected,
+  totalCount,
+  onDeleteAll,
 }: ActionButtonRowProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -113,6 +117,18 @@ export function ActionButtonRow({
           XÓA ĐÃ CHỌN ({selectedCount})
         </button>
       )}
+
+      {totalCount > 0 && (
+        <button
+          type="button"
+          onClick={onDeleteAll}
+          className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-2
+                     text-xs font-black uppercase tracking-widest text-red-700 transition-colors
+                     hover:bg-red-50"
+        >
+          XÓA TẤT CẢ ({totalCount})
+        </button>
+      )}
     </div>
   );
 }
@@ -160,6 +176,8 @@ type DataTableToolbarProps = {
   onExport: () => void;
   onReset: () => void;
   onDeleteSelected: () => void;
+  totalCount: number;
+  onDeleteAll: () => void;
 };
 
 export function DataTableToolbar(props: DataTableToolbarProps) {
@@ -182,6 +200,8 @@ export function DataTableToolbar(props: DataTableToolbarProps) {
         onExport={props.onExport}
         onReset={props.onReset}
         onDeleteSelected={props.onDeleteSelected}
+        totalCount={props.totalCount}
+        onDeleteAll={props.onDeleteAll}
       />
       <PageSizeRow pageSize={props.pageSize} onChange={props.onPageSizeChange} />
     </div>

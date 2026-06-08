@@ -5,10 +5,11 @@ type SidebarMenuItemProps = {
   id: DeTaiKhcnSidebarItemId;
   label: string;
   isActive: boolean;
+  badgeCount?: number;
   onSelect: (id: DeTaiKhcnSidebarItemId) => void;
 };
 
-export function SidebarMenuItem({ id, label, isActive, onSelect }: SidebarMenuItemProps) {
+export function SidebarMenuItem({ id, label, isActive, badgeCount, onSelect }: SidebarMenuItemProps) {
   return (
     <button
       type="button"
@@ -24,7 +25,17 @@ export function SidebarMenuItem({ id, label, isActive, onSelect }: SidebarMenuIt
       <span className={isActive ? 'text-[#0072bc]' : 'text-slate-500'}>
         <DeTaiKhcnSidebarIcon id={id} />
       </span>
-      <span className="truncate">{label}</span>
+      <span className="flex w-full items-center justify-between gap-2">
+        <span className="truncate text-sm font-medium">{label}</span>
+        {badgeCount != null && badgeCount > 0 ? (
+          <span
+            className="ml-2 flex-shrink-0 rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px]
+                       font-black text-violet-700"
+          >
+            {badgeCount}
+          </span>
+        ) : null}
+      </span>
     </button>
   );
 }

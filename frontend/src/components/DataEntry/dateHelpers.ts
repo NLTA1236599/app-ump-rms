@@ -24,6 +24,14 @@ export function isoToDisplay(iso: string): string {
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
+/** Progressive mask while typing — digits only, auto-inserts `/`. */
+export function formatDateInputMask(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
 export function parseNumberField(raw: string): number {
   const n = Number(String(raw).replace(/\s/g, '').replace(',', '.'));
   return Number.isFinite(n) ? n : 0;

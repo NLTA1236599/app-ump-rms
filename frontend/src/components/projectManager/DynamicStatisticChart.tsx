@@ -27,24 +27,30 @@ import type { DynChartType, DynYAxis } from './types.js';
 export type DynamicStatisticChartProps = {
   dynamicChartRef: RefObject<HTMLDivElement | null>;
   dynamicChartData: DynamicDatum[];
+  availableYears: string[];
   dynChartType: DynChartType;
   dynXAxis: string;
   dynYAxis: DynYAxis;
+  dynChartYear: string;
   onDynChartType: (v: DynChartType) => void;
   onDynXAxis: (v: string) => void;
   onDynYAxis: (v: DynYAxis) => void;
+  onDynChartYear: (v: string) => void;
   onExpand: () => void;
 };
 
 export function DynamicStatisticChart({
   dynamicChartRef,
   dynamicChartData,
+  availableYears,
   dynChartType,
   dynXAxis,
   dynYAxis,
+  dynChartYear,
   onDynChartType,
   onDynXAxis,
   onDynYAxis,
+  onDynChartYear,
   onExpand,
 }: DynamicStatisticChartProps) {
   const yLabel = dynYAxis === 'budget' ? 'Kinh phí' : 'Số lượng';
@@ -167,6 +173,24 @@ export function DynamicStatisticChart({
             {DYN_Y_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="min-w-[200px] flex-1">
+          <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            Chọn năm
+          </label>
+          <select
+            value={dynChartYear}
+            onChange={(e) => onDynChartYear(e.target.value)}
+            className="block w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-medium text-slate-700 outline-none transition focus:border-purple-500 focus:ring-purple-500"
+          >
+            <option value="all">Tất cả các năm</option>
+            {availableYears.map((year) => (
+              <option key={year} value={year}>
+                {year}
               </option>
             ))}
           </select>

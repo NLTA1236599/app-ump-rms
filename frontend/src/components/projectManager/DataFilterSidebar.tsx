@@ -1,5 +1,5 @@
 import type { ResearchProject } from './types.js';
-import { extractYearFromDate } from './projectAnalytics.js';
+import { extractYearFromDate, getProjectTypeOptions } from './projectAnalytics.js';
 
 export type FilterSidebarProps = {
   projects: ResearchProject[];
@@ -7,10 +7,12 @@ export type FilterSidebarProps = {
   startYear: string;
   status: string;
   researchField: string;
+  projectType: string;
   department: string;
   onStartYear: (v: string) => void;
   onStatus: (v: string) => void;
   onResearchField: (v: string) => void;
+  onProjectType: (v: string) => void;
   onDepartment: (v: string) => void;
 };
 
@@ -20,10 +22,12 @@ export function DataFilterSidebar({
   startYear,
   status,
   researchField,
+  projectType,
   department,
   onStartYear,
   onStatus,
   onResearchField,
+  onProjectType,
   onDepartment,
 }: FilterSidebarProps) {
   const years = Array.from(
@@ -37,6 +41,7 @@ export function DataFilterSidebar({
   const departments = Array.from(new Set(projects.map((p) => p.department))).filter(Boolean).sort();
   const statuses = Array.from(new Set(projects.map((p) => p.status))).filter(Boolean).sort();
   const fields = Array.from(new Set(projects.map((p) => p.researchField))).filter(Boolean).sort();
+  const projectTypes = getProjectTypeOptions(projects);
 
   return (
     <div className="w-full shrink-0 xl:w-80">
@@ -122,6 +127,32 @@ export function DataFilterSidebar({
               {fields.map((f) => (
                 <option key={f} value={f}>
                   {f}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center text-sm font-semibold text-slate-700">
+              <svg className="mr-2 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                />
+              </svg>
+              Loại đề tài
+            </label>
+            <select
+              className="block w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-700 outline-none transition-all focus:border-blue-500 focus:ring-blue-500"
+              value={projectType}
+              onChange={(e) => onProjectType(e.target.value)}
+            >
+              <option value="all">Tất cả loại đề tài</option>
+              {projectTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
                 </option>
               ))}
             </select>

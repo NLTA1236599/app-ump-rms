@@ -1,4 +1,28 @@
+import { PROJECT_TYPE_TAGS } from '../DataEntry/constants.js';
+
 import { ProgressStatus, ProjectStatus, type ResearchProject } from './types.js';
+
+function parseProjectCategories(categories?: string): string[] {
+  if (!categories?.trim()) return [];
+  return categories
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export function getProjectTypeOptions(projects: ResearchProject[]): string[] {
+  const fromData = new Set<string>();
+  for (const project of projects) {
+    for (const tag of parseProjectCategories(project.categories)) {
+      fromData.add(tag);
+    }
+  }
+
+  const extras = [...fromData].filter(
+    (tag) => !PROJECT_TYPE_TAGS.includes(tag as (typeof PROJECT_TYPE_TAGS)[number]),
+  );
+  return [...PROJECT_TYPE_TAGS, ...extras.sort()];
+}
 
 export function extractYearFromDate(dateValue: unknown): string | null {
   if (dateValue == null) return null;
@@ -45,14 +69,36 @@ export type StatusDatum = { name: string; value: number };
 export type DepartmentDatum = { name: string; count: number; budget: number };
 export type DynamicDatum = { name: string; value: number };
 
+export function getChartYears(projects: ResearchProject[]): string[] {
+  return Array.from(
+    new Set(
+      projects
+        .map((p) => (p.startDate ? extractYearFromDate(p.startDate) : null))
+        .filter((y): y is string => Boolean(y)),
+    ),
+  ).sort((a, b) => Number(b) - Number(a));
+}
+
+export function filterProjectsByYear(
+  projects: ResearchProject[],
+  year: string,
+): ResearchProject[] {
+  if (year === 'all') return projects;
+  return projects.filter((p) => {
+    if (!p.startDate) return false;
+    return extractYearFromDate(p.startDate) === year;
+  });
+}
+
 export function filterProjects(
   projects: ResearchProject[],
   filters: {
     startYear: string;
     status: string;
     researchField: string;
+    projectType: string;
     department: string;
-  }
+  },
 ): ResearchProject[] {
   return projects.filter((p) => {
     let matchYear = true;
@@ -68,8 +114,11 @@ export function filterProjects(
       filters.researchField === 'all' || p.researchField === filters.researchField;
     const matchStatus = filters.status === 'all' || p.status === filters.status;
     const matchDepartment = filters.department === 'all' || p.department === filters.department;
+    const matchProjectType =
+      filters.projectType === 'all' ||
+      parseProjectCategories(p.categories).includes(filters.projectType);
 
-    return matchYear && matchStatus && matchDepartment && matchResearchField;
+    return matchYear && matchStatus && matchDepartment && matchResearchField && matchProjectType;
   });
 }
 

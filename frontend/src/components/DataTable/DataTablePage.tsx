@@ -13,9 +13,11 @@ export function DataTablePage({
   onEdit,
   onView,
   onImport,
+  onImportFeedback,
   onDeleteMultiple,
+  onDeleteAll,
 }: DataTableProps) {
-  const table = useDataTable({ projects, onImport, onDeleteMultiple });
+  const table = useDataTable({ projects, onImport, onImportFeedback, onDeleteMultiple, onDeleteAll });
 
   const pageOffset = (table.currentPage - 1) * table.pageSize;
 
@@ -39,6 +41,8 @@ export function DataTablePage({
         onExport={table.exportExcel}
         onReset={table.handleReset}
         onDeleteSelected={table.handleDeleteSelected}
+        totalCount={projects.length}
+        onDeleteAll={table.handleDeleteAll}
       />
 
       <DataTableGrid
