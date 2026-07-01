@@ -6,6 +6,10 @@ import { authRoutes } from './modules/auth/auth.routes.js';
 import { workspaceRoutes } from './modules/workspaces/workspace.routes.js';
 import { workspaceIssueRoutes } from './modules/issues/issue.routes.js';
 import { userRoutes } from './modules/users/user.routes.js';
+import { fileRoutes } from './modules/files/file.routes.js';
+import { researchProjectRoutes } from './modules/research-projects/research-project.routes.js';
+import { adminRoutes } from './modules/admin/admin.routes.js';
+import { reminderTestRoutes } from './modules/dev/reminderTest.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -27,14 +31,21 @@ app.use(
   })
 );
 app.use('/api/v1/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 40 }));
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workspaces', workspaceRoutes);
 app.use('/api/v1/workspaces/:workspaceId/issues', workspaceIssueRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/files', fileRoutes);
+app.use('/api/v1/research-projects', researchProjectRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/v1/dev/reminders', reminderTestRoutes);
+}
 
 app.use(errorHandler);
 

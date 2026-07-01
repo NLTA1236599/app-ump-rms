@@ -5,8 +5,10 @@ import { ApiAuthService } from './api/authService.js';
 import { ApiWorkspaceService } from './api/workspaceService.js';
 import { ApiIssueService } from './api/issueService.js';
 import { ApiUserDirectory } from './api/userDirectory.js';
+import { ApiResearchProjectService } from './api/researchProjectService.js';
 
 export const authService: IAuthService = new ApiAuthService();
 export const workspaceService: IWorkspaceService = new ApiWorkspaceService();
 export const issueService: IIssueService = new ApiIssueService();
 export const userDirectory = new ApiUserDirectory();
+export const researchProjectService = new ApiResearchProjectService();

@@ -41,11 +41,13 @@ export function mapFormToTableProject(
     id: existing?.id ?? makeProjectId(),
     title: form.title.trim(),
     contractId: form.contractNumber.trim(),
+    contractAppendix: form.contractAppendix.trim() || undefined,
     projectCode: form.projectCode.trim(),
     certificateResultNumber: form.gcnNumber.trim() || undefined,
     certificateResultDate: form.gcnIssuedAt || undefined,
     certificateResultIssuingAuthority: form.gcnPlace.trim() || undefined,
     leadAuthor: form.principalInvestigator.trim(),
+    principalEmail: form.principalEmail.trim() || undefined,
     leadAuthorBirthYear: form.birthYear.trim() || undefined,
     leadAuthorGender: GENDER_LABELS[form.principalGender],
     members: form.members.trim() || undefined,
@@ -90,6 +92,7 @@ export function mapFormToTableProject(
     acceptanceCompletionDate: form.completionAt || undefined,
     isTransferred: form.transferForward,
     terminationReason: form.liquidationReason.trim() || undefined,
+    supervisorId: form.supervisorId.trim() || undefined,
     history: existing?.history ?? [],
   };
 }

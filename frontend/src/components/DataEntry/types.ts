@@ -3,6 +3,7 @@ import type { ProjectStatus, ExecutionProgress, Gender } from './constants.js';
 export type DataEntryFormData = {
   /** §1 */
   contractNumber: string;
+  contractAppendix: string;
   projectCode: string;
   gcnNumber: string;
   gcnIssuedAt: string;

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuthContext } from '../../../contexts/AuthContext.js';
+import { NotificationBell } from '../../notification-feature/index.js';
 import { HeaderLogoutIcon } from './HeaderIcons.js';
 import {
   HEADER_HORIZONTAL_PADDING,
@@ -71,6 +72,8 @@ export function IdentityBar({ onLogout, onHomeClick }: IdentityBarProps) {
           <span className="max-w-[200px] truncate text-sm font-medium text-white" title={userLabel}>
             {userLabel}
           </span>
+
+          <NotificationBell />
 
           <button
             type="button"

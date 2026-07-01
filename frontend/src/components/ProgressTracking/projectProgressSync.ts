@@ -69,11 +69,29 @@ export function projectToKanbanTask(project: ResearchProject): KanbanTask {
   };
 }
 
-export function buildProjectAnnouncements(projects: ResearchProject[]): AnnouncementItem[] {
+export function buildProjectAnnouncements(
+  projects: ResearchProject[],
+  currentUserId?: string,
+): AnnouncementItem[] {
   if (projects.length === 0) return [];
 
   const announcements: AnnouncementItem[] = [];
   const now = new Date();
+
+  if (currentUserId) {
+    for (const project of projects) {
+      for (const notification of project.noteNotifications ?? []) {
+        if (notification.forUserId !== currentUserId || notification.read) continue;
+        announcements.push({
+          id: notification.id,
+          tag: 'TRAO ĐỔI',
+          tone: 'notice',
+          title: notification.message,
+          at: new Date(notification.createdAt),
+        });
+      }
+    }
+  }
 
   for (const project of projects) {
     const status = String(project.status ?? '').toLowerCase();
@@ -112,5 +130,6 @@ export function buildProjectAnnouncements(projects: ResearchProject[]): Announce
     });
   }
 
+  announcements.sort((a, b) => b.at.getTime() - a.at.getTime());
   return announcements.slice(0, 5);
 }

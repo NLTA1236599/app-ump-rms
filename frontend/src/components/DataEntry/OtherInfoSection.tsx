@@ -95,7 +95,7 @@ export function OtherInfoSection({ form, errors, setField }: Props) {
           ) : null}
         </div>
         <div className="lg:col-span-2">
-          <FieldLabel htmlFor="supervisor">Người giám sát</FieldLabel>
+          <FieldLabel htmlFor="supervisor">Chuyên viên phụ trách</FieldLabel>
           <select
             id="supervisor"
             value={form.supervisorId}
@@ -104,7 +104,7 @@ export function OtherInfoSection({ form, errors, setField }: Props) {
             style={selectChevronStyle}
             aria-invalid={Boolean(errors.supervisorId)}
           >
-            <option value="">— Chọn người giám sát —</option>
+            <option value="">— Chọn chuyên viên phụ trách —</option>
             {supervisors.map((user) => (
               <option key={user.id} value={user.id}>
                 {formatSupervisorLabel(user)}

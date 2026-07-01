@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { ResearchProject } from '../DataTable/types.js';
+import { useAuthContext } from '../../contexts/AuthContext.js';
 import type { SaveTaskPayload } from './AddTaskForm.js';
 import { KanbanBoard } from './KanbanBoard.js';
 import { KanbanSectionHeader, type KanbanViewMode } from './KanbanSectionHeader.js';
@@ -29,12 +30,16 @@ export type ProgressTrackingPageProps = {
  * Matches `ProgressTracking-final-spec.md`; notification copy follows §3 canonical list.
  */
 export function ProgressTrackingPage({ projects = [] }: ProgressTrackingPageProps) {
+  const { user } = useAuthContext();
   const [view, setView] = useState<KanbanViewMode>('kanban');
   const [manualTasks, setManualTasks] = useState<KanbanTask[]>([]);
 
   const projectTasks = useMemo(() => projects.map(projectToKanbanTask), [projects]);
   const tasks = useMemo(() => [...projectTasks, ...manualTasks], [projectTasks, manualTasks]);
-  const announcements = useMemo(() => buildProjectAnnouncements(projects), [projects]);
+  const announcements = useMemo(
+    () => buildProjectAnnouncements(projects, user?.id),
+    [projects, user?.id],
+  );
 
   /** `review` pre‑opened aligns with screenshot evidence (first column composing a task). */
   const [addingToColumnId, setAddingToColumnId] = useState<ColumnId | null>(

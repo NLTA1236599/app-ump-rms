@@ -51,6 +51,42 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return body as T;
 }
 
+async function uploadFormData<T>(
+  path: string,
+  file: File,
+  fields?: Record<string, string>,
+): Promise<T> {
+  const token = localStorage.getItem('auth_token');
+  const url = `${BASE_URL}${path}`;
+  const formData = new FormData();
+  formData.append('file', file);
+  if (fields) {
+    for (const [key, value] of Object.entries(fields)) {
+      formData.append(key, value);
+    }
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+  } catch (e) {
+    const cause = e instanceof Error ? e.message : String(e);
+    throw new Error(`Không kết nối được tới máy chủ. (${cause})`);
+  }
+
+  const body = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
+
+  if (!response.ok) {
+    throw new ApiHttpError(body.error ?? body.message ?? response.statusText, response.status);
+  }
+
+  return body as T;
+}
+
 export const httpClient = {
   get: <T>(path: string, opts?: RequestInit) =>
     request<T>(path, { method: 'GET', ...opts }),
@@ -78,4 +114,6 @@ export const httpClient = {
 
   delete: <T>(path: string, opts?: RequestInit) =>
     request<T>(path, { method: 'DELETE', ...opts }),
+
+  uploadFormData,
 };

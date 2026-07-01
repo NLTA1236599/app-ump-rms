@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 
-import { useAuthContext } from '../../contexts/AuthContext.js';
 import { Breadcrumb } from '../DataTable/Breadcrumb.js';
 import { PageTitleBar } from '../DataTable/PageTitleBar.js';
 import { ProjectEditModal } from '../DataTable/ProjectEditModal.js';
@@ -32,7 +31,6 @@ export function LocTrungDeTaiPage({
   onNavigateHome,
   onNavigateDeTaiKhcn,
 }: LocTrungDeTaiPageProps) {
-  const { user } = useAuthContext();
   const [draft, setDraft] = useState<DuplicateFilterState>(DEFAULT_DRAFT);
   const [applied, setApplied] = useState<DuplicateFilterState | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -95,14 +93,12 @@ export function LocTrungDeTaiPage({
       <>
         <ProjectDetail
           project={liveViewingProject}
-          userEmail={user?.username ?? 'user'}
           onBack={() => setViewingProject(null)}
-          onUpdate={() => {}}
-          onPersist={onUpdateProject}
           onEdit={(p) => {
             setViewingProject(null);
             setEditingProject(p);
           }}
+          onUpdateProject={onUpdateProject}
         />
         <ProjectEditModal
           project={editingProject}

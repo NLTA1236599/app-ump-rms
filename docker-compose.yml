@@ -6,6 +6,7 @@ services:
       POSTGRES_USER: ump_rms_user
       POSTGRES_PASSWORD: change_me
       POSTGRES_DB: ump_rms_db
+      TZ: Asia/Ho_Chi_Minh
     ports:
       - "5432:5432"
     volumes:
@@ -22,6 +23,8 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"
+    volumes:
+      - ./uploads:/app/uploads
     environment:
       PORT: "3001"
       DB_HOST: postgres
@@ -30,8 +33,22 @@ services:
       DB_USER: ump_rms_user
       DB_PASSWORD: change_me
       JWT_SECRET: change-this-to-a-long-random-string
+      UPLOAD_DIR: /app/uploads
+      MAIL_HOST: smtp.gmail.com
+      MAIL_PORT: "587"
+      MAIL_USER: your-email@gmail.com
+      MAIL_PASS: your-app-password
+      MAIL_FROM: "RMS System <your-email@gmail.com>"
+      REMINDER_JOBS_ENABLED: "true"
+      TZ: Asia/Ho_Chi_Minh
+      REMINDER_TIMEZONE: Asia/Ho_Chi_Minh
+      REMINDER_START_HOUR: "13"
+      REMINDER_START_MINUTE: "0"
+      REMINDER_REPORT_LOOKAHEAD: "1 minute"
+      REMINDER_ACCEPTANCE_LONG_LOOKAHEAD: "3 minutes"
+      REMINDER_ACCEPTANCE_SHORT_LOOKAHEAD: "1 minute"
       # Browser origin is usually localhost (mapped port), not the Docker service hostname
-      FRONTEND_ORIGIN: http://localhost:5173,http://127.0.0.1:5173,http://rms-fe:5173
+      FRONTEND_ORIGIN: http://localhost:5173,http://127.0.0.1:5173,http://rms-fe:5173,http://localhost:5174,http://127.0.0.1:5174,http://rms-admin:5174
     depends_on:
       postgres:
         condition: service_healthy
@@ -48,6 +65,19 @@ services:
       - "5173:80"
     volumes:
       - ./assets-test:/usr/share/nginx/html/assets-test:ro
+    depends_on:
+      - backend
+
+  fe0-admin:
+    build:
+      context: ./fe0-admin
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3001/api/v1
+    container_name: rms-admin
+    restart: unless-stopped
+    ports:
+      - "5174:80"
     depends_on:
       - backend
 

@@ -1,11 +1,3 @@
-import type { StepStatus } from './types.js';
-
-export function getStepStatus(step: number, currentStep: number): StepStatus {
-  if (step < currentStep) return 'completed';
-  if (step === currentStep) return 'current';
-  return 'upcoming';
-}
-
 export type WorkflowPhaseBadge = {
   label: string;
   className: string;

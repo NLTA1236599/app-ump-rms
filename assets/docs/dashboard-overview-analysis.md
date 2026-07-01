@@ -2,7 +2,7 @@
 **System:** UMP-RMS — Hệ thống Quản lý Dự án KHCN  
 **Institution:** Đại Học Y Dược TP. Hồ Chí Minh  
 **Page:** Tổng quan (Overview / Home Dashboard)  
-**Role shown:** Admin (`admin2@ump....` / ADMIN)
+**Role shown:** Admin (`admin@ump....` / ADMIN)
 
 ---
 

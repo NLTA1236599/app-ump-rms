@@ -23,6 +23,32 @@ export type HistoryEntry = {
   action: string;
 };
 
+export type ProjectDiscussionNote = {
+  id: string;
+  content: string;
+  author: string;
+  authorId?: string;
+  createdAt: string;
+  updatedAt?: string;
+  /** User ids who liked this comment. */
+  likedBy?: string[];
+  /** When set, this comment is a reply to another note. */
+  parentId?: string;
+  /** User ids explicitly @mentioned in the comment. */
+  mentionedUserIds?: string[];
+};
+
+export type ProjectNoteNotification = {
+  id: string;
+  noteId: string;
+  forUserId: string;
+  projectId: string;
+  projectTitle: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+};
+
 export type WorkflowHistoryEntry = {
   step: number;
   updatedAt: string;
@@ -46,11 +72,13 @@ export type ResearchProject = {
   id: string;
   title: string;
   contractId: string;
+  contractAppendix?: string;
   contractDate?: string;
   certificateResultNumber?: string;
   certificateResultDate?: string | number;
   certificateResultIssuingAuthority?: string;
   leadAuthor: string;
+  principalEmail?: string;
   leadAuthorBirthYear?: string;
   leadAuthorGender?: string;
   members?: string;
@@ -92,6 +120,9 @@ export type ResearchProject = {
   projectCode?: string;
   isTransferred?: boolean;
   terminationReason?: string;
+  supervisorId?: string;
+  projectNotes?: ProjectDiscussionNote[];
+  noteNotifications?: ProjectNoteNotification[];
   history?: HistoryEntry[];
   workflowStep?: number;
   workflowHistory?: WorkflowHistoryEntry[];
@@ -114,7 +145,7 @@ export type DataTableProps = {
   onDelete: (id: string) => void;
   onEdit: (project: ResearchProject) => void;
   onView: (project: ResearchProject) => void;
-  onImport?: (data: Partial<ResearchProject>[]) => void;
+  onImport?: (data: Partial<ResearchProject>[], file?: File) => void | Promise<void>;
   onImportFeedback?: (result: ImportFeedback) => void;
   onDeleteMultiple?: (ids: string[]) => void;
   onDeleteAll?: () => void;

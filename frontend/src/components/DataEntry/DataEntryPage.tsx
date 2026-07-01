@@ -18,7 +18,7 @@ import { useDataEntryForm } from './useDataEntryForm.js';
 type DataEntryPageProps = {
   mode?: 'create' | 'edit';
   project?: ResearchProject;
-  onSaveProject?: (project: ResearchProject) => void;
+  onSaveProject?: (project: ResearchProject) => void | Promise<void>;
   onCancel?: () => void;
   embedded?: boolean;
 };
@@ -34,7 +34,7 @@ export function DataEntryPage({
   const { message, notify, dismiss } = useNotification();
   const handleSaved = useCallback(
     (saved: ResearchProject) => {
-      onSaveProject?.(saved);
+      void Promise.resolve(onSaveProject?.(saved));
     },
     [onSaveProject],
   );

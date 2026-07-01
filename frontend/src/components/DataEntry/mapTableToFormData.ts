@@ -103,6 +103,7 @@ export function mapTableToFormData(project: ResearchProject): DataEntryFormData 
   return {
     ...base,
     contractNumber: project.contractId ?? '',
+    contractAppendix: project.contractAppendix ?? '',
     projectCode: project.projectCode ?? '',
     gcnNumber: project.certificateResultNumber ?? '',
     gcnIssuedAt: toFormIsoDate(project.certificateResultDate),
@@ -154,8 +155,8 @@ export function mapTableToFormData(project: ResearchProject): DataEntryFormData 
     reminderAt: toFormIsoDate(project.reminderDate),
     completionAt: toFormIsoDate(project.acceptanceCompletionDate),
     principalGender: mapGender(project.leadAuthorGender),
-    principalEmail: '',
-    supervisorId: '',
+    principalEmail: String(project.principalEmail ?? ''),
+    supervisorId: project.supervisorId ?? '',
     transferForward: Boolean(project.isTransferred),
     liquidationReason: project.terminationReason ?? '',
     generalNotes: '',

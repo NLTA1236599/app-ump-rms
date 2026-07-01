@@ -117,31 +117,34 @@ export function useDataTable({
 
     const reader = new FileReader();
     reader.onload = (evt) => {
-      try {
-        const buffer = evt.target?.result;
-        if (!(buffer instanceof ArrayBuffer)) {
-          onImportFeedback?.({ ok: false, message: 'Không đọc được file Excel.' });
-          return;
-        }
+      void (async () => {
+        try {
+          const buffer = evt.target?.result;
+          if (!(buffer instanceof ArrayBuffer)) {
+            onImportFeedback?.({ ok: false, message: 'Không đọc được file Excel.' });
+            return;
+          }
 
-        const imported = parseExcelFile(buffer);
-        if (imported.length === 0) {
-          onImportFeedback?.({
-            ok: false,
-            message:
-              'Không tìm thấy dữ liệu hợp lệ trong file Excel. Kiểm tra dòng tiêu đề và nội dung.',
-          });
-          return;
-        }
+          const imported = parseExcelFile(buffer);
+          if (imported.length === 0) {
+            onImportFeedback?.({
+              ok: false,
+              message:
+                'Không tìm thấy dữ liệu hợp lệ trong file Excel. Kiểm tra dòng tiêu đề và nội dung.',
+            });
+            return;
+          }
 
-        onImport?.(imported);
-        onImportFeedback?.({ ok: true, count: imported.length });
-      } catch {
-        onImportFeedback?.({
-          ok: false,
-          message: 'Lỗi khi nhập dữ liệu từ Excel. Vui lòng kiểm tra định dạng file (.xlsx, .xls).',
-        });
-      }
+          await onImport?.(imported, file);
+          onImportFeedback?.({ ok: true, count: imported.length });
+        } catch (err) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : 'Lỗi khi nhập dữ liệu từ Excel. Vui lòng kiểm tra định dạng file (.xlsx, .xls).';
+          onImportFeedback?.({ ok: false, message });
+        }
+      })();
     };
     reader.onerror = () => {
       onImportFeedback?.({ ok: false, message: 'Không thể đọc file. Vui lòng thử lại.' });

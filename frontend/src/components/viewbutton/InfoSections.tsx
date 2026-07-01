@@ -4,13 +4,24 @@ import { InfoCircleIcon } from './icons.js';
 import { InfoField } from './InfoField.js';
 import { getWorkflowPhaseBadge } from './workflowStatus.js';
 
+export type DetailSectionId =
+  | 'general'
+  | 'contract'
+  | 'budget'
+  | 'timeline'
+  | 'acceptance';
+
 type InfoSectionsProps = {
   project: ResearchProject;
   currentStep: number;
   isEditing?: boolean;
   editData?: Partial<ResearchProject>;
   onEditDataChange?: (patch: Partial<ResearchProject>) => void;
-  onEdit: () => void;
+  onEdit?: () => void;
+  /** When set, only one section is rendered (for CRM tab layout). */
+  section?: DetailSectionId;
+  /** Outer card + main heading; off when embedded in ProjectDetail tabs. */
+  showWrapper?: boolean;
 };
 
 function categoriesDisplay(categories?: string[] | string): string {
@@ -75,6 +86,8 @@ export function InfoSections({
   editData = {},
   onEditDataChange,
   onEdit,
+  section,
+  showWrapper = true,
 }: InfoSectionsProps) {
   const data = isEditing ? { ...project, ...editData } : project;
   const phaseBadge = getWorkflowPhaseBadge(currentStep);
@@ -97,23 +110,10 @@ export function InfoSections({
     />
   );
 
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800">
-          <InfoCircleIcon className="h-5 w-5 text-blue-500" />
-          Thông tin chi tiết đề tài
-        </h3>
-        <button
-          type="button"
-          onClick={onEdit}
-          className="rounded-lg bg-blue-50 px-4 py-2 text-xs font-bold text-blue-600
-                     hover:bg-blue-100"
-        >
-          Chỉnh sửa thông tin
-        </button>
-      </div>
+  const show = (id: DetailSectionId) => !section || section === id;
 
+  const generalSection = show('general') ? (
+    <>
       <SectionHeading title="I. Thông tin chung" accent="blue" />
       <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
         <div className="lg:col-span-4">
@@ -175,10 +175,15 @@ export function InfoSections({
           className: 'md:col-span-2 lg:col-span-3',
         })}
       </div>
+    </>
+  ) : null;
 
+  const contractSection = show('contract') ? (
+    <>
       <SectionHeading title="II. Hợp đồng & Quyết định" accent="emerald" />
       <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
         {field('Số Hợp đồng', 'contractId')}
+        {field('Phụ lục hợp đồng', 'contractAppendix')}
         {field('Ngày ký HĐ', 'contractDate', { isDate: true })}
         {field('QĐ Xét duyệt', 'approvalDecision')}
         {field('QĐ Phê duyệt', 'authorizationDecision')}
@@ -188,7 +193,11 @@ export function InfoSections({
           className: 'md:col-span-2',
         })}
       </div>
+    </>
+  ) : null;
 
+  const budgetSection = show('budget') ? (
+    <>
       <SectionHeading title="III. Kinh phí & Phân bổ" accent="amber" />
       <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
         {field('Tổng kinh phí', 'budget', { isCurrency: true, className: 'font-bold text-blue-700' })}
@@ -199,7 +208,11 @@ export function InfoSections({
         {field('Cấp đợt 2', 'budgetBatch2', { isCurrency: true })}
         {field('Cấp đợt 3', 'budgetBatch3', { isCurrency: true })}
       </div>
+    </>
+  ) : null;
 
+  const timelineSection = show('timeline') ? (
+    <>
       <SectionHeading title="IV. Thời gian & Tiến độ" accent="purple" />
       <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
         {field('Thời gian TH', 'duration')}
@@ -217,7 +230,11 @@ export function InfoSections({
           className: 'md:col-span-2 lg:col-span-3',
         })}
       </div>
+    </>
+  ) : null;
 
+  const acceptanceSection = show('acceptance') ? (
+    <>
       <SectionHeading title="V. Nghiệm thu & Sản phẩm" accent="rose" />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
         {field('Ngày họp NT', 'acceptanceMeetingDate', { isDate: true })}
@@ -254,6 +271,42 @@ export function InfoSections({
           />
         </div>
       </div>
+    </>
+  ) : null;
+
+  const body = (
+    <>
+      {generalSection}
+      {contractSection}
+      {budgetSection}
+      {timelineSection}
+      {acceptanceSection}
+    </>
+  );
+
+  if (!showWrapper) {
+    return <div>{body}</div>;
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800">
+          <InfoCircleIcon className="h-5 w-5 text-blue-500" />
+          Thông tin chi tiết đề tài
+        </h3>
+        {onEdit ? (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="rounded-lg bg-blue-50 px-4 py-2 text-xs font-bold text-blue-600
+                       hover:bg-blue-100"
+          >
+            Chỉnh sửa thông tin
+          </button>
+        ) : null}
+      </div>
+      {body}
     </div>
   );
 }

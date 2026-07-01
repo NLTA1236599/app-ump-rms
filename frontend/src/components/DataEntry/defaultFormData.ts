@@ -10,6 +10,7 @@ const emptyProducts = PRODUCT_ROWS.map((row) => ({
 
 export const defaultFormData: DataEntryFormData = {
   contractNumber: '',
+  contractAppendix: '',
   projectCode: '',
   gcnNumber: '',
   gcnIssuedAt: '',
