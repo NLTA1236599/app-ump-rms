@@ -13,7 +13,7 @@ import { LOGIN_REQUIRES_ROLE_CHOICE } from './loginSessionRoleOptions.js';
 type LoginCredentialsFormProps = {
   phase: LoginSubmitPhase;
   issue: LoginIssue | null;
-  onSubmit: (identifier: string, password: string) => void;
+  onSubmit: (identifier: string, password: string, sessionRole?: string) => void;
 };
 
 /** Login form fields — includes session role picker when multi‑role UX is enabled (UMP login UI spec). */
@@ -33,7 +33,7 @@ export function LoginCredentialsForm({ phase, issue, onSubmit }: LoginCredential
       className="flex w-full flex-col outline-none"
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit(identifier, password);
+        onSubmit(identifier, password, sessionRole || undefined);
       }}
       noValidate
     >

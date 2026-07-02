@@ -48,7 +48,7 @@ services:
       REMINDER_ACCEPTANCE_LONG_LOOKAHEAD: "3 minutes"
       REMINDER_ACCEPTANCE_SHORT_LOOKAHEAD: "1 minute"
       # Browser origin is usually localhost (mapped port), not the Docker service hostname
-      FRONTEND_ORIGIN: http://localhost:5173,http://127.0.0.1:5173,http://rms-fe:5173,http://localhost:5174,http://127.0.0.1:5174,http://rms-admin:5174
+      FRONTEND_ORIGIN: http://localhost:5173,http://127.0.0.1:5173,http://rms-fe:5173,http://localhost:5174,http://127.0.0.1:5174,http://rms-admin:5174,http://localhost:5175,http://127.0.0.1:5175,http://rms-submitter:5175
     depends_on:
       postgres:
         condition: service_healthy
@@ -59,6 +59,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: http://localhost:3001/api/v1
+        VITE_SUBMITTER_PORTAL_URL: http://localhost:5175
     container_name: rms-fe
     restart: unless-stopped
     ports:
@@ -78,6 +79,20 @@ services:
     restart: unless-stopped
     ports:
       - "5174:80"
+    depends_on:
+      - backend
+
+  fe0-submitter:
+    build:
+      context: ./fe0-submitter
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3001/api/v1
+        VITE_MAIN_APP_URL: http://localhost:5173
+    container_name: rms-submitter
+    restart: unless-stopped
+    ports:
+      - "5175:80"
     depends_on:
       - backend
 

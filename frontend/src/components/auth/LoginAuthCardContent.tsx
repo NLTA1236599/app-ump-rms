@@ -9,7 +9,7 @@ type LoginAuthCardContentProps = {
   onTabChange: (tab: AuthTabId) => void;
   phase: LoginSubmitPhase;
   issue: LoginIssue | null;
-  onLoginSubmit: (identifier: string, password: string) => void;
+  onLoginSubmit: (identifier: string, password: string, sessionRole?: string) => void;
 };
 
 /**

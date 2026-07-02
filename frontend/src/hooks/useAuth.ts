@@ -4,7 +4,7 @@ import { ApiHttpError } from '../services/api/httpClient.js';
 import type { User } from '../types/index.js';
 
 export type AuthLoginResult =
-  | { ok: true }
+  | { ok: true; user: User }
   | { ok: false; message: string; code?: 'email_unverified' };
 
 export type AuthRegisterResult = { ok: true } | { ok: false; message: string };
@@ -14,6 +14,20 @@ export function useAuth() {
   const [isLoading, setLoading] = useState(true);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('logout') === '1') {
+      localStorage.removeItem('auth_token');
+      setUser(null);
+      setLoading(false);
+      params.delete('logout');
+      const query = params.toString();
+      const nextUrl = query
+        ? `${window.location.pathname}?${query}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', nextUrl);
+      return;
+    }
+
     const token = localStorage.getItem('auth_token');
     if (!token) {
       setLoading(false);
@@ -31,7 +45,7 @@ export function useAuth() {
       const { token, user: u } = await authService.login(username, password);
       localStorage.setItem('auth_token', token);
       setUser(u);
-      return { ok: true };
+      return { ok: true, user: u };
     } catch (e) {
       if (e instanceof ApiHttpError && e.status === 403) {
         return { ok: false, code: 'email_unverified', message: e.message };

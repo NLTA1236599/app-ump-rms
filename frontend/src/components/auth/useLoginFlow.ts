@@ -1,5 +1,10 @@
 import { useCallback, useState } from 'react';
 import { useAuthContext } from '../../contexts/AuthContext.js';
+import {
+  isSubmitterPortalRole,
+  redirectToSubmitterPortal,
+  shouldOpenSubmitterPortal,
+} from '../../utils/submitterPortalRedirect.js';
 import { loginIdentifierToUsername } from './loginIdentifier.js';
 import { validateInstitutionalEmail } from './institutionalEmail.js';
 import type { LoginIssue, LoginSubmitPhase } from './loginFlowTypes.js';
@@ -10,7 +15,7 @@ export function useLoginFlow() {
   const [issue, setIssue] = useState<LoginIssue | null>(null);
 
   const submit = useCallback(
-    async (emailInput: string, password: string) => {
+    async (emailInput: string, password: string, sessionRole?: string) => {
       setIssue(null);
 
       const validated = validateInstitutionalEmail(emailInput);
@@ -24,7 +29,20 @@ export function useLoginFlow() {
       const result = await login(username, password);
       setPhase('idle');
 
-      if (result.ok) return;
+      if (result.ok) {
+        if (shouldOpenSubmitterPortal(result.user.role, sessionRole)) {
+          const token = localStorage.getItem('auth_token');
+          if (token) {
+            localStorage.removeItem('auth_token');
+            const portalUser =
+              sessionRole && isSubmitterPortalRole(sessionRole)
+                ? { ...result.user, role: sessionRole, email: validated.normalized }
+                : { ...result.user, email: validated.normalized };
+            redirectToSubmitterPortal(token, portalUser);
+          }
+        }
+        return;
+      }
 
       if (result.code === 'email_unverified') {
         setIssue({ kind: 'email_unverified', message: result.message });

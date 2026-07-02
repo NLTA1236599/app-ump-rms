@@ -6,7 +6,7 @@ import type { LoginIssue, LoginSubmitPhase } from './loginFlowTypes.js';
 type LoginFormPanelProps = {
   phase: LoginSubmitPhase;
   issue: LoginIssue | null;
-  onSubmit: (identifier: string, password: string) => void;
+  onSubmit: (identifier: string, password: string, sessionRole?: string) => void;
   onSwitchToRegister: () => void;
 };
 
