@@ -3,7 +3,7 @@ import type { ResearchProject } from '../types/researchProject.js';
 import { ProjectStatus, ProgressStatus } from '../types/researchProject.js';
 import {
   getSubmitterEmailCandidates,
-  projectEmailMatchesSubmitter,
+  projectBelongsToSubmitter,
 } from '../utils/submitterEmail.js';
 import { fetchMyProjects } from './projectService.js';
 import { researchProjectService } from './researchProjectService.js';
@@ -12,6 +12,7 @@ type SubmitterIdentity = {
   id: string;
   username: string;
   email?: string | null;
+  displayName?: string | null;
 };
 
 /** Rich demo project for detail view when API data is unavailable. */
@@ -82,7 +83,10 @@ export async function fetchProjectById(
   try {
     const all = await researchProjectService.getAll();
     const match = all.find((p) => p.id === id);
-    if (match && projectEmailMatchesSubmitter(match.principalEmail, submitterEmails)) {
+    if (
+      match &&
+      projectBelongsToSubmitter(match as unknown as Record<string, unknown>, identity, submitterEmails)
+    ) {
       return {
         project: match,
         submitterStatus: submitterMatch?.status,

@@ -1,7 +1,7 @@
 import type { SubmitterProject } from '../types/submitter.js';
 import {
   getSubmitterEmailCandidates,
-  projectEmailMatchesSubmitter,
+  projectBelongsToSubmitter,
 } from '../utils/submitterEmail.js';
 import { httpClient } from './httpClient.js';
 
@@ -9,6 +9,7 @@ type SubmitterIdentity = {
   id: string;
   username: string;
   email?: string | null;
+  displayName?: string | null;
 };
 
 /** Sample data when the API is unavailable — scoped to the submitter email. */
@@ -43,26 +44,20 @@ export async function fetchMyProjects(identity: SubmitterIdentity): Promise<Subm
     }
 
     return data
-      .map((raw) => mapApiProjectToSubmitter(raw, submitterEmails))
+      .filter((raw) => projectBelongsToSubmitter(raw, identity, submitterEmails))
+      .map((raw) => mapApiProjectToSubmitter(raw))
       .filter(Boolean) as SubmitterProject[];
   } catch {
     return getDemoProjects(identity);
   }
 }
 
-function mapApiProjectToSubmitter(
-  raw: Record<string, unknown>,
-  submitterEmails: string[],
-): SubmitterProject | null {
+function mapApiProjectToSubmitter(raw: Record<string, unknown>): SubmitterProject | null {
   const id = String(raw.id ?? '');
   const title = String(raw.title ?? '').trim();
   if (!id || !title) return null;
 
   const principalEmail = raw.principalEmail ? String(raw.principalEmail) : undefined;
-  if (!projectEmailMatchesSubmitter(principalEmail, submitterEmails)) {
-    return null;
-  }
-
   const durationMonths = parseDurationMonths(raw.duration);
   const status = mapApprovalStatus(raw);
 
@@ -70,11 +65,11 @@ function mapApiProjectToSubmitter(
     id,
     title,
     projectCode: raw.projectCode ? String(raw.projectCode) : undefined,
-    level: String(raw.researchType ?? raw.department ?? 'cấp cơ sở'),
+    level: String(raw.researchType ?? raw.department ?? raw.subDepartment ?? 'cấp cơ sở'),
     durationMonths,
     status,
     createdAt: new Date().toISOString(),
-    submittedBy: String(raw.submittedBy ?? raw.leadAuthor ?? ''),
+    submittedBy: String(raw.submittedBy ?? raw.created_by ?? raw.leadAuthor ?? ''),
     principalEmail,
   };
 }

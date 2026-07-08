@@ -15,7 +15,11 @@ export class ResearchProjectRepository {
     const { rows } = await pool.query<ResearchProjectRow>(
       'SELECT * FROM research_projects ORDER BY created_at ASC',
     );
-    return rows.map((row) => ({ id: row.id, ...row.data }));
+    return rows.map((row) => ({
+      id: row.id,
+      ...row.data,
+      created_by: row.created_by,
+    }));
   }
 
   async insertMany(

@@ -4,6 +4,7 @@ import {
   isSubmitterPortalRole,
   redirectToSubmitterPortal,
   shouldOpenSubmitterPortal,
+  SUBMITTER_PORTAL_URL,
 } from '../../utils/submitterPortalRedirect.js';
 import { loginIdentifierToUsername } from './loginIdentifier.js';
 import { validateInstitutionalEmail } from './institutionalEmail.js';
@@ -32,13 +33,16 @@ export function useLoginFlow() {
       if (result.ok) {
         if (shouldOpenSubmitterPortal(result.user.role, sessionRole)) {
           const token = localStorage.getItem('auth_token');
+          const portalUser =
+            sessionRole && isSubmitterPortalRole(sessionRole)
+              ? { ...result.user, role: sessionRole, email: validated.normalized }
+              : { ...result.user, email: validated.normalized };
+
           if (token) {
             localStorage.removeItem('auth_token');
-            const portalUser =
-              sessionRole && isSubmitterPortalRole(sessionRole)
-                ? { ...result.user, role: sessionRole, email: validated.normalized }
-                : { ...result.user, email: validated.normalized };
             redirectToSubmitterPortal(token, portalUser);
+          } else {
+            window.location.assign(`${SUBMITTER_PORTAL_URL}/de-tai`);
           }
         }
         return;

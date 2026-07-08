@@ -27,6 +27,7 @@ export function ProjectDetailPage() {
       id: user.id,
       username: user.username,
       email: user.email,
+      displayName: user.displayName,
     };
 
     let cancelled = false;
@@ -54,7 +55,7 @@ export function ProjectDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, user?.id, user?.username, user?.email]);
+  }, [id, user?.id, user?.username, user?.email, user?.displayName]);
 
   const handleBack = useCallback(() => {
     navigate('/de-tai');
