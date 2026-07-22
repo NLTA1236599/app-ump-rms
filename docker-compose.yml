@@ -52,6 +52,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+#viết health check cho backend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   frontend:
     build:
@@ -68,6 +74,12 @@ services:
       - ./assets-test:/usr/share/nginx/html/assets-test:ro
     depends_on:
       - backend
+      #viết health check cho frontend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5173/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   fe0-admin:
     build:
