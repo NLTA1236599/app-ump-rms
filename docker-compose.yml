@@ -34,11 +34,12 @@ services:
       DB_PASSWORD: change_me
       JWT_SECRET: change-this-to-a-long-random-string
       UPLOAD_DIR: /app/uploads
-      MAIL_HOST: smtp.gmail.com
-      MAIL_PORT: "587"
-      MAIL_USER: your-email@gmail.com
-      MAIL_PASS: your-app-password
-      MAIL_FROM: "RMS System <your-email@gmail.com>"
+      # Gmail SMTP — set MAIL_* in repo-root `.env` (gitignored). Placeholders are rejected by the app.
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASS: ${MAIL_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-}
       REMINDER_JOBS_ENABLED: "true"
       TZ: Asia/Ho_Chi_Minh
       REMINDER_TIMEZONE: Asia/Ho_Chi_Minh

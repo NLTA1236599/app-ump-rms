@@ -1,3 +1,5 @@
+import { isSmtpConfigured as smtpReady } from '../../services/email/mailEnv.js';
+
 export type OtpDeliveryChannel = 'smtp' | 'log_only' | 'none' | 'smtp_failed';
 
 const DEFAULT_TTL_MINUTES = 10;
@@ -22,13 +24,9 @@ export function getOtpMaxFailedAttempts(): number {
 }
 
 export function isSmtpConfigured(): boolean {
-  return (
-    Boolean(process.env.MAIL_HOST) &&
-    Boolean(process.env.MAIL_USER) &&
-    Boolean(process.env.MAIL_PASS)
-  );
+  return smtpReady();
 }
 
 export function resolveConfiguredDeliveryChannel(): Exclude<OtpDeliveryChannel, 'smtp_failed' | 'none'> {
-  return isSmtpConfigured() ? 'smtp' : 'log_only';
+  return smtpReady() ? 'smtp' : 'log_only';
 }

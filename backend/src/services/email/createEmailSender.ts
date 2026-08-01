@@ -1,15 +1,14 @@
 import { ConsoleEmailSender } from './consoleEmailSender.js';
 import type { IEmailSender } from './IEmailSender.js';
+import { isSmtpConfigured } from './mailEnv.js';
 import { NodemailerSender } from './nodemailerSender.js';
 
 export function createEmailSender(): IEmailSender {
-  const hasSmtp =
-    Boolean(process.env.MAIL_HOST) &&
-    Boolean(process.env.MAIL_USER) &&
-    Boolean(process.env.MAIL_PASS);
-
-  if (!hasSmtp) {
-    console.warn('[Email] MAIL_* not configured — using ConsoleEmailSender');
+  if (!isSmtpConfigured()) {
+    console.warn(
+      '[Email] MAIL_* not configured (or still placeholders) — using ConsoleEmailSender. ' +
+        'For Docker: set MAIL_USER / MAIL_PASS in repo-root .env then recreate the backend container.'
+    );
     return new ConsoleEmailSender();
   }
 
