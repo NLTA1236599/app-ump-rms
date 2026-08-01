@@ -2,7 +2,7 @@ import { HeaderSettingsIcon } from './HeaderIcons.js';
 
 const ADMIN_APP_URL =
   import.meta.env.VITE_ADMIN_APP_URL ??
-  (import.meta.env.DEV ? 'http://localhost:5174/' : '/admin');
+  (import.meta.env.DEV ? 'http://localhost:5174/' : '/admin/');
 
 export function HeaderSettingsButton() {
   return (

@@ -4,8 +4,10 @@ WORKDIR /app
 # Relative URL so the browser calls same host; nginx proxies /api to the backend.
 ARG VITE_API_URL=/api/v1
 ARG VITE_SUBMITTER_PORTAL_URL=http://localhost:5175
+ARG VITE_ADMIN_APP_URL=/admin/
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_SUBMITTER_PORTAL_URL=$VITE_SUBMITTER_PORTAL_URL
+ENV VITE_ADMIN_APP_URL=$VITE_ADMIN_APP_URL
 
 COPY package*.json ./
 RUN npm ci

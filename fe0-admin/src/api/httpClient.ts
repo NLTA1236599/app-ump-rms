@@ -20,7 +20,10 @@ httpClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('admin_user');
-      window.location.href = '/login';
+      const base = import.meta.env.BASE_URL.endsWith('/')
+        ? import.meta.env.BASE_URL
+        : `${import.meta.env.BASE_URL}/`;
+      window.location.href = `${base}login`;
     }
     return Promise.reject(error);
   },

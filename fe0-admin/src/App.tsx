@@ -8,9 +8,11 @@ import { PermissionsPage } from './pages/PermissionsPage.js';
 import { UnauthorizedPage } from './pages/UnauthorizedPage.js';
 import { UsersPage } from './pages/UsersPage.js';
 
+const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
+
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={routerBasename === '/' ? undefined : routerBasename}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
