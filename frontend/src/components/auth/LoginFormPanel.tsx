@@ -8,17 +8,29 @@ type LoginFormPanelProps = {
   issue: LoginIssue | null;
   onSubmit: (identifier: string, password: string, sessionRole?: string) => void;
   onSwitchToRegister: () => void;
+  onResumeOtp?: (email: string) => void;
 };
 
 /**
  * Login tab body — bundles section header, credentials form, and in-card footer
  * (`login-component-analysis.md` §13 `<LoginForm>`).
  */
-export function LoginFormPanel({ phase, issue, onSubmit, onSwitchToRegister }: LoginFormPanelProps) {
+export function LoginFormPanel({
+  phase,
+  issue,
+  onSubmit,
+  onSwitchToRegister,
+  onResumeOtp,
+}: LoginFormPanelProps) {
   return (
     <>
       <LoginFormSectionHeader />
-      <LoginCredentialsForm phase={phase} issue={issue} onSubmit={onSubmit} />
+      <LoginCredentialsForm
+        phase={phase}
+        issue={issue}
+        onSubmit={onSubmit}
+        onResumeOtp={onResumeOtp}
+      />
       <LoginRegisterFooterPrompt onSwitchToRegister={onSwitchToRegister} />
     </>
   );

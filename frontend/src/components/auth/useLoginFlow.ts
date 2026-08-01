@@ -49,7 +49,11 @@ export function useLoginFlow() {
       }
 
       if (result.code === 'email_unverified') {
-        setIssue({ kind: 'email_unverified', message: result.message });
+        setIssue({
+          kind: 'email_unverified',
+          message: result.message,
+          email: validated.normalized,
+        });
         return;
       }
       setIssue({ kind: 'generic', message: result.message });

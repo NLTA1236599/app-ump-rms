@@ -1,12 +1,16 @@
 type LoginEmailUnverifiedNoticeProps = {
   message: string;
+  onResumeOtp: () => void;
 };
 
 /**
  * Shown when login returns 403: password accepted but `email_verified` is still false
  * (OTP wizard incomplete). Styling distinct from generic form errors.
  */
-export function LoginEmailUnverifiedNotice({ message }: LoginEmailUnverifiedNoticeProps) {
+export function LoginEmailUnverifiedNotice({
+  message,
+  onResumeOtp,
+}: LoginEmailUnverifiedNoticeProps) {
   return (
     <div
       role="alert"
@@ -18,12 +22,13 @@ export function LoginEmailUnverifiedNotice({ message }: LoginEmailUnverifiedNoti
         Hoàn tất nhập mã OTP từ email hoặc dùng gửi lại mã trong quy trình đăng ký.
       </p>
       <p className="mt-2">
-        <a
-          href="#register"
-          className="font-semibold text-ump-mid no-underline hover:underline focus-visible:underline focus-visible:outline-none"
+        <button
+          type="button"
+          onClick={onResumeOtp}
+          className="font-semibold text-ump-mid underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
         >
           Quay lại bước đăng ký / xác minh
-        </a>
+        </button>
       </p>
     </div>
   );

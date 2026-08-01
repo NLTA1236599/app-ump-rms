@@ -1,3 +1,4 @@
+import type { PoolClient } from 'pg';
 import type { User } from '../../types/index.js';
 
 /** DB row including credential column — internal to persistence. */
@@ -7,18 +8,24 @@ export type AuthUserRow = {
   password: string;
   role: string;
   display_name: string | null;
+  email_verified: boolean;
 };
 
 /**
  * Persistence port for auth flows — ISP: login/register/profile only see DB ops they need (guide §3 I).
  */
 export interface IAuthUserRepository {
-  insertUser(input: {
-    username: string;
-    passwordHash: string;
-    role: string;
-    displayName: string | null;
-  }): Promise<User>;
+  insertUser(
+    input: {
+      username: string;
+      passwordHash: string;
+      role: string;
+      displayName: string | null;
+      emailVerified: boolean;
+    },
+    client?: PoolClient
+  ): Promise<User>;
   findByUsername(username: string): Promise<AuthUserRow | null>;
   findProfileById(userId: string): Promise<User | null>;
+  markEmailVerified(userId: string, client?: PoolClient): Promise<void>;
 }

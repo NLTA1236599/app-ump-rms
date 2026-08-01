@@ -1,7 +1,6 @@
 import '../config/env.js';
 import bcrypt from 'bcryptjs';
 import { pool } from '../config/database.js';
-import { createAuthService } from '../backend/compositionRoot.js';
 import { WorkspaceService } from '../modules/workspaces/workspace.service.js';
 import { IssueService } from '../modules/issues/issue.service.js';
 
@@ -12,7 +11,6 @@ const ADMIN_SEED_DISPLAY_NAME = process.env.SEED_ADMIN_DISPLAY_NAME ?? 'Quản t
 const ADMIN_SEED_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? 'nltanh1995#';
 
 async function main() {
-  const auth = createAuthService();
   const workspaces = new WorkspaceService();
   const issues = new IssueService();
 
@@ -20,24 +18,26 @@ async function main() {
     ADMIN_SEED_USERNAME,
   ]);
   let userId: string;
+  const hash = await bcrypt.hash(ADMIN_SEED_PASSWORD, SALT_ROUNDS);
   if (existing[0]) {
     userId = existing[0].id as string;
-    const hash = await bcrypt.hash(ADMIN_SEED_PASSWORD, SALT_ROUNDS);
     await pool.query(
-      `UPDATE users SET password = $1, role = $2, display_name = $3 WHERE id = $4`,
+      `UPDATE users
+       SET password = $1, role = $2, display_name = $3, email_verified = TRUE
+       WHERE id = $4`,
       [hash, 'admin', ADMIN_SEED_DISPLAY_NAME, userId]
     );
     console.log(
       `Updated admin "${ADMIN_SEED_USERNAME}" (đăng nhập: ${ADMIN_SEED_USERNAME}@ump.edu.vn).`
     );
   } else {
-    const u = await auth.register(
-      ADMIN_SEED_USERNAME,
-      ADMIN_SEED_PASSWORD,
-      'admin',
-      ADMIN_SEED_DISPLAY_NAME
+    const { rows } = await pool.query(
+      `INSERT INTO users (username, password, role, display_name, email_verified)
+       VALUES ($1, $2, 'admin', $3, TRUE)
+       RETURNING id`,
+      [ADMIN_SEED_USERNAME, hash, ADMIN_SEED_DISPLAY_NAME]
     );
-    userId = u.id;
+    userId = rows[0].id as string;
     console.log(
       `Created admin "${ADMIN_SEED_USERNAME}" (đăng nhập: ${ADMIN_SEED_USERNAME}@ump.edu.vn).`
     );

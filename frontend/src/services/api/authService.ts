@@ -1,5 +1,9 @@
 import { httpClient } from './httpClient.js';
-import type { IAuthService } from '../interfaces/IAuthService.js';
+import type {
+  IAuthService,
+  RegisterResponse,
+  ResendOtpResponse,
+} from '../interfaces/IAuthService.js';
 import type { User } from '../../types/index.js';
 
 export class ApiAuthService implements IAuthService {
@@ -10,13 +14,20 @@ export class ApiAuthService implements IAuthService {
     });
   }
 
-  async register(username: string, password: string, role: string, displayName?: string) {
-    return httpClient.post<{ user: User }>('/auth/register', {
+  async register(username: string, password: string, displayName?: string) {
+    return httpClient.post<RegisterResponse>('/auth/register', {
       username,
       password,
-      role,
       displayName,
     });
+  }
+
+  async verifyOtp(email: string, otp: string) {
+    return httpClient.post<{ ok: boolean }>('/auth/verify-otp', { email, otp });
+  }
+
+  async resendOtp(email: string) {
+    return httpClient.post<ResendOtpResponse>('/auth/resend-otp', { email });
   }
 
   async getProfile(token: string) {

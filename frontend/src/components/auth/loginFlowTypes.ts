@@ -10,4 +10,4 @@ export type LoginSubmitPhase = 'idle' | 'submitting';
  */
 export type LoginIssue =
   | { kind: 'generic'; message: string }
-  | { kind: 'email_unverified'; message: string };
+  | { kind: 'email_unverified'; message: string; email: string };

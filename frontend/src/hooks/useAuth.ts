@@ -1,13 +1,22 @@
 import { useCallback, useEffect, useState } from 'react';
 import { authService } from '../services/index.js';
 import { ApiHttpError } from '../services/api/httpClient.js';
+import type { OtpDeliveryChannel } from '../components/auth/registration/constants.js';
 import type { User } from '../types/index.js';
 
 export type AuthLoginResult =
   | { ok: true; user: User }
   | { ok: false; message: string; code?: 'email_unverified' };
 
-export type AuthRegisterResult = { ok: true } | { ok: false; message: string };
+export type AuthRegisterResult =
+  | {
+      ok: true;
+      email: string;
+      emailVerificationRequired: boolean;
+      otpTtlSeconds: number;
+      otpDeliveryChannel: OtpDeliveryChannel;
+    }
+  | { ok: false; message: string };
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -59,12 +68,17 @@ export function useAuth() {
     async (
       username: string,
       password: string,
-      role: string,
       displayName?: string
     ): Promise<AuthRegisterResult> => {
       try {
-        await authService.register(username, password, role, displayName);
-        return { ok: true };
+        const result = await authService.register(username, password, displayName);
+        return {
+          ok: true,
+          email: username,
+          emailVerificationRequired: result.emailVerificationRequired,
+          otpTtlSeconds: result.otpTtlSeconds,
+          otpDeliveryChannel: result.otpDeliveryChannel,
+        };
       } catch (e) {
         const message = e instanceof Error ? e.message : 'Đăng ký thất bại.';
         return { ok: false, message };
@@ -73,10 +87,30 @@ export function useAuth() {
     []
   );
 
+  const verifyOtp = useCallback(async (email: string, otp: string) => {
+    try {
+      await authService.verifyOtp(email, otp);
+      return { ok: true as const };
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Xác minh OTP thất bại.';
+      return { ok: false as const, message };
+    }
+  }, []);
+
+  const resendOtp = useCallback(async (email: string) => {
+    try {
+      const result = await authService.resendOtp(email);
+      return { ok: true as const, ...result };
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Gửi lại OTP thất bại.';
+      return { ok: false as const, message };
+    }
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem('auth_token');
     setUser(null);
   }, []);
 
-  return { user, isLoading, login, register, logout };
+  return { user, isLoading, login, register, verifyOtp, resendOtp, logout };
 }

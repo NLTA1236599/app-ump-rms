@@ -14,10 +14,16 @@ type LoginCredentialsFormProps = {
   phase: LoginSubmitPhase;
   issue: LoginIssue | null;
   onSubmit: (identifier: string, password: string, sessionRole?: string) => void;
+  onResumeOtp?: (email: string) => void;
 };
 
 /** Login form fields — includes session role picker when multi‑role UX is enabled (UMP login UI spec). */
-export function LoginCredentialsForm({ phase, issue, onSubmit }: LoginCredentialsFormProps) {
+export function LoginCredentialsForm({
+  phase,
+  issue,
+  onSubmit,
+  onResumeOtp,
+}: LoginCredentialsFormProps) {
   const helperId = useId();
   const roleSelectId = useId();
   const [identifier, setIdentifier] = useState('');
@@ -74,7 +80,10 @@ export function LoginCredentialsForm({ phase, issue, onSubmit }: LoginCredential
 
       <div className="mb-5 mt-4">
         {issue?.kind === 'email_unverified' ? (
-          <LoginEmailUnverifiedNotice message={issue.message} />
+          <LoginEmailUnverifiedNotice
+            message={issue.message}
+            onResumeOtp={() => onResumeOtp?.(issue.email)}
+          />
         ) : issue?.kind === 'generic' ? (
           <LoginFormAlert message={issue.message} />
         ) : null}

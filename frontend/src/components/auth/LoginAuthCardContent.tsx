@@ -1,7 +1,10 @@
 import { AuthTabSwitcher, type AuthTabId } from './AuthTabSwitcher.js';
 import { AuthTabPanel } from './AuthTabPanel.js';
 import { LoginFormPanel } from './LoginFormPanel.js';
-import { RegisterForm } from './RegisterForm.js';
+import {
+  RegistrationWithOtp,
+  type ResumeOtpRequest,
+} from './registration/RegistrationWithOtp.js';
 import type { LoginIssue, LoginSubmitPhase } from './loginFlowTypes.js';
 
 type LoginAuthCardContentProps = {
@@ -10,6 +13,9 @@ type LoginAuthCardContentProps = {
   phase: LoginSubmitPhase;
   issue: LoginIssue | null;
   onLoginSubmit: (identifier: string, password: string, sessionRole?: string) => void;
+  resumeOtp: ResumeOtpRequest | null;
+  onResumeOtp: (email: string) => void;
+  onResumeConsumed: () => void;
 };
 
 /**
@@ -22,6 +28,9 @@ export function LoginAuthCardContent({
   phase,
   issue,
   onLoginSubmit,
+  resumeOtp,
+  onResumeOtp,
+  onResumeConsumed,
 }: LoginAuthCardContentProps) {
   return (
     <>
@@ -37,6 +46,7 @@ export function LoginAuthCardContent({
           issue={issue}
           onSubmit={onLoginSubmit}
           onSwitchToRegister={() => onTabChange('register')}
+          onResumeOtp={onResumeOtp}
         />
       </AuthTabPanel>
 
@@ -45,7 +55,11 @@ export function LoginAuthCardContent({
         ariaLabelledBy="tab-register"
         hidden={activeTab !== 'register'}
       >
-        <RegisterForm onSwitchToLogin={() => onTabChange('login')} />
+        <RegistrationWithOtp
+          onSwitchToLogin={() => onTabChange('login')}
+          resumeOtp={resumeOtp}
+          onResumeConsumed={onResumeConsumed}
+        />
       </AuthTabPanel>
     </>
   );

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useAuthContext } from '../../contexts/AuthContext.js';
-import { loginIdentifierToUsername } from './loginIdentifier.js';
+import type { OtpDeliveryChannel } from './registration/constants.js';
+import { DEFAULT_OTP_TTL_SECONDS } from './registration/constants.js';
 
 export type RegisterSubmitPhase = 'idle' | 'submitting';
 
@@ -8,30 +9,42 @@ export type RegisterBanner =
   | { kind: 'error'; message: string }
   | { kind: 'success'; message: string };
 
-export function useRegisterFlow() {
+export type RegisterSuccessPayload = {
+  email: string;
+  otpTtlSeconds: number;
+  otpDeliveryChannel: OtpDeliveryChannel;
+};
+
+export function useRegisterFlow(onRegistered?: (payload: RegisterSuccessPayload) => void) {
   const { register } = useAuthContext();
   const [phase, setPhase] = useState<RegisterSubmitPhase>('idle');
   const [banner, setBanner] = useState<RegisterBanner | null>(null);
 
   const submit = useCallback(
-    async (input: { email: string; password: string; displayName: string; apiRole: string }) => {
+    async (input: { email: string; password: string; displayName: string }) => {
       setBanner(null);
       setPhase('submitting');
-      const username = loginIdentifierToUsername(input.email);
-      const result = await register(username, input.password, input.apiRole, input.displayName.trim());
+      const result = await register(input.email, input.password, input.displayName.trim());
       setPhase('idle');
 
       if (result.ok) {
+        if (result.emailVerificationRequired) {
+          onRegistered?.({
+            email: result.email,
+            otpTtlSeconds: result.otpTtlSeconds || DEFAULT_OTP_TTL_SECONDS,
+            otpDeliveryChannel: result.otpDeliveryChannel,
+          });
+          return;
+        }
         setBanner({
           kind: 'success',
-          message:
-            'Đăng ký thành công. Vui lòng kiểm tra email để xác nhận trước khi đăng nhập (nếu hệ thống đã bật xác minh).',
+          message: 'Đăng ký thành công. Bạn có thể đăng nhập.',
         });
         return;
       }
       setBanner({ kind: 'error', message: result.message });
     },
-    [register]
+    [register, onRegistered]
   );
 
   const clearBanner = useCallback(() => setBanner(null), []);

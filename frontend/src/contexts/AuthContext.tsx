@@ -8,9 +8,10 @@ interface AuthContextValue {
   register: (
     username: string,
     password: string,
-    role: string,
     displayName?: string
   ) => Promise<AuthRegisterResult>;
+  verifyOtp: ReturnType<typeof useAuth>['verifyOtp'];
+  resendOtp: ReturnType<typeof useAuth>['resendOtp'];
   logout: ReturnType<typeof useAuth>['logout'];
 }
 

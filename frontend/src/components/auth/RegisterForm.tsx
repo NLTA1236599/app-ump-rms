@@ -2,28 +2,29 @@ import { useId, useMemo, useState, type FormEvent } from 'react';
 import { validateInstitutionalEmail } from './institutionalEmail.js';
 import { REGISTER_ACADEMIC_OPTIONS } from './registerAcademicOptions.js';
 import { REGISTER_WORK_UNIT_OPTIONS } from './registerWorkUnitOptions.js';
-import { resolveRegisterApiRole, type RegisterRoleId } from './registerRoles.js';
+import type { RegisterRoleId } from './registerRoles.js';
 import { RegisterSectionGroup } from './RegisterSectionGroup.js';
 import { RegisterFieldLabel } from './RegisterFieldLabel.js';
 import { RegisterFormInput, RegisterFormSelect } from './registerFormInputs.js';
 import { RegisterRoleToggleGroup } from './RegisterRoleToggleGroup.js';
 import { RegisterFormSectionHeader } from './RegisterFormSectionHeader.js';
 import { RegisterLoginRedirectLink } from './RegisterLoginRedirectLink.js';
-import { useRegisterFlow } from './useRegisterFlow.js';
+import { useRegisterFlow, type RegisterSuccessPayload } from './useRegisterFlow.js';
 
 type RegisterFormProps = {
   onSwitchToLogin: () => void;
+  onRegistered?: (payload: RegisterSuccessPayload) => void;
 };
 
 const DEFAULT_ROLES = new Set<RegisterRoleId>(['applicant']);
 
-export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
+export function RegisterForm({ onSwitchToLogin, onRegistered }: RegisterFormProps) {
   const formId = useId();
   const errEmail = `${formId}-err-email`;
   const errPwd = `${formId}-err-pwd`;
   const errPwd2 = `${formId}-err-pwd2`;
 
-  const { phase, banner, submit, clearBanner } = useRegisterFlow();
+  const { phase, banner, submit, clearBanner } = useRegisterFlow(onRegistered);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -70,7 +71,6 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
       email: emailOk.normalized,
       password,
       displayName: fullName.trim(),
-      apiRole: resolveRegisterApiRole(roles),
     });
   };
 
