@@ -19,7 +19,7 @@ export function PrimaryNavBar({ activeTab, isHomeActive, onHomeClick, onTabChang
   return (
     <nav style={{ backgroundColor: HEADER_NAV_BG }} aria-label="Menu chính">
       <div
-        className={`mx-auto flex h-10 max-w-[1600px] items-center overflow-x-auto ${HEADER_HORIZONTAL_PADDING}`}
+        className={`mx-auto flex h-10 max-w-[1600px] items-center overflow-x-auto scrollbar-none ${HEADER_HORIZONTAL_PADDING}`}
       >
         <button
           type="button"
