@@ -59,14 +59,23 @@ export const EXECUTION_PROGRESS: { value: ExecutionProgress; label: string }[] =
 export type ExecutionProgress = 'on_time' | 'late' | 'extended' | 'completed';
 
 export const PROJECT_STATUS: { value: ProjectStatus; label: string }[] = [
+  { value: 'new_registration', label: 'Đăng ký mới' },
   { value: 'in_progress', label: 'Đang thực hiện' },
+  { value: 'acceptance', label: 'Nghiệm thu' },
   { value: 'done', label: 'Hoàn thành' },
   { value: 'liquidated', label: 'Thanh lý' },
   { value: 'extended_status', label: 'Gia hạn' },
   { value: 'paused', label: 'Tạm dừng' },
 ];
 
-export type ProjectStatus = 'in_progress' | 'done' | 'liquidated' | 'extended_status' | 'paused';
+export type ProjectStatus =
+  | 'new_registration'
+  | 'in_progress'
+  | 'acceptance'
+  | 'done'
+  | 'liquidated'
+  | 'extended_status'
+  | 'paused';
 
 export const GENDER_OPTIONS: { value: Gender; label: string }[] = [
   { value: 'male', label: 'Nam' },

@@ -4,9 +4,11 @@ const BADGE_BASE =
   'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide';
 
 const STATUS_STYLES: Record<string, { className: string; label: string }> = {
+  [ProjectStatus.NEW_REGISTRATION]: { className: 'bg-violet-100 text-violet-700', label: 'Đăng ký mới' },
+  [ProjectStatus.ONGOING]: { className: 'bg-blue-100 text-blue-700', label: 'Đang TH' },
+  [ProjectStatus.ACCEPTANCE]: { className: 'bg-teal-100 text-teal-700', label: 'Nghiệm thu' },
   [ProjectStatus.COMPLETED]: { className: 'bg-emerald-100 text-emerald-700', label: 'Hoàn thành' },
   [ProjectStatus.OVERDUE]: { className: 'bg-red-100 text-red-700', label: 'Trễ hạn' },
-  [ProjectStatus.ONGOING]: { className: 'bg-blue-100 text-blue-700', label: 'Đang TH' },
   [ProjectStatus.PAUSED]: { className: 'bg-amber-100 text-amber-700', label: 'Tạm dừng' },
   [ProjectStatus.LIQUIDATED]: { className: 'bg-slate-100 text-slate-600', label: 'Thanh lý' },
 };

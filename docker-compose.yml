@@ -47,8 +47,8 @@ services:
       REMINDER_REPORT_LOOKAHEAD: "1 minute"
       REMINDER_ACCEPTANCE_LONG_LOOKAHEAD: "3 minutes"
       REMINDER_ACCEPTANCE_SHORT_LOOKAHEAD: "1 minute"
-      # Browser origin is usually localhost (mapped port), not the Docker service hostname
-      FRONTEND_ORIGIN: http://localhost:5173,http://127.0.0.1:5173,http://rms-fe:5173,http://localhost:5174,http://127.0.0.1:5174,http://rms-admin:5174,http://localhost:5175,http://127.0.0.1:5175,http://rms-submitter:5175
+      # Browser page origins (not Docker service hostnames). Include production domains for CORS.
+      FRONTEND_ORIGIN: http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175,https://ump-khcn.com,https://www.ump-khcn.com
     depends_on:
       postgres:
         condition: service_healthy
@@ -64,7 +64,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://localhost:3001/api/v1
+        # Same-origin /api — nginx in this image proxies to the backend service
+        VITE_API_URL: /api/v1
         VITE_SUBMITTER_PORTAL_URL: http://localhost:5175
     container_name: rms-fe
     restart: unless-stopped
@@ -86,7 +87,7 @@ services:
       context: ./fe0-admin
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://localhost:3001/api/v1
+        VITE_API_URL: /api/v1
     container_name: rms-admin
     restart: unless-stopped
     ports:
@@ -99,7 +100,7 @@ services:
       context: ./fe0-submitter
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://localhost:3001/api/v1
+        VITE_API_URL: /api/v1
         VITE_MAIN_APP_URL: http://localhost:5173
     container_name: rms-submitter
     restart: unless-stopped

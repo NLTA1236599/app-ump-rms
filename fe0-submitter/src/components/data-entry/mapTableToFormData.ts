@@ -23,7 +23,9 @@ function toFormIsoDate(value: string | number | null | undefined): string {
 }
 
 const TABLE_TO_FORM_STATUS: Record<string, ProjectStatus> = {
+  [TableProjectStatus.NEW_REGISTRATION]: 'new_registration',
   [TableProjectStatus.ONGOING]: 'in_progress',
+  [TableProjectStatus.ACCEPTANCE]: 'acceptance',
   [TableProjectStatus.COMPLETED]: 'done',
   [TableProjectStatus.LIQUIDATED]: 'liquidated',
   [TableProjectStatus.OVERDUE]: 'in_progress',

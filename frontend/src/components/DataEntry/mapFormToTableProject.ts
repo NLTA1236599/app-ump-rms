@@ -13,7 +13,9 @@ function makeProjectId(): string {
 }
 
 const FORM_STATUS_TO_TABLE: Record<ProjectStatus, string> = {
+  new_registration: TableProjectStatus.NEW_REGISTRATION,
   in_progress: TableProjectStatus.ONGOING,
+  acceptance: TableProjectStatus.ACCEPTANCE,
   done: TableProjectStatus.COMPLETED,
   liquidated: TableProjectStatus.LIQUIDATED,
   extended_status: TableProjectStatus.PAUSED,

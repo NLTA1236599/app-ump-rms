@@ -5,7 +5,9 @@ export type ProjectProductEntry = {
 };
 
 export enum ProjectStatus {
+  NEW_REGISTRATION = 'Đăng ký mới',
   ONGOING = 'Đang thực hiện',
+  ACCEPTANCE = 'Nghiệm thu',
   COMPLETED = 'Đã nghiệm thu',
   OVERDUE = 'Trễ hạn',
   LIQUIDATED = 'Thanh lý',

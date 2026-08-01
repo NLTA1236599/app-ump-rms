@@ -1,7 +1,8 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-ARG VITE_API_URL=http://localhost:3001/api/v1
+# Relative URL so the browser calls same host; nginx proxies /api to the backend.
+ARG VITE_API_URL=/api/v1
 ENV VITE_API_URL=$VITE_API_URL
 
 COPY package*.json ./
