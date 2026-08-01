@@ -1,39 +1,37 @@
 import { FACULTY_UNIT_OPTIONS } from './constants.js';
+import { FieldLabel } from './FieldLabel.js';
+import { inputError, selectBase, selectChevronStyle } from './formStyles.js';
 
 type FacultyUnitSelectorProps = {
   selected: string[];
-  onToggle: (unit: string) => void;
+  onChange: (unit: string) => void;
   error?: string;
 };
 
-/** Multi-choice selector for Khoa / Đơn vị */
-export function FacultyUnitSelector({ selected, onToggle, error }: FacultyUnitSelectorProps) {
+/** Single-select dropdown for Khoa / Đơn vị */
+export function FacultyUnitSelector({ selected, onChange, error }: FacultyUnitSelectorProps) {
+  const value = selected[0] ?? '';
+
   return (
     <div id="faculty-units">
-      <p className="mb-1.5 block text-xs font-medium text-slate-600">
+      <FieldLabel htmlFor="faculty-unit" required>
         Khoa / Đơn vị
-        <span className="ml-0.5 text-red-500">*</span>
-      </p>
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Khoa / Đơn vị">
-        {FACULTY_UNIT_OPTIONS.map((unit) => {
-          const on = selected.includes(unit);
-          return (
-            <button
-              key={unit}
-              type="button"
-              onClick={() => onToggle(unit)}
-              className={[
-                'cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-all duration-150',
-                on
-                  ? 'border border-blue-600 bg-blue-600 text-white'
-                  : 'border border-slate-200 bg-white text-slate-500 hover:border-blue-300 hover:text-blue-500',
-              ].join(' ')}
-            >
-              {unit}
-            </button>
-          );
-        })}
-      </div>
+      </FieldLabel>
+      <select
+        id="faculty-unit"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`${selectBase} pr-9 ${error ? inputError : ''}`}
+        style={selectChevronStyle}
+        aria-invalid={Boolean(error)}
+      >
+        <option value="">— Chọn khoa / đơn vị —</option>
+        {FACULTY_UNIT_OPTIONS.map((unit) => (
+          <option key={unit} value={unit}>
+            {unit}
+          </option>
+        ))}
+      </select>
       {error ? <p className="mt-1 text-[10px] text-red-500">{error}</p> : null}
     </div>
   );

@@ -22,7 +22,7 @@ function validate(form: DataEntryFormData): FormErrors {
   if (!form.principalInvestigator.trim())
     errors.principalInvestigator = 'Vui lòng nhập chủ nhiệm đề tài';
   if (!form.categoryTags.length) errors.categoryTags = 'Vui lòng chọn ít nhất 1 loại đề tài';
-  if (!form.facultyUnits.length) errors.facultyUnits = 'Vui lòng chọn ít nhất 1 khoa/đơn vị';
+  if (!form.facultyUnits.length) errors.facultyUnits = 'Vui lòng chọn khoa/đơn vị';
 
   const email = form.principalEmail.trim();
   if (email) {
@@ -97,14 +97,8 @@ export function useDataEntryForm({
     });
   }, []);
 
-  const toggleFacultyUnit = useCallback((unit: string) => {
-    setForm((prev) => {
-      const has = prev.facultyUnits.includes(unit);
-      const facultyUnits = has
-        ? prev.facultyUnits.filter((u) => u !== unit)
-        : [...prev.facultyUnits, unit];
-      return { ...prev, facultyUnits };
-    });
+  const setFacultyUnit = useCallback((unit: string) => {
+    setForm((prev) => ({ ...prev, facultyUnits: unit ? [unit] : [] }));
     setErrors((prev) => {
       const next = { ...prev };
       delete next.facultyUnits;
@@ -182,7 +176,7 @@ export function useDataEntryForm({
     setField,
     toggleCategoryTag,
     toggleResearchField,
-    toggleFacultyUnit,
+    setFacultyUnit,
     setProductCount,
     setProgressReportDate,
     submit,

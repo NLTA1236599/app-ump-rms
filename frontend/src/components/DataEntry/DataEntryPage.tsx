@@ -46,7 +46,7 @@ export function DataEntryPage({
     setField,
     toggleCategoryTag,
     toggleResearchField,
-    toggleFacultyUnit,
+    setFacultyUnit,
     setProductCount,
     setProgressReportDate,
     submit,
@@ -86,7 +86,7 @@ export function DataEntryPage({
           setField={setField}
           toggleCategoryTag={toggleCategoryTag}
           toggleResearchField={toggleResearchField}
-          toggleFacultyUnit={toggleFacultyUnit}
+          setFacultyUnit={setFacultyUnit}
         />
         <DecisionSection form={form} setField={setField} />
         <BudgetSection form={form} setField={setField} />

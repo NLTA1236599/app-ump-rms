@@ -12,7 +12,7 @@ type Props = {
   setField: <K extends keyof DataEntryFormData>(key: K, value: DataEntryFormData[K]) => void;
   toggleCategoryTag: (tag: string) => void;
   toggleResearchField: (field: string) => void;
-  toggleFacultyUnit: (unit: string) => void;
+  setFacultyUnit: (unit: string) => void;
 };
 
 export function GeneralInfoSection({
@@ -21,7 +21,7 @@ export function GeneralInfoSection({
   setField,
   toggleCategoryTag,
   toggleResearchField,
-  toggleFacultyUnit,
+  setFacultyUnit,
 }: Props) {
   return (
     <section>
@@ -109,6 +109,13 @@ export function GeneralInfoSection({
         </div>
 
         <div className="lg:col-span-2">
+          <FacultyUnitSelector
+            selected={form.facultyUnits}
+            onChange={setFacultyUnit}
+            error={errors.facultyUnits}
+          />
+        </div>
+        <div className="lg:col-span-2">
           <FieldLabel htmlFor="dept">Bộ môn</FieldLabel>
           <input
             id="dept"
@@ -116,13 +123,6 @@ export function GeneralInfoSection({
             value={form.department}
             onChange={(e) => setField('department', e.target.value)}
             className={inputBase}
-          />
-        </div>
-        <div className="lg:col-span-4">
-          <FacultyUnitSelector
-            selected={form.facultyUnits}
-            onToggle={toggleFacultyUnit}
-            error={errors.facultyUnits}
           />
         </div>
       </div>
