@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuthContext } from '../../../contexts/AuthContext.js';
 import { NotificationBell } from '../../notification-feature/index.js';
 import { HeaderLogoutIcon } from './HeaderIcons.js';
+import { HeaderSettingsButton } from './HeaderSettingsButton.js';
 import {
   HEADER_HORIZONTAL_PADDING,
   HEADER_IDENTITY_BG,
@@ -74,6 +75,8 @@ export function IdentityBar({ onLogout, onHomeClick }: IdentityBarProps) {
           </span>
 
           <NotificationBell />
+
+          <HeaderSettingsButton />
 
           <button
             type="button"
