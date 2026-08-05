@@ -58,7 +58,11 @@ services:
         condition: service_healthy
 #viết health check cho backend
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -81,9 +85,8 @@ services:
     depends_on:
       - backend
       - fe0-admin
-      #viết health check cho frontend
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5173/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 5

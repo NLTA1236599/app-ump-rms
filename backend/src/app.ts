@@ -14,6 +14,9 @@ import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
+// Behind Docker/nginx reverse proxy (X-Forwarded-For). Required by express-rate-limit.
+app.set('trust proxy', 1);
+
 /** Comma-separated list in FRONTEND_ORIGIN (e.g. local Vite + Docker UI hostnames). */
 function resolveCorsOrigin(): CorsOptions['origin'] {
   const raw = process.env.FRONTEND_ORIGIN?.trim();
@@ -30,7 +33,15 @@ app.use(
     credentials: true,
   })
 );
-app.use('/api/v1/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 40 }));
+app.use(
+  '/api/v1/auth',
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 40,
+    standardHeaders: true,
+    legacyHeaders: false,
+  }),
+);
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/v1/auth', authRoutes);
