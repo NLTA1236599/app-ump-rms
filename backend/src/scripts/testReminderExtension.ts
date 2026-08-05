@@ -41,7 +41,10 @@ async function main() {
 
   const originalExtension = project.data.extensionDate ?? null;
   const due = todayPlusDaysVn(90);
-  const testData = { ...project.data, extensionDate: due };
+  const testData: Record<string, unknown> = {
+    ...project.data,
+    extensionDate: due,
+  };
 
   console.log('title:', testData.title);
   console.log('leader:', testData.principalEmail, '/', testData.leadAuthor);
@@ -125,20 +128,11 @@ async function main() {
 
     console.log('=== TEST PASSED ===');
   } finally {
-    const restored = { ...testData };
-    if (originalExtension == null) {
-      delete restored.extensionDate;
-    } else {
-      restored.extensionDate = originalExtension;
-    }
     await pool.query(
       `UPDATE research_projects SET data = $2::jsonb, updated_at = NOW() WHERE id = $1`,
-      [project.id, JSON.stringify(restored)],
+      [project.id, JSON.stringify(project.data)],
     );
-    await new MilestoneSyncService().syncProject(
-      project.id,
-      restored as Record<string, unknown>,
-    );
+    await new MilestoneSyncService().syncProject(project.id, project.data);
     console.log('Restored original extensionDate:', originalExtension);
   }
 

@@ -53,7 +53,7 @@ async function main() {
 
   const originalMidterm = project.data.reviewReportingDate ?? null;
   const due = todayPlusDaysVn(30);
-  const testData = {
+  const testData: Record<string, unknown> = {
     ...project.data,
     reviewReportingDate: due,
   };
@@ -127,21 +127,13 @@ async function main() {
 
     console.log('=== TEST PASSED ===');
   } finally {
-    const restored = {
-      ...testData,
-      reviewReportingDate: originalMidterm,
-    };
-    if (originalMidterm == null) {
-      delete restored.reviewReportingDate;
-    }
     await pool.query(
       `UPDATE research_projects
        SET data = $2::jsonb, updated_at = NOW()
        WHERE id = $1`,
-      [project.id, JSON.stringify(restored)],
+      [project.id, JSON.stringify(project.data)],
     );
-    const sync = new MilestoneSyncService();
-    await sync.syncProject(project.id, restored as Record<string, unknown>);
+    await new MilestoneSyncService().syncProject(project.id, project.data);
     console.log('Restored original reviewReportingDate:', originalMidterm);
   }
 
