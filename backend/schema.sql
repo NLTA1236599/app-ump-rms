@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS users (
 -- Existing DBs created before email verification: keep current users loginable.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT TRUE;
 
+-- Unit-scoped topic access (empty = see all departments). Managed by fe0-admin.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS allowed_units TEXT[] NOT NULL DEFAULT '{}';
+
 CREATE TABLE IF NOT EXISTS registration_otp_codes (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -192,3 +195,108 @@ CREATE TABLE IF NOT EXISTS reminder_send_log (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (project_id, job_type, recipient, sent_on)
 );
+
+-- ── TKKT configurable milestone reminders ───────────────────────────────────
+CREATE TABLE IF NOT EXISTS reminder_milestone_types (
+  id           SERIAL PRIMARY KEY,
+  code         VARCHAR(64)  NOT NULL UNIQUE,
+  name_vi      VARCHAR(255) NOT NULL,
+  description  TEXT,
+  is_active    BOOLEAN      NOT NULL DEFAULT TRUE,
+  created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS reminder_offsets (
+  id                 SERIAL PRIMARY KEY,
+  milestone_type_id  INT NOT NULL REFERENCES reminder_milestone_types(id) ON DELETE CASCADE,
+  offset_days        INT NOT NULL,
+  label              VARCHAR(100),
+  is_active          BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_reminder_offset UNIQUE (milestone_type_id, offset_days),
+  CONSTRAINT chk_reminder_offset_nonneg CHECK (offset_days >= 0)
+);
+
+CREATE TABLE IF NOT EXISTS project_milestones (
+  id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id         UUID NOT NULL REFERENCES research_projects(id) ON DELETE CASCADE,
+  milestone_type_id  INT NOT NULL REFERENCES reminder_milestone_types(id),
+  due_date           DATE NOT NULL,
+  status             VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_project_milestone UNIQUE (project_id, milestone_type_id),
+  CONSTRAINT chk_project_milestone_status CHECK (status IN ('PENDING', 'DONE', 'CANCELLED'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_milestones_due_pending
+  ON project_milestones (due_date)
+  WHERE status = 'PENDING';
+
+CREATE TABLE IF NOT EXISTS reminder_logs (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_milestone_id  UUID NOT NULL REFERENCES project_milestones(id) ON DELETE CASCADE,
+  offset_days           INT NOT NULL,
+  recipient_email       VARCHAR(255) NOT NULL,
+  recipient_role        VARCHAR(20)  NOT NULL,
+  status                VARCHAR(20)  NOT NULL,
+  error_message         TEXT,
+  retry_count           INT NOT NULL DEFAULT 0,
+  sent_at               TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  CONSTRAINT chk_reminder_log_status CHECK (status IN ('SENT', 'FAILED', 'CLAIMED')),
+  CONSTRAINT uq_reminder_sent UNIQUE (project_milestone_id, offset_days, recipient_email)
+);
+
+INSERT INTO reminder_milestone_types (code, name_vi, description) VALUES
+  ('PROGRESS_REPORT_1',    'Báo cáo tiến độ lần 1',           'progressReportDate1'),
+  ('PROGRESS_REPORT_2',    'Báo cáo tiến độ lần 2',           'progressReportDate2'),
+  ('PROGRESS_REPORT_3',    'Báo cáo tiến độ lần 3',           'progressReportDate3'),
+  ('PROGRESS_REPORT_4',    'Báo cáo tiến độ lần 4',           'progressReportDate4'),
+  ('MIDTERM_REPORT',       'Báo cáo giám định / giữa kỳ',     'reviewReportingDate'),
+  ('ACCEPTANCE',           'Nghiệm thu (họp NT)',             'acceptanceMeetingDate'),
+  ('ACCEPTANCE_EXTENSION', 'Gia hạn nghiệm thu',              'extensionDate'),
+  ('FINAL_ACCEPTANCE_DOC', 'Nộp hồ sơ nghiệm thu cuối cùng',  'acceptanceCompletionDate')
+ON CONFLICT (code) DO NOTHING;
+
+-- Offset policy:
+--   30 ngày: tiến độ 1–4, giám định, nghiệm thu (họp + nộp HS)
+--   90 ngày: gia hạn nghiệm thu
+-- Soft-deactivate other offsets so existing DBs converge on migrate.
+UPDATE reminder_offsets ro
+SET is_active = FALSE
+FROM reminder_milestone_types t
+WHERE ro.milestone_type_id = t.id
+  AND t.code IN (
+    'PROGRESS_REPORT_1', 'PROGRESS_REPORT_2', 'PROGRESS_REPORT_3', 'PROGRESS_REPORT_4',
+    'MIDTERM_REPORT', 'ACCEPTANCE', 'FINAL_ACCEPTANCE_DOC', 'ACCEPTANCE_EXTENSION'
+  )
+  AND NOT (
+    (t.code = 'ACCEPTANCE_EXTENSION' AND ro.offset_days = 90)
+    OR (
+      t.code IN (
+        'PROGRESS_REPORT_1', 'PROGRESS_REPORT_2', 'PROGRESS_REPORT_3', 'PROGRESS_REPORT_4',
+        'MIDTERM_REPORT', 'ACCEPTANCE', 'FINAL_ACCEPTANCE_DOC'
+      )
+      AND ro.offset_days = 30
+    )
+  );
+
+INSERT INTO reminder_offsets (milestone_type_id, offset_days, label, is_active)
+SELECT t.id, 30, 'Trước 30 ngày', TRUE
+FROM reminder_milestone_types t
+WHERE t.code IN (
+  'PROGRESS_REPORT_1', 'PROGRESS_REPORT_2', 'PROGRESS_REPORT_3', 'PROGRESS_REPORT_4',
+  'MIDTERM_REPORT', 'ACCEPTANCE', 'FINAL_ACCEPTANCE_DOC'
+)
+ON CONFLICT (milestone_type_id, offset_days) DO UPDATE
+SET is_active = TRUE,
+    label = EXCLUDED.label;
+
+INSERT INTO reminder_offsets (milestone_type_id, offset_days, label, is_active)
+SELECT t.id, 90, 'Trước 90 ngày', TRUE
+FROM reminder_milestone_types t
+WHERE t.code = 'ACCEPTANCE_EXTENSION'
+ON CONFLICT (milestone_type_id, offset_days) DO UPDATE
+SET is_active = TRUE,
+    label = EXCLUDED.label;

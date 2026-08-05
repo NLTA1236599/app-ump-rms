@@ -5,6 +5,7 @@ import { AdminLayout } from './components/Layout/AdminLayout.js';
 import { DashboardPage } from './pages/DashboardPage.js';
 import { LoginPage } from './pages/LoginPage.js';
 import { PermissionsPage } from './pages/PermissionsPage.js';
+import { TopicPermissionsPage } from './pages/TopicPermissionsPage.js';
 import { UnauthorizedPage } from './pages/UnauthorizedPage.js';
 import { UsersPage } from './pages/UsersPage.js';
 
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="permissions" element={<PermissionsPage />} />
+          <Route path="topic-permissions" element={<TopicPermissionsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

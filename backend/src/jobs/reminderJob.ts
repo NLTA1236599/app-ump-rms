@@ -5,6 +5,16 @@ import {
   REMINDER_START_MINUTE,
   REMINDER_TIMEZONE,
 } from '../config/reminderConfig.js';
+import {
+  REMINDER_CRON,
+  REMINDER_LEGACY_JOBS,
+  REMINDER_TIMEZONE as TKKT_TZ,
+} from '../modules/reminders/reminder.config.js';
+import { MilestoneSyncService } from '../modules/reminders/milestoneSync.service.js';
+import { RecipientResolver } from '../modules/reminders/recipientResolver.js';
+import { ReminderLogRepository } from '../modules/reminders/reminderLog.repository.js';
+import { ReminderRepository } from '../modules/reminders/reminder.repository.js';
+import { SendDueRemindersUseCase } from '../modules/reminders/sendDueReminders.useCase.js';
 import { createEmailSender } from '../services/email/createEmailSender.js';
 import type { IEmailSender } from '../services/email/IEmailSender.js';
 import type { IReminderQuery } from '../services/reminder/IReminderQuery.js';
@@ -18,15 +28,34 @@ export type ReminderJobDeps = {
   mailer?: IEmailSender;
 };
 
+export async function runTkktReminderEngine(mailer?: IEmailSender) {
+  const sync = new MilestoneSyncService();
+  await sync.syncAll();
+  const useCase = new SendDueRemindersUseCase(
+    new ReminderRepository(),
+    new RecipientResolver(),
+    new ReminderLogRepository(),
+    mailer ?? createEmailSender(),
+  );
+  return useCase.execute();
+}
+
 export async function runAllReminderChecks(deps: ReminderJobDeps = {}) {
   const query = deps.query ?? new ReminderQueryService();
   const mailer = deps.mailer ?? createEmailSender();
 
-  console.log('[ReminderJob] Running reminder checks...');
-  await checkReportDeadline(query, mailer);
-  await checkAcceptanceExpiry(query, mailer);
-  await checkFinalAcceptance(query, mailer);
-  console.log('[ReminderJob] All checks complete.');
+  console.log('[ReminderJob] Running TKKT reminder engine...');
+  const tkkt = await runTkktReminderEngine(mailer);
+
+  if (REMINDER_LEGACY_JOBS) {
+    console.log('[ReminderJob] Running legacy hard-coded jobs...');
+    await checkReportDeadline(query, mailer);
+    await checkAcceptanceExpiry(query, mailer);
+    await checkFinalAcceptance(query, mailer);
+  }
+
+  console.log('[ReminderJob] All checks complete.', tkkt);
+  return tkkt;
 }
 
 function msUntilStartToday(): number {
@@ -76,6 +105,23 @@ export function registerReminderJobs(deps: ReminderJobDeps = {}) {
     return;
   }
 
+  // Prefer explicit daily cron from TKKT when provided.
+  if (REMINDER_CRON.trim()) {
+    cron.schedule(
+      REMINDER_CRON,
+      () => {
+        void runAllReminderChecks(deps).catch((err) => {
+          console.error('[ReminderJob] Failed:', err);
+        });
+      },
+      { timezone: TKKT_TZ },
+    );
+    console.log(
+      `[ReminderJob] TKKT cron registered: "${REMINDER_CRON}" (${TKKT_TZ})`,
+    );
+    return;
+  }
+
   const delayMs = msUntilStartToday();
   const startLabel = formatStartTime();
 
@@ -91,7 +137,7 @@ export function registerReminderJobs(deps: ReminderJobDeps = {}) {
     });
 
     console.log(
-      `[ReminderJob] Active — runs every minute (started at ${startLabel} ${REMINDER_TIMEZONE})`,
+      `[ReminderJob] Active — TKKT engine every minute (started at ${startLabel} ${REMINDER_TIMEZONE})`,
     );
   }, delayMs);
 

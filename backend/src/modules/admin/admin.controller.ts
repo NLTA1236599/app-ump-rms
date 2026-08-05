@@ -21,6 +21,7 @@ export async function getAllUsers(_req: Request, res: Response, next: NextFuncti
         email: usernameToEmail(row.username),
         full_name: row.display_name ?? row.username,
         role: row.role,
+        allowed_units: row.allowed_units,
         created_at: row.created_at,
       })),
     });
@@ -42,6 +43,25 @@ export async function updateUserRole(req: Request, res: Response, next: NextFunc
     if (!ok) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
 
     res.json({ message: 'Role updated' });
+  } catch (e) {
+    next(e);
+  }
+}
+
+export async function updateUserAllowedUnits(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = asPathParam(req.params.id);
+    const { allowed_units } = req.body ?? {};
+
+    if (!Array.isArray(allowed_units)) {
+      return res.status(400).json({ error: 'allowed_units phải là mảng' });
+    }
+
+    const units = allowed_units.map((unit) => String(unit).trim()).filter(Boolean);
+    const ok = await userRepo.updateAllowedUnits(id, units);
+    if (!ok) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+
+    res.json({ message: 'Allowed units updated', allowed_units: units });
   } catch (e) {
     next(e);
   }

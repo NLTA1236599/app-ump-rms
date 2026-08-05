@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/users', label: 'Quản lý người dùng' },
   { to: '/permissions', label: 'Phân quyền tính năng' },
+  { to: '/topic-permissions', label: 'Phân quyền đề tài' },
 ] as const;
 
 export function Sidebar() {

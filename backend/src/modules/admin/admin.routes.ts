@@ -5,6 +5,7 @@ import {
   getAllUsers,
   getPermissions,
   updatePermission,
+  updateUserAllowedUnits,
   updateUserRole,
 } from './admin.controller.js';
 
@@ -14,6 +15,7 @@ adminRoutes.use(requireAuth, requireRole('admin'));
 
 adminRoutes.get('/users', getAllUsers);
 adminRoutes.patch('/users/:id/role', updateUserRole);
+adminRoutes.patch('/users/:id/allowed-units', updateUserAllowedUnits);
 adminRoutes.delete('/users/:id', deleteUser);
 
 adminRoutes.get('/permissions', getPermissions);

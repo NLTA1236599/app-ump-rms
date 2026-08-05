@@ -5,13 +5,18 @@ import { asPathParam } from '../../utils/pathParams.js';
 
 const service = new ResearchProjectService();
 
-function getUserId(req: Request): string {
-  return (req as Request & { user: JwtUserPayload }).user.id;
+function getUser(req: Request): JwtUserPayload {
+  return (req as Request & { user: JwtUserPayload }).user;
 }
 
-export async function getResearchProjects(_req: Request, res: Response, next: NextFunction) {
+function getUserId(req: Request): string {
+  return getUser(req).id;
+}
+
+export async function getResearchProjects(req: Request, res: Response, next: NextFunction) {
   try {
-    const projects = await service.list();
+    const user = getUser(req);
+    const projects = await service.listForUser(user.id, user.role);
     res.json(projects);
   } catch (e) {
     next(e);

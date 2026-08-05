@@ -41,6 +41,8 @@ services:
       MAIL_PASS: ${MAIL_PASS:-}
       MAIL_FROM: ${MAIL_FROM:-}
       REMINDER_JOBS_ENABLED: "true"
+      REMINDER_LEGACY_JOBS: "false"
+      REMINDER_CATCHUP_DAYS: "3"
       TZ: Asia/Ho_Chi_Minh
       REMINDER_TIMEZONE: Asia/Ho_Chi_Minh
       REMINDER_START_HOUR: "13"
@@ -48,6 +50,7 @@ services:
       REMINDER_REPORT_LOOKAHEAD: "1 minute"
       REMINDER_ACCEPTANCE_LONG_LOOKAHEAD: "3 minutes"
       REMINDER_ACCEPTANCE_SHORT_LOOKAHEAD: "1 minute"
+      APP_BASE_URL: http://localhost:5173
       # Browser page origins (not Docker service hostnames). Include production domains for CORS.
       FRONTEND_ORIGIN: http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175,https://ump-khcn.com,https://www.ump-khcn.com
     depends_on:

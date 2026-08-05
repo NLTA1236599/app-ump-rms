@@ -16,6 +16,7 @@ export type AdminUserRow = {
   email: string;
   full_name: string;
   role: string;
+  allowed_units: string[];
   created_at: string;
 };
 

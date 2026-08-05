@@ -10,16 +10,20 @@ export type ResearchProjectRow = {
   updated_at: string;
 };
 
+function mapRow(row: ResearchProjectRow): Record<string, unknown> {
+  return {
+    id: row.id,
+    ...row.data,
+    created_by: row.created_by,
+  };
+}
+
 export class ResearchProjectRepository {
   async findAll(): Promise<Record<string, unknown>[]> {
     const { rows } = await pool.query<ResearchProjectRow>(
       'SELECT * FROM research_projects ORDER BY created_at ASC',
     );
-    return rows.map((row) => ({
-      id: row.id,
-      ...row.data,
-      created_by: row.created_by,
-    }));
+    return rows.map(mapRow);
   }
 
   async insertMany(
