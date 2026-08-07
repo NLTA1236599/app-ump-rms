@@ -27,6 +27,7 @@ import { WORKFLOW_STEPS } from './constants.js';
 import { formatDisplayDate } from './formatDisplayDate.js';
 import { BackArrowIcon } from './icons.js';
 import { InfoSections, type DetailSectionId } from './InfoSections.js';
+import { OperationHistoryPanel } from './OperationHistoryPanel.js';
 import {
   appendProjectNote,
   buildDiscussionFeed,
@@ -53,7 +54,8 @@ type DetailTabId =
   | 'thoi-gian'
   | 'nghiem-thu'
   | 'nhiem-vu'
-  | 'trao-doi';
+  | 'trao-doi'
+  | 'lich-su-thao-tac';
 
 type TabDef = {
   id: DetailTabId;
@@ -69,6 +71,7 @@ const DETAIL_TABS: TabDef[] = [
   { id: 'nghiem-thu', label: 'Nghiệm thu', section: 'acceptance' },
   { id: 'nhiem-vu', label: 'Tiến độ' },
   { id: 'trao-doi', label: 'Trao đổi' },
+  { id: 'lich-su-thao-tac', label: 'Lịch sử thao tác' },
 ];
 
 const PROGRESS_OPTIONS = [ProgressStatus.ON_TIME, ProgressStatus.OVERDUE, ProgressStatus.EXTENDED];
@@ -1064,6 +1067,10 @@ function TabContent({
         isSaving={isSavingNote}
       />
     );
+  }
+
+  if (activeTab === 'lich-su-thao-tac') {
+    return <OperationHistoryPanel project={project} />;
   }
 
   if (tab?.section) {

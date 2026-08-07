@@ -6,7 +6,9 @@ export class ConsoleEmailSender implements IEmailSender {
     console.log('[Email:console]', {
       to: payload.to,
       subject: payload.subject,
+      text: payload.text,
       html: payload.html,
+      headers: payload.headers,
     });
   }
 }

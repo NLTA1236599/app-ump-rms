@@ -237,9 +237,16 @@ export function ProjectTableRow({
 
       <td className="px-3 py-3 align-top text-xs text-slate-500">
         {p.history?.[0] ? (
-          <div className="flex flex-col">
-            <span className="font-bold">@{p.history[0].user}</span>
-            <span>{p.history[0].timestamp}</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="font-bold text-slate-700">@{p.history[0].user}</span>
+            <span className="text-slate-500">
+              {(() => {
+                const d = new Date(p.history[0].timestamp);
+                if (Number.isNaN(d.getTime())) return p.history[0].timestamp;
+                return d.toLocaleString('vi-VN');
+              })()}
+            </span>
+            <span className="line-clamp-2 text-slate-400">{p.history[0].action}</span>
           </div>
         ) : (
           '---'

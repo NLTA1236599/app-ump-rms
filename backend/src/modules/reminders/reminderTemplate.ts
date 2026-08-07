@@ -15,52 +15,85 @@ export function buildReminderEmail(reminder: DueReminder, recipient: ReminderRec
   const remaining = daysRemaining(reminder.dueDate, reminder.offsetDays);
   const dueLabel = formatDueDate(reminder.dueDate);
   const roleLabel = recipient.role === 'LEADER' ? 'Chủ nhiệm đề tài' : 'Chuyên viên phụ trách';
-  const link = `${APP_BASE_URL.replace(/\/$/, '')}/de-tai-khcn/du-lieu-de-tai`;
+  const base = APP_BASE_URL.replace(/\/$/, '');
+  const link = `${base}/?projectId=${encodeURIComponent(reminder.projectId)}`;
+  const whenLabel = remaining === 0 ? 'Đúng hạn hôm nay' : `Trước ${remaining} ngày`;
 
-  const remainingText =
-    remaining === 0 ? 'đúng hạn hôm nay' : `còn ${remaining} ngày`;
+  // Avoid urgency / promo wording that spam filters score highly.
+  const subject = `UMP-RMS: ${reminder.milestoneName} — ${reminder.projectTitle}`;
 
-  const subject = `[UMP-RMS] Nhắc: ${reminder.milestoneName} — đề tài "${reminder.projectTitle}" ${remainingText}`;
+  const contractLine = reminder.projectCode
+    ? `Mã/HĐ: ${reminder.projectCode}`
+    : '';
+
+  const text = [
+    `Kính gửi ${recipient.fullName} (${roleLabel}),`,
+    '',
+    'Đây là thông báo tự động từ hệ thống quản lý đề tài UMP-RMS.',
+    '',
+    `Đề tài: ${reminder.projectTitle}`,
+    ...(contractLine ? [contractLine] : []),
+    `Nội dung: ${reminder.milestoneName}`,
+    `Hạn cuối: ${dueLabel}`,
+    `Thời điểm nhắc: ${whenLabel}`,
+    '',
+    `Xem đề tài trên hệ thống: ${link}`,
+    '',
+    'Phòng KHCN — Đại học Y Dược TP. Hồ Chí Minh',
+    'Email tự động, vui lòng không trả lời thư này.',
+  ].join('\n');
 
   const html = `
-    <div style="font-family:Arial,sans-serif;max-width:600px;color:#111827;">
-      <h2 style="color:#1d4ed8;margin-bottom:12px;">Nhắc mốc thời gian đề tài</h2>
-      <p>Kính gửi <strong>${escapeHtml(recipient.fullName)}</strong> (${roleLabel}),</p>
-      <p>
-        Đề tài <strong>"${escapeHtml(reminder.projectTitle)}"</strong>
-        ${reminder.projectCode ? `(mã/HĐ: <strong>${escapeHtml(reminder.projectCode)}</strong>)` : ''}
-        sắp đến hạn:
+    <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;color:#111827;line-height:1.5;">
+      <p style="margin:0 0 16px 0;font-size:16px;font-weight:bold;color:#111827;">
+        Thông báo mốc thời gian đề tài — UMP-RMS
       </p>
-      <table style="border-collapse:collapse;width:100%;margin:16px 0;">
-        <tr style="background:#eff6ff;">
-          <td style="padding:8px 12px;border:1px solid #bfdbfe;font-weight:bold;">Nội dung</td>
-          <td style="padding:8px 12px;border:1px solid #bfdbfe;">${escapeHtml(reminder.milestoneName)}</td>
+      <p>Kính gửi <strong>${escapeHtml(recipient.fullName)}</strong> (${escapeHtml(roleLabel)}),</p>
+      <p>
+        Hệ thống UMP-RMS xin thông báo đề tài
+        <strong>${escapeHtml(reminder.projectTitle)}</strong>
+        ${
+          reminder.projectCode
+            ? `(mã/HĐ: ${escapeHtml(reminder.projectCode)})`
+            : ''
+        }
+        có mốc thời gian sắp đến hạn.
+      </p>
+      <table style="border-collapse:collapse;width:100%;margin:16px 0;font-size:14px;">
+        <tr>
+          <td style="padding:8px 12px;border:1px solid #d1d5db;width:40%;">Nội dung</td>
+          <td style="padding:8px 12px;border:1px solid #d1d5db;">${escapeHtml(reminder.milestoneName)}</td>
         </tr>
         <tr>
-          <td style="padding:8px 12px;border:1px solid #bfdbfe;font-weight:bold;">Hạn cuối</td>
-          <td style="padding:8px 12px;border:1px solid #bfdbfe;color:#b91c1c;font-weight:bold;">${dueLabel}</td>
+          <td style="padding:8px 12px;border:1px solid #d1d5db;">Hạn cuối</td>
+          <td style="padding:8px 12px;border:1px solid #d1d5db;">${escapeHtml(dueLabel)}</td>
         </tr>
-        <tr style="background:#eff6ff;">
-          <td style="padding:8px 12px;border:1px solid #bfdbfe;font-weight:bold;">Thời điểm nhắc</td>
-          <td style="padding:8px 12px;border:1px solid #bfdbfe;">${
-            remaining === 0 ? 'Đúng hạn' : `Trước ${remaining} ngày`
-          }</td>
+        <tr>
+          <td style="padding:8px 12px;border:1px solid #d1d5db;">Thời điểm nhắc</td>
+          <td style="padding:8px 12px;border:1px solid #d1d5db;">${escapeHtml(whenLabel)}</td>
         </tr>
       </table>
       <p>
-        <a href="${link}"
-           style="background:#1d4ed8;color:#fff;padding:10px 18px;border-radius:6px;
-                  text-decoration:none;display:inline-block;">
-          Vào hệ thống
-        </a>
+        Xem chi tiết đề tài:
+        <a href="${escapeHtml(link)}">${escapeHtml(link)}</a>
       </p>
-      <p style="margin-top:24px;color:#6b7280;font-size:12px;">
-        Email tự động từ UMP-RMS. Vui lòng không trả lời email này.
+      <p style="margin-top:24px;color:#4b5563;font-size:12px;">
+        Phòng Khoa học Công nghệ — Đại học Y Dược TP. Hồ Chí Minh<br/>
+        Email tự động từ UMP-RMS (<a href="${escapeHtml(base)}">${escapeHtml(base)}</a>).
+        Vui lòng không trả lời email này.
       </p>
     </div>
   `;
 
-  return { subject, html };
+  return {
+    subject,
+    html,
+    text,
+    headers: {
+      'X-UMP-RMS-Notification': 'project-reminder',
+      'X-UMP-RMS-Project-Id': reminder.projectId,
+    },
+  };
 }
 
 function escapeHtml(value: string): string {

@@ -1,0 +1,20 @@
+# Edge reverse proxy for ump-khcn.com (host Caddy → Docker frontend :5173).
+# Install/sync on VPS: sudo cp deploy/Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy
+#
+# CSP is set by frontend/admin/submitter nginx (and Helmet on /api).
+# Sensitive paths (/.env, /.git, …) → branded 404.html via frontend/nginx.conf.
+
+www.ump-khcn.com, ump-khcn.com {
+	encode gzip zstd
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Frame-Options DENY
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	reverse_proxy localhost:5173
+}

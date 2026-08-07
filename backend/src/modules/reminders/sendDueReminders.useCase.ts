@@ -54,8 +54,8 @@ export class SendDueRemindersUseCase {
           }
 
           try {
-            const { subject, html } = buildReminderEmail(reminder, person);
-            await this.mailer.send({ to: person.email, subject, html });
+            const { subject, html, text, headers } = buildReminderEmail(reminder, person);
+            await this.mailer.send({ to: person.email, subject, html, text, headers });
             await this.logs.markSent(
               reminder.projectMilestoneId,
               reminder.offsetDays,

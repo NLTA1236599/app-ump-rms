@@ -26,7 +26,23 @@ function resolveCorsOrigin(): CorsOptions['origin'] {
   return list.length === 1 ? list[0] : list;
 }
 
-app.use(helmet());
+app.use(
+  helmet({
+    // API responses are JSON — block active content by default.
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        baseUri: ["'none'"],
+        formAction: ["'none'"],
+      },
+    },
+    crossOriginResourcePolicy: { policy: 'same-origin' },
+    crossOriginOpenerPolicy: { policy: 'same-origin' },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  }),
+);
 app.use(
   cors({
     origin: resolveCorsOrigin(),

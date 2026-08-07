@@ -34,6 +34,11 @@ function httpError(message: string, status: number): Error {
 const GENERIC_OTP_REJECT = 'Mã OTP không hợp lệ hoặc đã hết hạn.';
 const UNVERIFIED_LOGIN_MSG =
   'Email chưa được xác minh. Vui lòng nhập mã OTP từ email hoặc gửi lại mã trong quy trình đăng ký.';
+/** Same message for unknown user and wrong password — prevents user enumeration (BUG-018). */
+const INVALID_CREDENTIALS_MSG = 'Tên đăng nhập hoặc mật khẩu không đúng';
+/** Precomputed bcrypt hash used only to keep login timing similar when the user is missing. */
+const DUMMY_PASSWORD_HASH =
+  '$2a$12$QiILhFxpAoP7LUFd5Qm6o.JbNWZH4aTquq3smrsf4AjdFqcy10ftK';
 
 /**
  * Auth use-cases only — coordinates ports (guide §3 S: one reason to change = business rules for auth).
@@ -198,14 +203,13 @@ export class AuthApplicationService implements IAuthService {
       const local = normalized.slice(0, normalized.indexOf('@'));
       if (local) row = await this.users.findByUsername(local);
     }
-    if (!row) throw httpError('Tài khoản không tồn tại', 401);
-
-    if (typeof row.password !== 'string' || !row.password) {
-      throw httpError('Mật khẩu không đúng', 401);
+    if (!row || typeof row.password !== 'string' || !row.password) {
+      await this.passwords.compare(password, DUMMY_PASSWORD_HASH).catch(() => false);
+      throw httpError(INVALID_CREDENTIALS_MSG, 401);
     }
 
     const valid = await this.passwords.compare(password, row.password);
-    if (!valid) throw httpError('Mật khẩu không đúng', 401);
+    if (!valid) throw httpError(INVALID_CREDENTIALS_MSG, 401);
 
     if (!row.email_verified) {
       throw httpError(UNVERIFIED_LOGIN_MSG, 403);

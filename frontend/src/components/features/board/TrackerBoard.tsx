@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   DashboardOverview,
   DEFAULT_HEADER_NAV_TAB,
@@ -18,6 +18,23 @@ function PlaceholderPanel({ label }: { label: string }) {
       Nội dung cho mục &ldquo;{label}&rdquo; đang được xây dựng.
     </div>
   );
+}
+
+function readProjectIdFromUrl(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  const projectId = params.get('projectId')?.trim();
+  return projectId || null;
+}
+
+function clearProjectIdFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has('projectId')) return;
+  params.delete('projectId');
+  const query = params.toString();
+  const nextUrl = query
+    ? `${window.location.pathname}?${query}`
+    : window.location.pathname;
+  window.history.replaceState({}, '', nextUrl);
 }
 
 export function TrackerBoard({ onLogout }: { onLogout: () => void }) {
@@ -45,6 +62,13 @@ export function TrackerBoard({ onLogout }: { onLogout: () => void }) {
     setPendingViewProjectId(projectId);
   }, []);
 
+  // Deep-link from reminder emails: /?projectId=<uuid>
+  useEffect(() => {
+    const projectId = readProjectIdFromUrl();
+    if (!projectId) return;
+    handleViewProject(projectId);
+  }, [handleViewProject]);
+
   const handleShowAllNotifications = useCallback(() => {
     setIsHomeActive(false);
     setActiveTab(null);
@@ -53,6 +77,7 @@ export function TrackerBoard({ onLogout }: { onLogout: () => void }) {
 
   const handlePendingViewConsumed = useCallback(() => {
     setPendingViewProjectId(null);
+    clearProjectIdFromUrl();
   }, []);
 
   const content = (() => {

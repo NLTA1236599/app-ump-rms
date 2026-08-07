@@ -1,7 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useAuthContext } from '../../contexts/AuthContext.js';
 import { researchProjectService } from '../../services/index.js';
 import { mapTableToPmProjects } from '../DataTable/mapToTableProjects.js';
+import {
+  applyProjectUpdateHistory,
+  resolveHistoryActor,
+  withCreateHistory,
+  withImportHistory,
+} from '../DataTable/projectHistory.js';
 import type { ResearchProject as TableProject } from '../DataTable/types.js';
 
 import type { ResearchProject } from './types.js';
@@ -21,9 +28,14 @@ type UsePersistedTableProjectsResult = {
 };
 
 export function usePersistedTableProjects(): UsePersistedTableProjectsResult {
+  const { user } = useAuthContext();
   const [tableProjects, setTableProjects] = useState<TableProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const tableProjectsRef = useRef(tableProjects);
+  tableProjectsRef.current = tableProjects;
+
+  const actor = useMemo(() => resolveHistoryActor(user), [user]);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,28 +85,46 @@ export function usePersistedTableProjects(): UsePersistedTableProjectsResult {
     setTableProjects([]);
   }, []);
 
-  const onImport = useCallback(async (rows: Partial<TableProject>[], file?: File) => {
-    const projects = rows as TableProject[];
-    let importFileId: string | undefined;
+  const onImport = useCallback(
+    async (rows: Partial<TableProject>[], file?: File) => {
+      const projects = (rows as TableProject[]).map((row) => withImportHistory(row, actor));
+      let importFileId: string | undefined;
 
-    if (file) {
-      const uploadResult = await researchProjectService.uploadImportFile(file, projects.length);
-      importFileId = uploadResult.file.id;
-    }
+      if (file) {
+        const uploadResult = await researchProjectService.uploadImportFile(file, projects.length);
+        importFileId = uploadResult.file.id;
+      }
 
-    const saved = await researchProjectService.bulkCreate(projects, importFileId);
-    setTableProjects((prev) => [...prev, ...saved]);
-  }, []);
+      const saved = await researchProjectService.bulkCreate(projects, importFileId);
+      setTableProjects((prev) => [...prev, ...saved]);
+    },
+    [actor],
+  );
 
-  const onSaveProject = useCallback(async (project: TableProject) => {
-    const saved = await researchProjectService.upsert(project);
-    setTableProjects((prev) => [...prev, saved]);
-  }, []);
+  const onSaveProject = useCallback(
+    async (project: TableProject) => {
+      const toSave = withCreateHistory(project, actor);
+      const saved = await researchProjectService.upsert(toSave);
+      setTableProjects((prev) => [...prev, saved]);
+    },
+    [actor],
+  );
 
-  const onUpdateProject = useCallback(async (project: TableProject) => {
-    const saved = await researchProjectService.upsert(project);
-    setTableProjects((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
-  }, []);
+  const onUpdateProject = useCallback(
+    async (project: TableProject) => {
+      const existing = tableProjectsRef.current.find((p) => p.id === project.id);
+      const toSave = existing
+        ? applyProjectUpdateHistory(existing, project, actor)
+        : withCreateHistory(project, actor);
+      const saved = await researchProjectService.upsert(toSave);
+      setTableProjects((prev) => {
+        const idx = prev.findIndex((p) => p.id === saved.id);
+        if (idx === -1) return [...prev, saved];
+        return prev.map((p) => (p.id === saved.id ? saved : p));
+      });
+    },
+    [actor],
+  );
 
   const onSyncProject = useCallback((project: TableProject) => {
     setTableProjects((prev) => prev.map((p) => (p.id === project.id ? project : p)));

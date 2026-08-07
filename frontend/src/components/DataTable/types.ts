@@ -19,10 +19,19 @@ export type ProductEntry = {
   count: number;
 };
 
+export type HistoryFieldChange = {
+  field: string;
+  label: string;
+  oldValue: string;
+  newValue: string;
+};
+
 export type HistoryEntry = {
   timestamp: string;
   user: string;
   action: string;
+  /** Field-level before/after values when the action edited project data. */
+  changes?: HistoryFieldChange[];
 };
 
 export type ProjectDiscussionNote = {

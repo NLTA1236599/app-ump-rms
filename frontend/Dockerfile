@@ -18,7 +18,10 @@ RUN npm run build
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-RUN mkdir -p /usr/share/nginx/html/assets-test
+RUN mkdir -p /usr/share/nginx/html/assets-test \
+  && if [ -f /usr/share/nginx/html/ump-seal.png ] && [ ! -f /usr/share/nginx/html/logo.png ]; then \
+       cp /usr/share/nginx/html/ump-seal.png /usr/share/nginx/html/logo.png; \
+     fi
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

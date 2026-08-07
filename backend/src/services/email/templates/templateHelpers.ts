@@ -1,6 +1,8 @@
 function primaryFrontendOrigin(): string {
+  const fromAppBase = process.env.APP_BASE_URL?.trim();
+  if (fromAppBase) return fromAppBase.replace(/\/$/, '');
   const raw = process.env.FRONTEND_ORIGIN?.split(',')[0]?.trim();
-  return raw ?? 'http://localhost:5173';
+  return (raw ?? 'http://localhost:5173').replace(/\/$/, '');
 }
 
 export const deadlineTable = (date: string) => `

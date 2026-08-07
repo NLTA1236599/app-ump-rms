@@ -4,12 +4,24 @@ import { ProtectedRoute } from './components/ProtectedRoute.js';
 import { AdminLayout } from './components/Layout/AdminLayout.js';
 import { DashboardPage } from './pages/DashboardPage.js';
 import { LoginPage } from './pages/LoginPage.js';
+import { OperationHistoryPage } from './pages/OperationHistoryPage.js';
 import { PermissionsPage } from './pages/PermissionsPage.js';
 import { TopicPermissionsPage } from './pages/TopicPermissionsPage.js';
 import { UnauthorizedPage } from './pages/UnauthorizedPage.js';
 import { UsersPage } from './pages/UsersPage.js';
 
 const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
+
+/** Docker build uses base=/admin/; opening :5174/ would leave Router unmatched. */
+function ensureBasenamePath(): void {
+  if (routerBasename === '/' || typeof window === 'undefined') return;
+  const { pathname, search, hash } = window.location;
+  if (pathname === routerBasename || pathname.startsWith(`${routerBasename}/`)) return;
+  const suffix = pathname === '/' ? '/' : pathname;
+  window.location.replace(`${routerBasename}${suffix}${search}${hash}`);
+}
+
+ensureBasenamePath();
 
 export default function App() {
   return (
@@ -31,6 +43,7 @@ export default function App() {
           <Route path="users" element={<UsersPage />} />
           <Route path="permissions" element={<PermissionsPage />} />
           <Route path="topic-permissions" element={<TopicPermissionsPage />} />
+          <Route path="operation-history" element={<OperationHistoryPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -96,5 +96,10 @@ export function mapFormToTableProject(
     terminationReason: form.liquidationReason.trim() || undefined,
     supervisorId: form.supervisorId.trim() || undefined,
     history: existing?.history ?? [],
+    projectNotes: existing?.projectNotes,
+    noteNotifications: existing?.noteNotifications,
+    workflowStep: existing?.workflowStep,
+    workflowHistory: existing?.workflowHistory,
+    workflowTodos: existing?.workflowTodos,
   };
 }
