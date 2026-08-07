@@ -60,6 +60,8 @@ export function mapFormToTableProject(
     categories: form.categoryTags,
     approvalDecision: form.decisionReview.trim() || undefined,
     authorizationDecision: form.decisionApprove.trim() || undefined,
+    appraisalDecision: form.decisionAppraisal.trim() || undefined,
+    acceptanceDecision: form.decisionAcceptance.trim() || undefined,
     budget: Number(form.totalBudget) || 0,
     budgetLumpSum: Number(form.contractedBudget) || 0,
     budgetNonLumpSum: Number(form.nonContractedBudget) || 0,

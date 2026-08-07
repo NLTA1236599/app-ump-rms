@@ -27,6 +27,8 @@ export const defaultFormData: DataEntryFormData = {
   facultyUnits: [],
   decisionReview: '',
   decisionApprove: '',
+  decisionAppraisal: '',
+  decisionAcceptance: '',
   totalBudget: '0',
   contractedBudget: '0',
   nonContractedBudget: '0',

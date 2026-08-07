@@ -118,6 +118,8 @@ export function ProjectTableRow({
 
       <td className="px-3 py-3 align-top text-xs text-slate-700">{p.approvalDecision}</td>
       <td className="px-3 py-3 align-top text-xs text-slate-700">{p.authorizationDecision}</td>
+      <td className="px-3 py-3 align-top text-xs text-slate-700">{p.appraisalDecision}</td>
+      <td className="px-3 py-3 align-top text-xs text-slate-700">{p.acceptanceDecision}</td>
 
       <td className="px-3 py-3 text-right align-top font-mono text-xs font-bold text-slate-700">
         {p.budget?.toLocaleString('vi-VN')}

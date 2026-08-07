@@ -34,6 +34,26 @@ export function DecisionSection({ form, setField }: Props) {
             className={inputBase}
           />
         </div>
+        <div>
+          <FieldLabel htmlFor="qd-appraisal">QĐ giám định</FieldLabel>
+          <input
+            id="qd-appraisal"
+            type="text"
+            value={form.decisionAppraisal}
+            onChange={(e) => setField('decisionAppraisal', e.target.value)}
+            className={inputBase}
+          />
+        </div>
+        <div>
+          <FieldLabel htmlFor="qd-acceptance">QĐ nghiệm thu</FieldLabel>
+          <input
+            id="qd-acceptance"
+            type="text"
+            value={form.decisionAcceptance}
+            onChange={(e) => setField('decisionAcceptance', e.target.value)}
+            className={inputBase}
+          />
+        </div>
       </div>
     </section>
   );

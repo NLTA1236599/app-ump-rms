@@ -122,6 +122,8 @@ export function mapTableToFormData(project: ResearchProject): DataEntryFormData 
     facultyUnits: mapFacultyUnits(project.department),
     decisionReview: project.approvalDecision ?? '',
     decisionApprove: project.authorizationDecision ?? '',
+    decisionAppraisal: project.appraisalDecision ?? '',
+    decisionAcceptance: project.acceptanceDecision ?? '',
     totalBudget: String(project.budget ?? 0),
     contractedBudget: String(project.budgetLumpSum ?? 0),
     nonContractedBudget: String(project.budgetNonLumpSum ?? 0),

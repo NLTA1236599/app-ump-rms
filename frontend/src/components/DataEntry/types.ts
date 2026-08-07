@@ -22,6 +22,8 @@ export type DataEntryFormData = {
   /** §3 */
   decisionReview: string;
   decisionApprove: string;
+  decisionAppraisal: string;
+  decisionAcceptance: string;
   /** §4 */
   totalBudget: string;
   contractedBudget: string;

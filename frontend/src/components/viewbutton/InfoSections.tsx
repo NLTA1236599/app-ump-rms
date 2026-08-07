@@ -187,6 +187,8 @@ export function InfoSections({
         {field('Ngày ký HĐ', 'contractDate', { isDate: true })}
         {field('QĐ Xét duyệt', 'approvalDecision')}
         {field('QĐ Phê duyệt', 'authorizationDecision')}
+        {field('QĐ giám định', 'appraisalDecision')}
+        {field('QĐ nghiệm thu', 'acceptanceDecision')}
         {field('Số GCN kết quả', 'certificateResultNumber')}
         {field('Ngày cấp GCN', 'certificateResultDate', { isDate: true })}
         {field('Cơ quan cấp GCN', 'certificateResultIssuingAuthority', {

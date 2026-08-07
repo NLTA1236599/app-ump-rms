@@ -109,6 +109,8 @@ export function DataTableGrid({
               <FilterableHeader label="Đơn vị" colId="department" minWidth="150px" {...headerProps} />
               <FilterableHeader label="QĐ Xét duyệt" colId="approvalDecision" minWidth="120px" {...headerProps} />
               <FilterableHeader label="QĐ Phê duyệt" colId="authorizationDecision" minWidth="120px" {...headerProps} />
+              <FilterableHeader label="QĐ giám định" colId="appraisalDecision" minWidth="120px" {...headerProps} />
+              <FilterableHeader label="QĐ nghiệm thu" colId="acceptanceDecision" minWidth="120px" {...headerProps} />
 
               <FilterableHeader label="Kinh phí TH" colId="budget" minWidth="120px" className="text-right" {...headerProps} />
               <FilterableHeader label="Khoán" colId="budgetLumpSum" minWidth="120px" className="text-right" {...headerProps} />

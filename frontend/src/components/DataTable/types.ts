@@ -100,6 +100,8 @@ export type ResearchProject = {
   categories?: string[] | string;
   approvalDecision?: string;
   authorizationDecision?: string;
+  appraisalDecision?: string;
+  acceptanceDecision?: string;
   budget: number;
   budgetLumpSum?: number;
   budgetNonLumpSum?: number;

@@ -23,8 +23,14 @@ function mapRow(headers: string[], row: unknown[]): Partial<ResearchProject> {
       p.categories = val ? String(val).split(',').map((s) => s.trim()) : [];
     else if (header.includes('bộ môn')) p.subDepartment = val ? String(val) : '';
     else if (header.includes('đơn vị')) p.department = val ? String(val) : '';
-    else if (header.includes('qđ xét duyệt')) p.approvalDecision = val ? String(val) : '';
-    else if (header.includes('qđ phê duyệt')) p.authorizationDecision = val ? String(val) : '';
+    else if (header.includes('qđ xét duyệt') || header.includes('quyết định xét duyệt'))
+      p.approvalDecision = val ? String(val) : '';
+    else if (header.includes('qđ phê duyệt') || header.includes('quyết định phê duyệt'))
+      p.authorizationDecision = val ? String(val) : '';
+    else if (header.includes('qđ giám định') || header.includes('quyết định giám định'))
+      p.appraisalDecision = val ? String(val) : '';
+    else if (header.includes('qđ nghiệm thu') || header.includes('quyết định nghiệm thu'))
+      p.acceptanceDecision = val ? String(val) : '';
     else if (header.includes('kinh phí thực hiện')) p.budget = Number(val) || 0;
     else if (header.includes('thời gian th')) p.duration = val ? String(val) : '';
     else if (header.includes('bắt đầu')) p.startDate = val ? String(val) : '';
