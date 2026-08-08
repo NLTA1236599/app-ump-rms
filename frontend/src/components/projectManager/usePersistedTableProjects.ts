@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAuthContext } from '../../contexts/AuthContext.js';
 import { researchProjectService } from '../../services/index.js';
+import { dedupeProjects, findExistingProjectMatch } from '../DataTable/dedupeProjects.js';
 import { mapTableToPmProjects } from '../DataTable/mapToTableProjects.js';
 import {
   applyProjectUpdateHistory,
@@ -37,6 +38,13 @@ export function usePersistedTableProjects(): UsePersistedTableProjectsResult {
 
   const actor = useMemo(() => resolveHistoryActor(user), [user]);
 
+  const reloadFromServer = useCallback(async () => {
+    const projects = await researchProjectService.getAll();
+    setTableProjects(dedupeProjects(projects));
+    setLoadError(null);
+    return projects;
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -44,7 +52,7 @@ export function usePersistedTableProjects(): UsePersistedTableProjectsResult {
       .getAll()
       .then((projects) => {
         if (!cancelled) {
-          setTableProjects(projects);
+          setTableProjects(dedupeProjects(projects));
           setLoadError(null);
         }
       })
@@ -69,43 +77,96 @@ export function usePersistedTableProjects(): UsePersistedTableProjectsResult {
     [tableProjects],
   );
 
-  const onDelete = useCallback(async (id: string) => {
-    await researchProjectService.deleteOne(id);
-    setTableProjects((prev) => prev.filter((p) => p.id !== id));
-  }, []);
+  const onDelete = useCallback(
+    async (id: string) => {
+      await researchProjectService.deleteOne(id);
+      // Optimistic local remove, then hard-sync from server so Excel/UI never keep ghosts.
+      setTableProjects((prev) => prev.filter((p) => p.id !== id));
+      try {
+        await reloadFromServer();
+      } catch {
+        /* local filter already applied */
+      }
+    },
+    [reloadFromServer],
+  );
 
-  const onDeleteMultiple = useCallback(async (ids: string[]) => {
-    await researchProjectService.deleteMany(ids);
-    const idSet = new Set(ids);
-    setTableProjects((prev) => prev.filter((p) => !idSet.has(p.id)));
-  }, []);
+  const onDeleteMultiple = useCallback(
+    async (ids: string[]) => {
+      const uniqueIds = [...new Set(ids.filter(Boolean))];
+      if (uniqueIds.length === 0) return;
+
+      await researchProjectService.deleteMany(uniqueIds);
+      const idSet = new Set(uniqueIds);
+      setTableProjects((prev) => prev.filter((p) => !idSet.has(p.id)));
+      try {
+        await reloadFromServer();
+      } catch {
+        /* local filter already applied */
+      }
+    },
+    [reloadFromServer],
+  );
 
   const onDeleteAll = useCallback(async () => {
     await researchProjectService.deleteAll();
     setTableProjects([]);
-  }, []);
+    try {
+      await reloadFromServer();
+    } catch {
+      setTableProjects([]);
+    }
+  }, [reloadFromServer]);
 
   const onImport = useCallback(
     async (rows: Partial<TableProject>[], file?: File) => {
-      const projects = (rows as TableProject[]).map((row) => withImportHistory(row, actor));
-      let importFileId: string | undefined;
+      const prepared = (rows as TableProject[]).map((row) => withImportHistory(row, actor));
+      const existing = tableProjectsRef.current;
 
+      const toCreate: TableProject[] = [];
+      const toUpdate: TableProject[] = [];
+
+      for (const row of prepared) {
+        const match = findExistingProjectMatch(existing, row);
+        if (match) {
+          toUpdate.push({
+            ...match,
+            ...row,
+            id: match.id,
+            history: row.history?.length ? row.history : match.history,
+          });
+        } else {
+          toCreate.push(row);
+        }
+      }
+
+      let importFileId: string | undefined;
       if (file) {
-        const uploadResult = await researchProjectService.uploadImportFile(file, projects.length);
+        const uploadResult = await researchProjectService.uploadImportFile(
+          file,
+          prepared.length,
+        );
         importFileId = uploadResult.file.id;
       }
 
-      const saved = await researchProjectService.bulkCreate(projects, importFileId);
-      setTableProjects((prev) => [...prev, ...saved]);
+      for (const project of toUpdate) {
+        await researchProjectService.upsert(project);
+      }
+
+      if (toCreate.length > 0) {
+        await researchProjectService.bulkCreate(toCreate, importFileId);
+      }
+
+      await reloadFromServer();
     },
-    [actor],
+    [actor, reloadFromServer],
   );
 
   const onSaveProject = useCallback(
     async (project: TableProject) => {
       const toSave = withCreateHistory(project, actor);
       const saved = await researchProjectService.upsert(toSave);
-      setTableProjects((prev) => [...prev, saved]);
+      setTableProjects((prev) => dedupeProjects([...prev, saved]));
     },
     [actor],
   );
@@ -119,15 +180,17 @@ export function usePersistedTableProjects(): UsePersistedTableProjectsResult {
       const saved = await researchProjectService.upsert(toSave);
       setTableProjects((prev) => {
         const idx = prev.findIndex((p) => p.id === saved.id);
-        if (idx === -1) return [...prev, saved];
-        return prev.map((p) => (p.id === saved.id ? saved : p));
+        if (idx === -1) return dedupeProjects([...prev, saved]);
+        return dedupeProjects(prev.map((p) => (p.id === saved.id ? saved : p)));
       });
     },
     [actor],
   );
 
   const onSyncProject = useCallback((project: TableProject) => {
-    setTableProjects((prev) => prev.map((p) => (p.id === project.id ? project : p)));
+    setTableProjects((prev) =>
+      dedupeProjects(prev.map((p) => (p.id === project.id ? project : p))),
+    );
   }, []);
 
   return {

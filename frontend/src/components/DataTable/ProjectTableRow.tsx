@@ -14,7 +14,7 @@ type ProjectTableRowProps = {
   onSelect: (id: string) => void;
   onView: (project: ResearchProject) => void;
   onEdit: (project: ResearchProject) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => void | boolean | Promise<void | boolean>;
   canDelete?: boolean;
 };
 

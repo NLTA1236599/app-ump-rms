@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 
+import { dedupeProjects } from './dedupeProjects.js';
 import { formatDate, getAge } from './formatDate.js';
 import type { ProjectLeader, ProjectMember, ResearchProject } from './types.js';
 
@@ -359,9 +360,10 @@ export function exportProjectsToExcel(
   projects: ResearchProject[],
   visibleColumns?: Record<string, boolean>,
 ): void {
+  const uniqueProjects = dedupeProjects(projects);
   const columns = resolveExportColumns(visibleColumns);
   const headers = columns.map((c) => c.header);
-  const dataRows = projects.map((p, i) => columns.map((c) => c.value(p, i)));
+  const dataRows = uniqueProjects.map((p, i) => columns.map((c) => c.value(p, i)));
   const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
   ws['!cols'] = columns.map((c) => ({ wch: c.ml }));
 

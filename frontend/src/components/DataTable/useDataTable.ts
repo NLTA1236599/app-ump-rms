@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { DEFAULT_PAGE_SIZE } from './constants.js';
+import { dedupeProjects } from './dedupeProjects.js';
 import { exportProjectsToExcel } from './excelExport.js';
 import { parseExcelFile } from './excelImport.js';
 import { filterProjects } from './filterProjects.js';
@@ -37,12 +38,14 @@ export function useDataTable({
 
   const filteredProjects = useMemo(
     () =>
-      filterProjects(projects, {
-        searchTerm,
-        statusFilter,
-        columnFilters,
-        contractIdSearch,
-      }),
+      dedupeProjects(
+        filterProjects(projects, {
+          searchTerm,
+          statusFilter,
+          columnFilters,
+          contractIdSearch,
+        }),
+      ),
     [projects, searchTerm, statusFilter, columnFilters, contractIdSearch],
   );
 
@@ -68,20 +71,24 @@ export function useDataTable({
   };
 
   const handleDeleteSelected = () => {
-    onDeleteMultiple?.([...selectedIds]);
-    setSelectedIds(new Set());
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    void Promise.resolve(onDeleteMultiple?.(ids)).finally(() => {
+      setSelectedIds(new Set());
+    });
   };
 
   const handleDeleteAll = () => {
     if (projects.length === 0) return;
     const confirmed = window.confirm(
-      `Bạn có chắc muốn xóa tất cả ${projects.length} bản ghi trong bảng? Thao tác này không thể hoàn tác.`,
+      `Bạn có chắc muốn xóa tất cả ${projects.length} bản ghi trong bảng?\n\nThao tác này xóa vĩnh viễn khỏi hệ thống; file Excel tải về sau đó sẽ không còn các bản ghi đã xóa.`,
     );
     if (!confirmed) return;
 
-    onDeleteAll?.();
-    setSelectedIds(new Set());
-    setCurrentPage(1);
+    void Promise.resolve(onDeleteAll?.()).finally(() => {
+      setSelectedIds(new Set());
+      setCurrentPage(1);
+    });
   };
 
   const handleSelectAll = () => {

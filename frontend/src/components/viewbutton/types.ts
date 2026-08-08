@@ -9,7 +9,7 @@ export type ProjectDetailProps = {
   project: ResearchProject;
   onBack: () => void;
   onEdit: (project: ResearchProject) => void;
-  onDelete?: (id: string) => void | Promise<void>;
+  onDelete?: (id: string) => void | boolean | Promise<void | boolean>;
   onUpdateProject?: (project: ResearchProject) => void | Promise<void>;
   /** Updates local project cache without a write (e.g. after polling). */
   onSyncProject?: (project: ResearchProject) => void;

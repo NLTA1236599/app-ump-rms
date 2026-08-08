@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAuthContext } from '../../contexts/AuthContext.js';
 import { useNotification } from '../../hooks/useNotification.js';
 import { ProjectDetail } from '../viewbutton/index.js';
 import { Toast } from '../ui/Toast.js';
 import { DataTablePage } from './DataTablePage.js';
+import { dedupeProjects } from './dedupeProjects.js';
 import { ProjectEditModal } from './ProjectEditModal.js';
 import type { ImportFeedback, ResearchProject } from './types.js';
 
@@ -38,29 +39,81 @@ export function DataTableView({
   const [editingProject, setEditingProject] = useState<ResearchProject | null>(null);
   const [viewingProjectId, setViewingProjectId] = useState<string | null>(null);
 
+  const uniqueProjects = useMemo(() => dedupeProjects(projects), [projects]);
+
   useEffect(() => {
     if (!initialViewProjectId) return;
-    const exists = projects.some((p) => p.id === initialViewProjectId);
+    const exists = uniqueProjects.some((p) => p.id === initialViewProjectId);
     if (exists) {
       setViewingProjectId(initialViewProjectId);
     }
     onInitialViewConsumed?.();
-  }, [initialViewProjectId, projects, onInitialViewConsumed]);
+  }, [initialViewProjectId, uniqueProjects, onInitialViewConsumed]);
 
   const viewingProject = useMemo(
-    () => (viewingProjectId ? projects.find((p) => p.id === viewingProjectId) : undefined),
-    [projects, viewingProjectId],
+    () => (viewingProjectId ? uniqueProjects.find((p) => p.id === viewingProjectId) : undefined),
+    [uniqueProjects, viewingProjectId],
   );
 
   const handleImportFeedback = (result: ImportFeedback) => {
     notify(result.ok ? `Đã nhập ${result.count} bản ghi từ Excel.` : result.message);
   };
 
-  const handleDeleteAll = () => {
-    void Promise.resolve(onDeleteAll()).then(() => {
-      notify(`Đã xóa tất cả ${projects.length} bản ghi.`);
-    });
-  };
+  const handleDeleteOne = useCallback(
+    async (id: string): Promise<boolean> => {
+      const project = uniqueProjects.find((p) => p.id === id);
+      const label = project?.title || project?.contractId || id;
+      const confirmed = window.confirm(
+        `Bạn có chắc muốn xóa đề tài "${label}"?\n\nDữ liệu sẽ bị xóa vĩnh viễn khỏi hệ thống và không còn xuất hiện khi tải Excel.`,
+      );
+      if (!confirmed) return false;
+
+      try {
+        await Promise.resolve(onDelete(id));
+        if (viewingProjectId === id) setViewingProjectId(null);
+        notify('Đã xóa đề tài thành công.');
+        return true;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Không xóa được đề tài. Vui lòng thử lại.';
+        notify(msg);
+        return false;
+      }
+    },
+    [onDelete, uniqueProjects, viewingProjectId],
+  );
+
+  const handleDeleteMultiple = useCallback(
+    async (ids: string[]) => {
+      const uniqueIds = [...new Set(ids.filter(Boolean))];
+      if (uniqueIds.length === 0) return;
+
+      const confirmed = window.confirm(
+        `Bạn có chắc muốn xóa ${uniqueIds.length} đề tài đã chọn?\n\nDữ liệu sẽ bị xóa vĩnh viễn và không còn trong file Excel xuất ra.`,
+      );
+      if (!confirmed) return;
+
+      try {
+        await Promise.resolve(onDeleteMultiple(uniqueIds));
+        notify(`Đã xóa ${uniqueIds.length} đề tài.`);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Không xóa được các đề tài đã chọn.';
+        notify(msg);
+      }
+    },
+    [onDeleteMultiple],
+  );
+
+  const handleDeleteAll = useCallback(async () => {
+    // Confirm is already handled in useDataTable; still guard empty list.
+    if (uniqueProjects.length === 0) return;
+    try {
+      await Promise.resolve(onDeleteAll());
+      notify(`Đã xóa tất cả ${uniqueProjects.length} bản ghi.`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Không xóa được toàn bộ dữ liệu.';
+      notify(msg);
+    }
+  }, [onDeleteAll, uniqueProjects.length]);
 
   const handleEdit = (project: ResearchProject) => {
     setEditingProject(project);
@@ -90,7 +143,7 @@ export function DataTableView({
           project={viewingProject}
           onBack={handleBackFromDetail}
           onEdit={handleEditFromDetail}
-          onDelete={canDeleteProjects ? onDelete : undefined}
+          onDelete={canDeleteProjects ? handleDeleteOne : undefined}
           onUpdateProject={onUpdateProject}
           onSyncProject={onSyncProject}
         />
@@ -107,13 +160,13 @@ export function DataTableView({
   return (
     <>
       <DataTablePage
-        projects={projects}
-        onDelete={onDelete}
+        projects={uniqueProjects}
+        onDelete={handleDeleteOne}
         onEdit={handleEdit}
         onView={handleView}
         onImport={onImport}
         onImportFeedback={handleImportFeedback}
-        onDeleteMultiple={onDeleteMultiple}
+        onDeleteMultiple={handleDeleteMultiple}
         onDeleteAll={handleDeleteAll}
         canDeleteProjects={canDeleteProjects}
       />

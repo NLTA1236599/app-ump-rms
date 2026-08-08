@@ -184,13 +184,13 @@ export type ImportFeedback =
 
 export type DataTableProps = {
   projects: ResearchProject[];
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => void | boolean | Promise<void | boolean>;
   onEdit: (project: ResearchProject) => void;
   onView: (project: ResearchProject) => void;
   onImport?: (data: Partial<ResearchProject>[], file?: File) => void | Promise<void>;
   onImportFeedback?: (result: ImportFeedback) => void;
-  onDeleteMultiple?: (ids: string[]) => void;
-  onDeleteAll?: () => void;
+  onDeleteMultiple?: (ids: string[]) => void | Promise<void>;
+  onDeleteAll?: () => void | Promise<void>;
   /** When false, hide RESET and all delete actions (e.g. chuyên viên). Default true. */
   canDeleteProjects?: boolean;
 };

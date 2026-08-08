@@ -11,9 +11,10 @@ export type ResearchProjectRow = {
 };
 
 function mapRow(row: ResearchProjectRow): Record<string, unknown> {
+  // Prefer DB primary key over any `id` nested inside JSONB `data`.
   return {
-    id: row.id,
     ...row.data,
+    id: row.id,
     created_by: row.created_by,
   };
 }

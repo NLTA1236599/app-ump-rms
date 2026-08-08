@@ -25,7 +25,7 @@ type DataTableGridProps = {
   onPageChange: (page: number) => void;
   onView: (project: ResearchProject) => void;
   onEdit: (project: ResearchProject) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => void | boolean | Promise<void | boolean>;
   canDeleteProjects?: boolean;
 };
 

@@ -1229,10 +1229,13 @@ export function ProjectDetail({
     centerScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!onDelete) return;
-    if (!window.confirm('Bạn có chắc chắn muốn xóa đề tài này?')) return;
-    void Promise.resolve(onDelete(localProject.id)).then(() => onBack());
+    // Parent may return false when user cancels confirm or delete fails.
+    // Annotate explicitly: Promise.resolve() can collapse `void | boolean` to `void`.
+    const result: void | boolean = await onDelete(localProject.id);
+    if (result === false) return;
+    onBack();
   };
 
   const handleProgressStatusChange = (status: string) => {
