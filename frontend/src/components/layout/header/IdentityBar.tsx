@@ -76,7 +76,7 @@ export function IdentityBar({ onLogout, onHomeClick }: IdentityBarProps) {
 
           <NotificationBell />
 
-          <HeaderSettingsButton />
+          {user?.role === 'admin' ? <HeaderSettingsButton /> : null}
 
           <button
             type="button"
