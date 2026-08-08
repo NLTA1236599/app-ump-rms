@@ -16,6 +16,7 @@ export function DataTablePage({
   onImportFeedback,
   onDeleteMultiple,
   onDeleteAll,
+  canDeleteProjects = true,
 }: DataTableProps) {
   const table = useDataTable({ projects, onImport, onImportFeedback, onDeleteMultiple, onDeleteAll });
 
@@ -43,6 +44,9 @@ export function DataTablePage({
         onDeleteSelected={table.handleDeleteSelected}
         totalCount={projects.length}
         onDeleteAll={table.handleDeleteAll}
+        canDeleteProjects={canDeleteProjects}
+        visibleColumns={table.visibleColumns}
+        onVisibleColumnsChange={table.setVisibleColumns}
       />
 
       <DataTableGrid
@@ -55,6 +59,7 @@ export function DataTablePage({
         activeFilterColumn={table.activeFilterColumn}
         currentPage={table.currentPage}
         totalPages={table.totalPages}
+        visibleColumns={table.visibleColumns}
         onSelectAll={table.handleSelectAll}
         onSelectOne={table.handleSelectOne}
         onToggleFilter={table.toggleFilter}
@@ -64,6 +69,7 @@ export function DataTablePage({
         onView={onView}
         onEdit={onEdit}
         onDelete={onDelete}
+        canDeleteProjects={canDeleteProjects}
       />
     </div>
   );

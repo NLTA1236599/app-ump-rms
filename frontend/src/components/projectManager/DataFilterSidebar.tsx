@@ -5,26 +5,41 @@ export type FilterSidebarProps = {
   projects: ResearchProject[];
   filteredCount: number;
   startYear: string;
+  academicYear: string;
   status: string;
   researchField: string;
   projectType: string;
   department: string;
   onStartYear: (v: string) => void;
+  onAcademicYear: (v: string) => void;
   onStatus: (v: string) => void;
   onResearchField: (v: string) => void;
   onProjectType: (v: string) => void;
   onDepartment: (v: string) => void;
 };
 
+function sortAcademicYearsDesc(years: string[]): string[] {
+  return [...years].sort((a, b) => {
+    const yearA = Number.parseInt(a, 10);
+    const yearB = Number.parseInt(b, 10);
+    if (!Number.isNaN(yearA) && !Number.isNaN(yearB) && yearA !== yearB) {
+      return yearB - yearA;
+    }
+    return b.localeCompare(a, 'vi');
+  });
+}
+
 export function DataFilterSidebar({
   projects,
   filteredCount,
   startYear,
+  academicYear,
   status,
   researchField,
   projectType,
   department,
   onStartYear,
+  onAcademicYear,
   onStatus,
   onResearchField,
   onProjectType,
@@ -37,6 +52,16 @@ export function DataFilterSidebar({
         .filter((y): y is string => Boolean(y))
     )
   ).sort((a, b) => Number(b) - Number(a));
+
+  const academicYears = sortAcademicYearsDesc(
+    Array.from(
+      new Set(
+        projects
+          .map((p) => p.acceptanceAcademicYear?.trim())
+          .filter((y): y is string => Boolean(y)),
+      ),
+    ),
+  );
 
   const departments = Array.from(new Set(projects.map((p) => p.department))).filter(Boolean).sort();
   const statuses = Array.from(new Set(projects.map((p) => p.status))).filter(Boolean).sort();
@@ -73,6 +98,38 @@ export function DataFilterSidebar({
             >
               <option value="all">Tất cả các năm bắt đầu</option>
               {years.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center text-sm font-semibold text-slate-700">
+              <svg className="mr-2 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 14l9-5-9-5-9 5 9 5z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"
+                />
+              </svg>
+              Năm học
+            </label>
+            <select
+              className="block w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-700 outline-none transition-all focus:border-blue-500 focus:ring-blue-500"
+              value={academicYear}
+              onChange={(e) => onAcademicYear(e.target.value)}
+            >
+              <option value="all">Tất cả năm học</option>
+              {academicYears.map((y) => (
                 <option key={y} value={y}>
                   {y}
                 </option>

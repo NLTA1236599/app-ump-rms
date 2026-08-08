@@ -12,17 +12,31 @@ function mapRow(headers: string[], row: unknown[]): Partial<ResearchProject> {
     if (val === undefined) return;
 
     if (header.includes('số hợp đồng')) p.contractId = val ? String(val) : '';
+    else if (header.includes('phụ lục')) p.contractAppendix = val ? String(val) : '';
     else if (header.includes('ngày ký')) p.contractDate = val ? String(val) : '';
     else if (header.includes('tên đề tài')) p.title = val ? String(val) : '';
-    else if (header.includes('chủ nhiệm')) p.leadAuthor = val ? String(val) : '';
+    else if (header.includes('chi tiết chủ nhiệm')) {
+      /* structured text kept for display; primary name still mapped below */
+    } else if (header.includes('chủ nhiệm') && !header.includes('email') && !header.includes('chi tiết'))
+      p.leadAuthor = val ? String(val) : '';
     else if (header.includes('năm sinh')) p.leadAuthorBirthYear = val ? String(val) : '';
+    else if (header.includes('email chủ nhiệm') || header === 'email cn')
+      p.principalEmail = val ? String(val) : '';
     else if (header.includes('thành viên')) p.members = val ? String(val) : '';
     else if (header.includes('lĩnh vực')) p.researchField = val ? String(val) : '';
     else if (header.includes('loại hình')) p.researchType = val ? String(val) : '';
     else if (header.includes('loại đề tài'))
       p.categories = val ? String(val).split(',').map((s) => s.trim()) : [];
     else if (header.includes('bộ môn')) p.subDepartment = val ? String(val) : '';
-    else if (header.includes('đơn vị')) p.department = val ? String(val) : '';
+    else if (header.includes('khoa') || header.includes('đơn vị')) p.department = val ? String(val) : '';
+    else if (header.includes('số gcn') || header === 'số gcn kết quả')
+      p.certificateResultNumber = val ? String(val) : '';
+    else if (header.includes('ngày cấp gcn')) p.certificateResultDate = val ? String(val) : '';
+    else if (header.includes('nơi cấp gcn'))
+      p.certificateResultIssuingAuthority = val ? String(val) : '';
+    else if (header.includes('chuyên viên') || header.includes('cv phụ trách'))
+      p.supervisorId = val ? String(val) : '';
+    else if (header.includes('ghi chú chung')) p.generalNotes = val ? String(val) : '';
     else if (header.includes('qđ xét duyệt') || header.includes('quyết định xét duyệt'))
       p.approvalDecision = val ? String(val) : '';
     else if (header.includes('qđ phê duyệt') || header.includes('quyết định phê duyệt'))
@@ -49,7 +63,8 @@ function mapRow(headers: string[], row: unknown[]): Partial<ResearchProject> {
       p.progressStatus = val ? String(val) : '';
     else if (header.includes('mã số đt')) p.projectCode = val ? String(val) : '';
     else if (header.includes('tình trạng')) p.status = val ? String(val) : '';
-    else if (header.includes('giấy chứng nhận')) p.certificateResultNumber = val ? String(val) : '';
+    else if (header.includes('giấy chứng nhận') && !p.certificateResultNumber)
+      p.certificateResultNumber = val ? String(val) : '';
     else if (header.includes('khoán') && !header.includes('không')) p.budgetLumpSum = Number(val) || 0;
     else if (header.includes('không khoán')) p.budgetNonLumpSum = Number(val) || 0;
     else if (header.includes('nguồn khác')) p.budgetOtherSources = Number(val) || 0;

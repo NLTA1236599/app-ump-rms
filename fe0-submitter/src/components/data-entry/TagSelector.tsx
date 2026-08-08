@@ -1,48 +1,47 @@
 import { PROJECT_TYPE_TAGS } from './constants.js';
-import { inputBase } from './formStyles.js';
+import { FieldLabel } from './FieldLabel.js';
+import { inputBase, inputError, selectBase, selectChevronStyle } from './formStyles.js';
 
 type TagSelectorProps = {
   selected: string[];
   otherValue: string;
-  onToggle: (tag: string) => void;
+  onChange: (tag: string) => void;
   onOtherChange: (value: string) => void;
   error?: string;
 };
 
-/** spec §6.4 */
-export function TagSelector({ selected, otherValue, onToggle, onOtherChange, error }: TagSelectorProps) {
-  const hasOther = selected.includes('Khác');
+/** Single-select dropdown for Loại đề tài */
+export function TagSelector({
+  selected,
+  otherValue,
+  onChange,
+  onOtherChange,
+  error,
+}: TagSelectorProps) {
+  const value = selected[0] ?? '';
+  const hasOther = value === 'Khác';
 
   return (
     <div id="category-tags">
-      <p className="mb-1.5 block text-xs font-medium text-slate-600">
-        Loại đề tài (Tags)
-        <span className="ml-0.5 text-red-500">*</span>
-      </p>
-      <div
-        className="flex flex-wrap justify-end gap-2"
-        role="group"
-        aria-label="Loại đề tài (Tags)"
+      <FieldLabel htmlFor="category-tag" required>
+        Loại đề tài
+      </FieldLabel>
+      <select
+        id="category-tag"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`${selectBase} pr-9 ${error ? inputError : ''}`}
+        style={selectChevronStyle}
+        aria-label="Loại đề tài"
+        aria-invalid={Boolean(error)}
       >
-        {PROJECT_TYPE_TAGS.map((tag) => {
-          const on = selected.includes(tag);
-          return (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => onToggle(tag)}
-              className={[
-                'cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-all duration-150',
-                on
-                  ? 'border border-blue-600 bg-blue-600 text-white'
-                  : 'border border-slate-200 bg-white text-slate-500 hover:border-blue-300 hover:text-blue-500',
-              ].join(' ')}
-            >
-              {tag}
-            </button>
-          );
-        })}
-      </div>
+        <option value="">— Chọn loại đề tài —</option>
+        {PROJECT_TYPE_TAGS.map((tag) => (
+          <option key={tag} value={tag}>
+            {tag}
+          </option>
+        ))}
+      </select>
       {hasOther ? (
         <div className="mt-2 animate-slideUp rounded-lg bg-blue-50 p-2">
           <input

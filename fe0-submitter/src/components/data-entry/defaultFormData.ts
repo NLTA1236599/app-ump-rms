@@ -1,4 +1,6 @@
 import { PRODUCT_ROWS } from './constants.js';
+import { createEmptyLeader } from './projectLeaders.js';
+import { createEmptyMember } from './projectMembers.js';
 import type { DataEntryFormData } from './types.js';
 
 const emptyProducts = PRODUCT_ROWS.map((row) => ({
@@ -18,7 +20,8 @@ export const defaultFormData: DataEntryFormData = {
   title: '',
   principalInvestigator: '',
   birthYear: '',
-  members: '',
+  leaders: [createEmptyLeader()],
+  members: [createEmptyMember()],
   researchFields: [],
   researchType: '',
   categoryTags: [],

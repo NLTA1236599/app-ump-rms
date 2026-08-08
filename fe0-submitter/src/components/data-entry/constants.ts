@@ -4,8 +4,6 @@ export const PROJECT_TYPE_TAGS = [
   'Loại C',
   'Loại D',
   'Sinh viên',
-  'HVCH',
-  'NCS',
   'Tự túc kinh phí',
   'Khác',
 ] as const;
@@ -74,7 +72,7 @@ export const EXECUTION_PROGRESS: { value: ExecutionProgress; label: string }[] =
   { value: 'on_time', label: 'Đúng hạn' },
   { value: 'late', label: 'Trễ hạn' },
   { value: 'extended', label: 'Gia hạn' },
-  { value: 'completed', label: 'Hoàn thành' },
+  { value: 'completed', label: 'Nghiệm thu' },
 ];
 
 export type ExecutionProgress = 'on_time' | 'late' | 'extended' | 'completed';

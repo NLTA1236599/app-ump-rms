@@ -10,6 +10,8 @@ function categoriesToPmValue(categories?: string[] | string): string | undefined
 export function mapTableToPmProjects(projects: ResearchProject[]): PmProject[] {
   return projects.map((p) => ({
     id: p.id,
+    title: p.title,
+    leadAuthor: p.leadAuthor,
     department: p.department,
     status: p.status,
     researchField: p.researchField,
@@ -18,7 +20,12 @@ export function mapTableToPmProjects(projects: ResearchProject[]): PmProject[] {
     categories: categoriesToPmValue(p.categories),
     startDate: p.startDate != null ? String(p.startDate) : null,
     endDate: p.endDate != null ? String(p.endDate) : null,
+    acceptanceAcademicYear: p.acceptanceAcademicYear,
     budget: p.budget,
+    budgetLumpSum: p.budgetLumpSum,
+    budgetNonLumpSum: p.budgetNonLumpSum,
+    budgetOtherSources: p.budgetOtherSources,
+    workflowStep: p.workflowStep,
     expectedProducts: p.expectedProducts,
     actualProducts: p.actualProducts,
   }));

@@ -87,7 +87,27 @@ export type ResearchProject = {
   principalEmail?: string;
   leadAuthorBirthYear?: string;
   leadAuthorGender?: string;
+  leaderDetails?: Array<{
+    id: string;
+    fullName: string;
+    academicTitle: string;
+    nationalId: string;
+    email: string;
+    workUnit: string;
+    projectRole: string;
+    birthYear: string;
+    addReason: '' | 'co_leader' | 'replacement';
+  }>;
   members?: string;
+  memberDetails?: Array<{
+    id: string;
+    fullName: string;
+    academicTitle: string;
+    nationalId: string;
+    email: string;
+    workUnit: string;
+    projectRole: string;
+  }>;
   department: string;
   subDepartment?: string;
   researchField: string;
@@ -127,6 +147,7 @@ export type ResearchProject = {
   isTransferred?: boolean;
   terminationReason?: string;
   supervisorId?: string;
+  generalNotes?: string;
   projectNotes?: ProjectDiscussionNote[];
   noteNotifications?: ProjectNoteNotification[];
   history?: HistoryEntry[];

@@ -68,6 +68,99 @@ export function getStatusColor(status: string): string {
 export type StatusDatum = { name: string; value: number };
 export type DepartmentDatum = { name: string; count: number; budget: number };
 export type DynamicDatum = { name: string; value: number };
+export type DonutDatum = { name: string; value: number };
+export type TrendDatum = { period: string; registered: number; completed: number };
+
+export const DONUT_TYPE_COLORS = ['#1a6ec2', '#06b6d4', '#8b5cf6', '#f59e0b', '#10b981', '#64748b'];
+export const DONUT_BUDGET_COLORS = ['#1a6ec2', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe'];
+
+export function formatBudgetShort(amount: number): string {
+  if (!Number.isFinite(amount) || amount === 0) return '0';
+  if (Math.abs(amount) >= 1_000_000_000) {
+    return `${(amount / 1_000_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} tỷ`;
+  }
+  if (Math.abs(amount) >= 1_000_000) {
+    return `${(amount / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} triệu`;
+  }
+  return amount.toLocaleString('vi-VN');
+}
+
+export function estimateProjectProgress(project: ResearchProject): number {
+  const status = String(project.status ?? '').toLowerCase();
+  if (status.includes('nghiệm thu') || status.includes('hoàn thành')) return 100;
+  if (status.includes('thanh lý')) return 100;
+  if (typeof project.workflowStep === 'number' && project.workflowStep > 0) {
+    return Math.max(0, Math.min(100, Math.round((project.workflowStep / 8) * 100)));
+  }
+  if (project.startDate && project.endDate) {
+    const start = new Date(String(project.startDate)).getTime();
+    const end = new Date(String(project.endDate)).getTime();
+    if (!Number.isNaN(start) && !Number.isNaN(end) && end > start) {
+      const ratio = (Date.now() - start) / (end - start);
+      return Math.max(0, Math.min(100, Math.round(ratio * 100)));
+    }
+  }
+  if (status.includes('đang thực hiện')) return 45;
+  if (status.includes('đăng ký')) return 10;
+  return 0;
+}
+
+export function buildProjectTypeData(filtered: ResearchProject[]): DonutDatum[] {
+  const data: Record<string, number> = {};
+  filtered.forEach((p) => {
+    const tags = parseProjectCategories(p.categories);
+    if (tags.length === 0) {
+      data['Chưa phân loại'] = (data['Chưa phân loại'] || 0) + 1;
+      return;
+    }
+    tags.forEach((tag) => {
+      data[tag] = (data[tag] || 0) + 1;
+    });
+  });
+  return Object.entries(data)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+}
+
+export function buildDepartmentBudgetTop5(filtered: ResearchProject[]): DonutDatum[] {
+  return buildDepartmentData(filtered)
+    .slice(0, 5)
+    .map((d) => ({ name: d.name, value: Number(d.budget.toFixed(2)) }));
+}
+
+export function buildTrendData(filtered: ResearchProject[]): TrendDatum[] {
+  const buckets: Record<string, { registered: number; completed: number }> = {};
+
+  const touch = (period: string) => {
+    if (!buckets[period]) buckets[period] = { registered: 0, completed: 0 };
+  };
+
+  filtered.forEach((p) => {
+    const startYear = p.startDate ? extractYearFromDate(p.startDate) : null;
+    if (startYear) {
+      touch(startYear);
+      buckets[startYear].registered += 1;
+    }
+    const status = String(p.status ?? '').toLowerCase();
+    const completed =
+      status.includes('nghiệm thu') || status.includes('hoàn thành');
+    if (completed) {
+      const year =
+        (p.acceptanceAcademicYear?.trim() &&
+          (p.acceptanceAcademicYear.match(/\d{4}/)?.[0] ?? null)) ||
+        (p.endDate ? extractYearFromDate(p.endDate) : null) ||
+        startYear;
+      if (year) {
+        touch(year);
+        buckets[year].completed += 1;
+      }
+    }
+  });
+
+  return Object.entries(buckets)
+    .map(([period, stats]) => ({ period, ...stats }))
+    .sort((a, b) => Number(a.period) - Number(b.period));
+}
 
 export function getChartYears(projects: ResearchProject[]): string[] {
   return Array.from(
@@ -94,6 +187,7 @@ export function filterProjects(
   projects: ResearchProject[],
   filters: {
     startYear: string;
+    academicYear: string;
     status: string;
     researchField: string;
     projectType: string;
@@ -110,6 +204,9 @@ export function filterProjects(
         matchYear = false;
       }
     }
+    const matchAcademicYear =
+      filters.academicYear === 'all' ||
+      (p.acceptanceAcademicYear?.trim() ?? '') === filters.academicYear;
     const matchResearchField =
       filters.researchField === 'all' || p.researchField === filters.researchField;
     const matchStatus = filters.status === 'all' || p.status === filters.status;
@@ -118,7 +215,14 @@ export function filterProjects(
       filters.projectType === 'all' ||
       parseProjectCategories(p.categories).includes(filters.projectType);
 
-    return matchYear && matchStatus && matchDepartment && matchResearchField && matchProjectType;
+    return (
+      matchYear &&
+      matchAcademicYear &&
+      matchStatus &&
+      matchDepartment &&
+      matchResearchField &&
+      matchProjectType
+    );
   });
 }
 
@@ -221,21 +325,66 @@ export type StatCardModel = {
   value: string | number;
   color: string;
   icon: string;
+  iconBg?: string;
+  iconColor?: string;
 };
 
+function umpBudgetOf(project: ResearchProject): number {
+  const lump = Number(project.budgetLumpSum) || 0;
+  const nonLump = Number(project.budgetNonLumpSum) || 0;
+  if (lump > 0 || nonLump > 0) return lump + nonLump;
+
+  const total = Number(project.budget) || 0;
+  const other = Number(project.budgetOtherSources) || 0;
+  return Math.max(0, total - other);
+}
+
 export function buildStats(filtered: ResearchProject[]): StatCardModel[] {
-  const totalBudget = filtered.reduce((acc, curr) => acc + curr.budget, 0);
-  const ongoingCount = filtered.filter((p) => p.status === ProjectStatus.ONGOING).length;
-  const completedCount = filtered.filter((p) => p.status === ProjectStatus.COMPLETED).length;
-  const extendedCount = filtered.filter(
-    (p) => p.progressStatus === ProgressStatus.EXTENDED || p.progressStatus === 'Gia hạn'
-  ).length;
+  const totalBudget = filtered.reduce((acc, curr) => acc + (Number(curr.budget) || 0), 0);
+  const umpBudget = filtered.reduce((acc, curr) => acc + umpBudgetOf(curr), 0);
+
+  const newRegistrationCount = filtered.filter((p) => {
+    const s = String(p.status).toLowerCase();
+    return p.status === ProjectStatus.NEW_REGISTRATION || s.includes('đăng ký mới');
+  }).length;
+
+  const ongoingCount = filtered.filter((p) => {
+    const s = String(p.status).toLowerCase();
+    return p.status === ProjectStatus.ONGOING || s.includes('đang thực hiện');
+  }).length;
+
+  const acceptanceCount = filtered.filter((p) => {
+    const s = String(p.status).toLowerCase();
+    return (
+      p.status === ProjectStatus.ACCEPTANCE ||
+      p.status === ProjectStatus.COMPLETED ||
+      s.includes('nghiệm thu') ||
+      s.includes('hoàn thành')
+    );
+  }).length;
+
   const overdueCount = filtered.filter((p) => {
     if (p.status === ProjectStatus.OVERDUE) return true;
-    const isPastEnd = p.endDate ? new Date(p.endDate) < new Date() : false;
+    const s = String(p.status).toLowerCase();
+    if (s.includes('trễ hạn') || s.includes('quá hạn')) return true;
+    const isPastEnd = p.endDate ? new Date(String(p.endDate)) < new Date() : false;
     const isNotFinished =
-      p.status !== ProjectStatus.COMPLETED && p.status !== ProjectStatus.LIQUIDATED;
+      p.status !== ProjectStatus.COMPLETED &&
+      p.status !== ProjectStatus.LIQUIDATED &&
+      !s.includes('nghiệm thu') &&
+      !s.includes('hoàn thành') &&
+      !s.includes('thanh lý');
     return isPastEnd && isNotFinished;
+  }).length;
+
+  const extendedCount = filtered.filter((p) => {
+    const progress = String(p.progressStatus ?? '').toLowerCase();
+    const status = String(p.status ?? '').toLowerCase();
+    return (
+      progress.includes('gia hạn') ||
+      status.includes('gia hạn') ||
+      p.progressStatus === ProgressStatus.EXTENDED
+    );
   }).length;
 
   return [
@@ -243,37 +392,65 @@ export function buildStats(filtered: ResearchProject[]): StatCardModel[] {
       label: 'Tổng số đề tài',
       value: filtered.length,
       color: 'bg-blue-600',
+      iconBg: 'bg-blue-100',
+      iconColor: 'text-[#1a6ec2]',
       icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
     },
     {
-      label: 'Ngân sách tổng (VNĐ)',
-      value: totalBudget.toLocaleString('vi-VN'),
+      label: 'Tổng kinh phí thực hiện',
+      value: `${formatBudgetShort(totalBudget)} VNĐ`,
       color: 'bg-indigo-600',
+      iconBg: 'bg-purple-100',
+      iconColor: 'text-purple-600',
       icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
     },
     {
-      label: 'Đang thực hiện',
-      value: ongoingCount,
-      color: 'bg-amber-500',
-      icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+      label: 'Tổng kinh phí nguồn ĐHYD',
+      value: `${formatBudgetShort(umpBudget)} VNĐ`,
+      color: 'bg-cyan-600',
+      iconBg: 'bg-cyan-100',
+      iconColor: 'text-cyan-700',
+      icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
     },
     {
-      label: 'Đã nghiệm thu',
-      value: completedCount,
+      label: 'Đề tài đăng ký mới',
+      value: newRegistrationCount,
+      color: 'bg-sky-500',
+      iconBg: 'bg-sky-100',
+      iconColor: 'text-sky-600',
+      icon: 'M12 4v16m8-8H4',
+    },
+    {
+      label: 'Đề tài đang thực hiện',
+      value: ongoingCount,
+      color: 'bg-amber-500',
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-500',
+      icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+    },
+    {
+      label: 'Đề tài nghiệm thu',
+      value: acceptanceCount,
       color: 'bg-emerald-500',
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-500',
       icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
     },
     {
-      label: 'Gia hạn',
-      value: extendedCount,
-      color: 'bg-purple-500',
-      icon: 'M13 5l7 7-7 7M5 5l7 7-7 7',
-    },
-    {
-      label: 'Trễ hạn',
+      label: 'Đề tài trễ hạn',
       value: overdueCount,
       color: 'bg-red-500',
+      iconBg: 'bg-red-100',
+      iconColor: 'text-red-500',
       icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+    },
+    {
+      label: 'Đề tài gia hạn',
+      value: extendedCount,
+      color: 'bg-violet-500',
+      iconBg: 'bg-violet-100',
+      iconColor: 'text-violet-600',
+      icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
     },
   ];
 }

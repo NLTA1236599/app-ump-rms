@@ -1,3 +1,4 @@
+import { ColumnVisibilityDropdown } from './ColumnVisibilityDropdown.js';
 import { PAGE_SIZE_OPTIONS } from './constants.js';
 import {
   ArrowDownTrayIcon,
@@ -49,6 +50,9 @@ type ActionButtonRowProps = {
   onDeleteSelected: () => void;
   totalCount: number;
   onDeleteAll: () => void;
+  canDeleteProjects?: boolean;
+  visibleColumns: Record<string, boolean>;
+  onVisibleColumnsChange: (visible: Record<string, boolean>) => void;
 };
 
 export function ActionButtonRow({
@@ -62,6 +66,9 @@ export function ActionButtonRow({
   onDeleteSelected,
   totalCount,
   onDeleteAll,
+  canDeleteProjects = true,
+  visibleColumns,
+  onVisibleColumnsChange,
 }: ActionButtonRowProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -96,17 +103,19 @@ export function ActionButtonRow({
         <ArrowDownTrayIcon className="h-4 w-4" /> XUẤT EXCEL
       </button>
 
-      <button
-        type="button"
-        onClick={onReset}
-        className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2
-                   text-xs font-black uppercase tracking-widest text-red-600 transition-colors
-                   hover:bg-red-100"
-      >
-        RESET
-      </button>
+      {canDeleteProjects ? (
+        <button
+          type="button"
+          onClick={onReset}
+          className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2
+                     text-xs font-black uppercase tracking-widest text-red-600 transition-colors
+                     hover:bg-red-100"
+        >
+          RESET
+        </button>
+      ) : null}
 
-      {selectedCount > 0 && (
+      {canDeleteProjects && selectedCount > 0 && (
         <button
           type="button"
           onClick={onDeleteSelected}
@@ -118,7 +127,7 @@ export function ActionButtonRow({
         </button>
       )}
 
-      {totalCount > 0 && (
+      {canDeleteProjects && totalCount > 0 && (
         <button
           type="button"
           onClick={onDeleteAll}
@@ -129,6 +138,11 @@ export function ActionButtonRow({
           XÓA TẤT CẢ ({totalCount})
         </button>
       )}
+
+      <ColumnVisibilityDropdown
+        visibleColumns={visibleColumns}
+        onChange={onVisibleColumnsChange}
+      />
     </div>
   );
 }
@@ -178,6 +192,9 @@ type DataTableToolbarProps = {
   onDeleteSelected: () => void;
   totalCount: number;
   onDeleteAll: () => void;
+  canDeleteProjects?: boolean;
+  visibleColumns: Record<string, boolean>;
+  onVisibleColumnsChange: (visible: Record<string, boolean>) => void;
 };
 
 export function DataTableToolbar(props: DataTableToolbarProps) {
@@ -202,6 +219,9 @@ export function DataTableToolbar(props: DataTableToolbarProps) {
         onDeleteSelected={props.onDeleteSelected}
         totalCount={props.totalCount}
         onDeleteAll={props.onDeleteAll}
+        canDeleteProjects={props.canDeleteProjects}
+        visibleColumns={props.visibleColumns}
+        onVisibleColumnsChange={props.onVisibleColumnsChange}
       />
       <PageSizeRow pageSize={props.pageSize} onChange={props.onPageSizeChange} />
     </div>

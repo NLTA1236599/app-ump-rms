@@ -1,9 +1,10 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { DEFAULT_PAGE_SIZE } from './constants.js';
 import { exportProjectsToExcel } from './excelExport.js';
 import { parseExcelFile } from './excelImport.js';
 import { filterProjects } from './filterProjects.js';
+import { loadVisibleColumns, saveVisibleColumns } from './tableColumns.js';
 import type { ColumnFilters, DataTableProps, ProjectStatus } from './types.js';
 
 export function useDataTable({
@@ -24,7 +25,15 @@ export function useDataTable({
   const [columnFilters, setColumnFilters] = useState<ColumnFilters>({});
   const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [visibleColumns, setVisibleColumnsState] = useState<Record<string, boolean>>(
+    () => loadVisibleColumns(),
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const setVisibleColumns = useCallback((next: Record<string, boolean>) => {
+    setVisibleColumnsState(next);
+    saveVisibleColumns(next);
+  }, []);
 
   const filteredProjects = useMemo(
     () =>
@@ -153,7 +162,7 @@ export function useDataTable({
     e.target.value = '';
   };
 
-  const exportExcel = () => exportProjectsToExcel(filteredProjects);
+  const exportExcel = () => exportProjectsToExcel(filteredProjects, visibleColumns);
 
   return {
     contractIdSearch,
@@ -164,6 +173,8 @@ export function useDataTable({
     columnFilters,
     activeFilterColumn,
     selectedIds,
+    visibleColumns,
+    setVisibleColumns,
     fileInputRef,
     filteredProjects,
     paginatedProjects,

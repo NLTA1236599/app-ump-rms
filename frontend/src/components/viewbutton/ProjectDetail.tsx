@@ -91,9 +91,18 @@ function formatVND(value?: number): string {
   return `${value.toLocaleString('vi-VN')} VNĐ`;
 }
 
-function parseMembers(raw?: string): string[] {
+function parseMembers(
+  raw?: string,
+  memberDetails?: Array<{ fullName?: string }>,
+): string[] {
+  if (Array.isArray(memberDetails) && memberDetails.length > 0) {
+    const names = memberDetails
+      .map((m) => m.fullName?.trim())
+      .filter((name): name is string => Boolean(name));
+    if (names.length > 0) return names;
+  }
   return (raw ?? '')
-    .split(',')
+    .split(/[,;\n]+/)
     .map((s) => s.trim())
     .filter(Boolean);
 }
@@ -899,7 +908,7 @@ function ProjectNoteThread({
   const filterOptions = useMemo(() => {
     const names = new Set<string>();
     if (project.leadAuthor) names.add(project.leadAuthor);
-    for (const member of parseMembers(project.members)) names.add(member);
+    for (const member of parseMembers(project.members, project.memberDetails)) names.add(member);
     for (const note of notes) {
       if (note.author) names.add(note.author);
     }
@@ -1202,7 +1211,10 @@ export function ProjectDetail({
 
   const currentStep = localProject.workflowStep ?? 1;
   const completionPct = Math.round((currentStep / WORKFLOW_STEPS.length) * 100);
-  const members = useMemo(() => parseMembers(localProject.members), [localProject.members]);
+  const members = useMemo(
+    () => parseMembers(localProject.members, localProject.memberDetails),
+    [localProject.members, localProject.memberDetails],
+  );
   const category = categoryLabel(localProject.categories);
 
   const persistProject = useCallback(

@@ -1,90 +1,344 @@
 import * as XLSX from 'xlsx';
 
 import { formatDate, getAge } from './formatDate.js';
-import type { ResearchProject } from './types.js';
+import type { ProjectLeader, ProjectMember, ResearchProject } from './types.js';
 
 type ExportColumn = {
   header: string;
   ml: number;
+  /** Maps to `TABLE_COLUMNS` id; omit for always-exported columns (e.g. STT). */
+  columnId?: string;
   value: (p: ResearchProject, i: number) => string | number;
 };
 
+function formatMemberDetails(members?: ProjectMember[]): string {
+  if (!members?.length) return '';
+  return members
+    .map((m) => {
+      const parts = [
+        m.fullName,
+        m.academicTitle && `HH/HV: ${m.academicTitle}`,
+        m.nationalId && `CCCD: ${m.nationalId}`,
+        m.email && `Email: ${m.email}`,
+        m.workUnit && `ĐV: ${m.workUnit}`,
+        m.projectRole && `Vai trò: ${m.projectRole}`,
+      ].filter(Boolean);
+      return parts.join(' | ');
+    })
+    .join('; ');
+}
+
+function formatLeaderDetails(leaders?: ProjectLeader[]): string {
+  if (!leaders?.length) return '';
+  return leaders
+    .map((l, index) => {
+      const reason =
+        l.addReason === 'co_leader'
+          ? 'Đồng chủ nhiệm'
+          : l.addReason === 'replacement'
+            ? 'Thay đổi chủ nhiệm'
+            : index === 0
+              ? 'Chủ nhiệm chính'
+              : undefined;
+      const parts = [
+        l.fullName,
+        reason && `(${reason})`,
+        l.academicTitle && `HH/HV: ${l.academicTitle}`,
+        l.birthYear && `NS: ${l.birthYear}`,
+        l.nationalId && `CCCD: ${l.nationalId}`,
+        l.email && `Email: ${l.email}`,
+        l.workUnit && `ĐV: ${l.workUnit}`,
+        l.projectRole && `Vai trò: ${l.projectRole}`,
+      ].filter(Boolean);
+      return parts.join(' | ');
+    })
+    .join('; ');
+}
+
+/** Column order follows Data Entry form sections §1–§8 for Excel download parity. */
 const EXPORT_COLUMNS: ExportColumn[] = [
   { header: 'Số thứ tự', ml: 5, value: (_, i) => i + 1 },
-  { header: 'Số hợp đồng', ml: 20, value: (p) => (p.contractId ? String(p.contractId) : '') },
+  // §1
   {
-    header: 'Giấy chứng nhận đăng ký kết quả',
-    ml: 30,
-    value: (p) => {
-      const parts: string[] = [];
-      if (p.certificateResultNumber) parts.push(`Số: ${p.certificateResultNumber}`);
-      if (p.certificateResultDate) parts.push(`Ngày: ${formatDate(p.certificateResultDate)}`);
-      if (p.certificateResultIssuingAuthority)
-        parts.push(`Nơi cấp: ${p.certificateResultIssuingAuthority}`);
-      return parts.join('\n');
-    },
+    columnId: 'contractId',
+    header: 'Số hợp đồng',
+    ml: 18,
+    value: (p) => (p.contractId ? String(p.contractId) : ''),
   },
-  { header: 'Tên đề tài', ml: 40, value: (p) => p.title },
-  { header: 'Chủ nhiệm đề tài', ml: 20, value: (p) => p.leadAuthor },
-  { header: 'Năm sinh', ml: 10, value: (p) => p.leadAuthorBirthYear || '' },
-  { header: 'Tuổi', ml: 8, value: (p) => getAge(p.leadAuthorBirthYear) },
-  { header: 'Thành viên NC', ml: 30, value: (p) => p.members || '' },
-  { header: 'Lĩnh vực NC', ml: 15, value: (p) => p.researchField || '' },
-  { header: 'Loại hình nghiên cứu', ml: 15, value: (p) => p.researchType || '' },
   {
+    columnId: 'contractAppendix',
+    header: 'Phụ lục hợp đồng',
+    ml: 16,
+    value: (p) => p.contractAppendix || '',
+  },
+  { columnId: 'projectCode', header: 'Mã số ĐT', ml: 14, value: (p) => p.projectCode || '' },
+  {
+    columnId: 'certificateResultNumber',
+    header: 'Số GCN kết quả',
+    ml: 16,
+    value: (p) => p.certificateResultNumber || '',
+  },
+  {
+    columnId: 'certificateResultNumber',
+    header: 'Ngày cấp GCN',
+    ml: 12,
+    value: (p) => formatDate(p.certificateResultDate),
+  },
+  {
+    columnId: 'certificateResultNumber',
+    header: 'Nơi cấp GCN',
+    ml: 18,
+    value: (p) => p.certificateResultIssuingAuthority || '',
+  },
+  // §2
+  { columnId: 'title', header: 'Tên đề tài', ml: 40, value: (p) => p.title },
+  { columnId: 'leadAuthor', header: 'Chủ nhiệm đề tài', ml: 20, value: (p) => p.leadAuthor },
+  {
+    columnId: 'leaderDetails',
+    header: 'Chi tiết chủ nhiệm',
+    ml: 40,
+    value: (p) =>
+      formatLeaderDetails(p.leaderDetails) ||
+      [p.leadAuthor, p.leadAuthorBirthYear && `NS: ${p.leadAuthorBirthYear}`]
+        .filter(Boolean)
+        .join(' | '),
+  },
+  {
+    columnId: 'leadAuthorBirthYear',
+    header: 'Năm sinh',
+    ml: 10,
+    value: (p) => p.leadAuthorBirthYear || '',
+  },
+  { columnId: 'age', header: 'Tuổi', ml: 8, value: (p) => getAge(p.leadAuthorBirthYear) },
+  {
+    columnId: 'leadAuthorGender',
+    header: 'Giới tính',
+    ml: 8,
+    value: (p) => p.leadAuthorGender || '',
+  },
+  {
+    columnId: 'principalEmail',
+    header: 'Email chủ nhiệm',
+    ml: 22,
+    value: (p) => p.principalEmail || '',
+  },
+  {
+    columnId: 'members',
+    header: 'Thành viên NC',
+    ml: 35,
+    value: (p) => formatMemberDetails(p.memberDetails) || p.members || '',
+  },
+  {
+    columnId: 'researchField',
+    header: 'Lĩnh vực nghiên cứu',
+    ml: 18,
+    value: (p) => p.researchField || '',
+  },
+  {
+    columnId: 'researchType',
+    header: 'Loại hình nghiên cứu',
+    ml: 16,
+    value: (p) => p.researchType || '',
+  },
+  {
+    columnId: 'categories',
     header: 'Loại đề tài',
-    ml: 20,
+    ml: 18,
     value: (p) => (Array.isArray(p.categories) ? p.categories.join(', ') : p.categories || ''),
   },
-  { header: 'Bộ môn', ml: 15, value: (p) => p.subDepartment || '' },
-  { header: 'Khoa/Đơn vị', ml: 15, value: (p) => p.department || '' },
-  { header: 'Quyết định xét duyệt', ml: 15, value: (p) => p.approvalDecision || '' },
-  { header: 'Quyết định phê duyệt', ml: 15, value: (p) => p.authorizationDecision || '' },
-  { header: 'Quyết định giám định', ml: 15, value: (p) => p.appraisalDecision || '' },
-  { header: 'Quyết định nghiệm thu', ml: 15, value: (p) => p.acceptanceDecision || '' },
-  { header: 'Kinh phí thực hiện', ml: 15, value: (p) => p.budget },
-  { header: 'Kinh phí khoán', ml: 15, value: (p) => p.budgetLumpSum || 0 },
-  { header: 'Kinh phí không khoán', ml: 15, value: (p) => p.budgetNonLumpSum || 0 },
-  { header: 'Nguồn khác', ml: 15, value: (p) => p.budgetOtherSources || 0 },
-  { header: 'Kinh phí Cấp đợt 1', ml: 12, value: (p) => p.budgetBatch1 || 0 },
-  { header: 'Kinh phí Cấp đợt 2', ml: 12, value: (p) => p.budgetBatch2 || 0 },
-  { header: 'Kinh phí Cấp đợt 3', ml: 12, value: (p) => p.budgetBatch3 || 0 },
-  { header: 'Thời gian thực hiện', ml: 12, value: (p) => p.duration || '' },
-  { header: 'Thời gian Bắt đầu', ml: 12, value: (p) => formatDate(p.startDate) },
-  { header: 'Thời gian Kết thúc', ml: 12, value: (p) => formatDate(p.endDate) },
-  { header: 'Thời gian Gia hạn', ml: 12, value: (p) => formatDate(p.extensionDate) },
-  { header: 'Thời gian Báo cáo Giám định', ml: 20, value: (p) => formatDate(p.reviewReportingDate) },
-  { header: 'Thời gian Báo cáo tiến độ 1', ml: 20, value: (p) => formatDate(p.progressReportDate1) },
-  { header: 'Thời gian Báo cáo tiến độ 2', ml: 20, value: (p) => formatDate(p.progressReportDate2) },
-  { header: 'Thời gian Báo cáo tiến độ 3', ml: 20, value: (p) => formatDate(p.progressReportDate3) },
-  { header: 'Thời gian Báo cáo tiến độ 4', ml: 20, value: (p) => formatDate(p.progressReportDate4) },
-  { header: 'Tiến độ thực hiện', ml: 15, value: (p) => p.progressStatus || '' },
-  { header: 'Ghi chú về nộp báo cáo tiến độ', ml: 25, value: (p) => p.progressReportNote || '' },
-  { header: 'Ngày họp nghiệm thu', ml: 12, value: (p) => formatDate(p.acceptanceMeetingDate) },
-  { header: 'Đầu ra', ml: 20, value: (p) => p.outputProduct || '' },
-  { header: 'Tình trạng', ml: 15, value: (p) => p.status },
-  { header: 'Năm nghiệm thu', ml: 10, value: (p) => p.acceptanceYear || '' },
-  { header: 'Năm học nghiệm thu', ml: 12, value: (p) => p.acceptanceAcademicYear || '' },
+  { columnId: 'department', header: 'Khoa/Đơn vị', ml: 18, value: (p) => p.department || '' },
+  { columnId: 'subDepartment', header: 'Bộ môn', ml: 16, value: (p) => p.subDepartment || '' },
+  // §3
   {
+    columnId: 'approvalDecision',
+    header: 'Quyết định xét duyệt',
+    ml: 16,
+    value: (p) => p.approvalDecision || '',
+  },
+  {
+    columnId: 'authorizationDecision',
+    header: 'Quyết định phê duyệt',
+    ml: 16,
+    value: (p) => p.authorizationDecision || '',
+  },
+  {
+    columnId: 'appraisalDecision',
+    header: 'Quyết định giám định',
+    ml: 16,
+    value: (p) => p.appraisalDecision || '',
+  },
+  {
+    columnId: 'acceptanceDecision',
+    header: 'Quyết định nghiệm thu',
+    ml: 16,
+    value: (p) => p.acceptanceDecision || '',
+  },
+  // §4
+  { columnId: 'budget', header: 'Kinh phí thực hiện', ml: 14, value: (p) => p.budget },
+  { columnId: 'budgetLumpSum', header: 'Kinh phí khoán', ml: 14, value: (p) => p.budgetLumpSum || 0 },
+  {
+    columnId: 'budgetNonLumpSum',
+    header: 'Kinh phí không khoán',
+    ml: 14,
+    value: (p) => p.budgetNonLumpSum || 0,
+  },
+  {
+    columnId: 'budgetOtherSources',
+    header: 'Nguồn khác',
+    ml: 12,
+    value: (p) => p.budgetOtherSources || 0,
+  },
+  {
+    columnId: 'budgetBatch1',
+    header: 'Kinh phí Cấp đợt 1',
+    ml: 12,
+    value: (p) => p.budgetBatch1 || 0,
+  },
+  {
+    columnId: 'budgetBatch2',
+    header: 'Kinh phí Cấp đợt 2',
+    ml: 12,
+    value: (p) => p.budgetBatch2 || 0,
+  },
+  {
+    columnId: 'budgetBatch3',
+    header: 'Kinh phí Cấp đợt 3',
+    ml: 12,
+    value: (p) => p.budgetBatch3 || 0,
+  },
+  // §5
+  { columnId: 'duration', header: 'Thời gian thực hiện', ml: 12, value: (p) => p.duration || '' },
+  {
+    columnId: 'startDate',
+    header: 'Thời gian Bắt đầu',
+    ml: 12,
+    value: (p) => formatDate(p.startDate),
+  },
+  {
+    columnId: 'endDate',
+    header: 'Thời gian Kết thúc',
+    ml: 12,
+    value: (p) => formatDate(p.endDate),
+  },
+  {
+    columnId: 'extensionDate',
+    header: 'Thời gian Gia hạn',
+    ml: 12,
+    value: (p) => formatDate(p.extensionDate),
+  },
+  {
+    columnId: 'reviewReportingDate',
+    header: 'Thời gian Báo cáo Giám định',
+    ml: 18,
+    value: (p) => formatDate(p.reviewReportingDate),
+  },
+  {
+    columnId: 'progressReportDate1',
+    header: 'Thời gian Báo cáo tiến độ 1',
+    ml: 18,
+    value: (p) => formatDate(p.progressReportDate1),
+  },
+  {
+    columnId: 'progressReportDate2',
+    header: 'Thời gian Báo cáo tiến độ 2',
+    ml: 18,
+    value: (p) => formatDate(p.progressReportDate2),
+  },
+  {
+    columnId: 'progressReportDate3',
+    header: 'Thời gian Báo cáo tiến độ 3',
+    ml: 18,
+    value: (p) => formatDate(p.progressReportDate3),
+  },
+  {
+    columnId: 'progressReportDate4',
+    header: 'Thời gian Báo cáo tiến độ 4',
+    ml: 18,
+    value: (p) => formatDate(p.progressReportDate4),
+  },
+  {
+    columnId: 'progressStatus',
+    header: 'Tiến độ thực hiện',
+    ml: 14,
+    value: (p) => p.progressStatus || '',
+  },
+  {
+    columnId: 'progressReportNote',
+    header: 'Ghi chú về nộp báo cáo tiến độ',
+    ml: 24,
+    value: (p) => p.progressReportNote || '',
+  },
+  {
+    columnId: 'acceptanceMeetingDate',
+    header: 'Ngày họp nghiệm thu',
+    ml: 14,
+    value: (p) => formatDate(p.acceptanceMeetingDate),
+  },
+  // §6
+  { columnId: 'outputProduct', header: 'Đầu ra', ml: 20, value: (p) => p.outputProduct || '' },
+  { columnId: 'status', header: 'Tình trạng', ml: 14, value: (p) => p.status },
+  {
+    columnId: 'acceptanceYear',
+    header: 'Năm nghiệm thu',
+    ml: 10,
+    value: (p) => p.acceptanceYear || '',
+  },
+  {
+    columnId: 'acceptanceAcademicYear',
+    header: 'Năm học nghiệm thu',
+    ml: 12,
+    value: (p) => p.acceptanceAcademicYear || '',
+  },
+  // §7
+  {
+    columnId: 'expectedProducts',
     header: 'Sản phẩm NC cam kết',
-    ml: 25,
+    ml: 24,
     value: (p) => (p.expectedProducts || []).map((x) => `${x.type}(${x.count})`).join('; '),
   },
   {
+    columnId: 'actualProducts',
     header: 'Sản phẩm thực tế đạt được',
-    ml: 30,
+    ml: 28,
     value: (p) => {
       const summary = (p.actualProducts || []).map((x) => `${x.type}(${x.count})`).join('; ');
       return p.actualProductDetails ? `${summary}\n${p.actualProductDetails}` : summary;
     },
   },
-  { header: 'Thời điểm nhắc', ml: 15, value: (p) => formatDate(p.reminderDate) },
-  { header: 'Thời điểm nghiệm thu', ml: 15, value: (p) => formatDate(p.acceptanceCompletionDate) },
-  { header: 'Mã số ĐT', ml: 15, value: (p) => p.projectCode || '' },
-  { header: 'Giới tính', ml: 8, value: (p) => p.leadAuthorGender || '' },
-  { header: 'Chuyển tiếp', ml: 10, value: (p) => (p.isTransferred ? 'Có' : 'Không') },
-  { header: 'Lý do thanh lý', ml: 20, value: (p) => p.terminationReason || '' },
+  // §8
   {
+    columnId: 'reminderDate',
+    header: 'Thời điểm nhắc',
+    ml: 12,
+    value: (p) => formatDate(p.reminderDate),
+  },
+  {
+    columnId: 'acceptanceCompletionDate',
+    header: 'Thời điểm nghiệm thu',
+    ml: 14,
+    value: (p) => formatDate(p.acceptanceCompletionDate),
+  },
+  {
+    columnId: 'supervisorId',
+    header: 'Chuyên viên phụ trách',
+    ml: 18,
+    value: (p) => p.supervisorId || '',
+  },
+  {
+    columnId: 'isTransferred',
+    header: 'Chuyển tiếp',
+    ml: 10,
+    value: (p) => (p.isTransferred ? 'Có' : 'Không'),
+  },
+  {
+    columnId: 'terminationReason',
+    header: 'Lý do thanh lý',
+    ml: 20,
+    value: (p) => p.terminationReason || '',
+  },
+  { columnId: 'generalNotes', header: 'Ghi chú chung', ml: 24, value: (p) => p.generalNotes || '' },
+  {
+    columnId: 'history',
     header: 'Lịch sử edit',
     ml: 30,
     value: (p) =>
@@ -94,11 +348,22 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   },
 ];
 
-export function exportProjectsToExcel(projects: ResearchProject[]): void {
-  const headers = EXPORT_COLUMNS.map((c) => c.header);
-  const dataRows = projects.map((p, i) => EXPORT_COLUMNS.map((c) => c.value(p, i)));
+function resolveExportColumns(visibleColumns?: Record<string, boolean>): ExportColumn[] {
+  if (!visibleColumns) return EXPORT_COLUMNS;
+  return EXPORT_COLUMNS.filter(
+    (col) => !col.columnId || visibleColumns[col.columnId] !== false,
+  );
+}
+
+export function exportProjectsToExcel(
+  projects: ResearchProject[],
+  visibleColumns?: Record<string, boolean>,
+): void {
+  const columns = resolveExportColumns(visibleColumns);
+  const headers = columns.map((c) => c.header);
+  const dataRows = projects.map((p, i) => columns.map((c) => c.value(p, i)));
   const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
-  ws['!cols'] = EXPORT_COLUMNS.map((c) => ({ wch: c.ml }));
+  ws['!cols'] = columns.map((c) => ({ wch: c.ml }));
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Danh sách đề tài');

@@ -3,7 +3,14 @@ import { ProjectStatus as TableProjectStatus, type ResearchProject } from '../Da
 
 import { cloneFormData } from './cloneFormData.js';
 import type { ExecutionProgress, Gender, ProjectStatus } from './constants.js';
-import { FACULTY_UNIT_OPTIONS, PRODUCT_ROWS, RESEARCH_FIELD_OPTIONS } from './constants.js';
+import {
+  FACULTY_UNIT_OPTIONS,
+  PRODUCT_ROWS,
+  PROJECT_TYPE_TAGS,
+  RESEARCH_FIELD_OPTIONS,
+} from './constants.js';
+import { leadersFromProject, primaryLeaderBirthYear, primaryLeaderName } from './projectLeaders.js';
+import { membersFromProject } from './projectMembers.js';
 import type { DataEntryFormData } from './types.js';
 
 function toFormIsoDate(value: string | number | null | undefined): string {
@@ -40,7 +47,7 @@ function mapProgressStatus(status?: string): ExecutionProgress {
   const lower = (status ?? '').toLowerCase();
   if (lower.includes('trễ')) return 'late';
   if (lower.includes('gia hạn')) return 'extended';
-  if (lower.includes('hoàn')) return 'completed';
+  if (lower.includes('nghiệm thu') || lower.includes('hoàn')) return 'completed';
   return 'on_time';
 }
 
@@ -50,13 +57,29 @@ function mapGender(gender?: string): Gender {
   return 'male';
 }
 
-function mapCategories(categories?: string[] | string): string[] {
+function parseCategoryList(categories?: string[] | string): string[] {
   if (!categories) return [];
   if (Array.isArray(categories)) return categories.filter(Boolean);
   return categories
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function mapCategories(categories?: string[] | string): string[] {
+  const raw = parseCategoryList(categories);
+  if (raw.length === 0) return [];
+
+  const known = raw.find((tag) =>
+    (PROJECT_TYPE_TAGS as readonly string[]).includes(tag),
+  );
+  return [known ?? raw[0]!];
+}
+
+function mapCategoryOther(categories?: string[] | string): string {
+  const raw = parseCategoryList(categories);
+  if (!raw.includes('Khác')) return '';
+  return raw.find((tag) => tag !== 'Khác') ?? '';
 }
 
 function mapFacultyUnits(value?: string): string[] {
@@ -81,18 +104,22 @@ function mapResearchFields(value?: string): string[] {
   if (!value?.trim()) return [];
 
   const trimmed = value.trim();
-  if (trimmed.includes(';')) {
-    return trimmed
-      .split(';')
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
+  const parts = trimmed.includes(';')
+    ? trimmed
+        .split(';')
+        .map((item) => item.trim())
+        .filter(Boolean)
+    : [trimmed];
 
-  const exact = RESEARCH_FIELD_OPTIONS.find((opt) => opt === trimmed);
+  const exact = parts.find((part) =>
+    (RESEARCH_FIELD_OPTIONS as readonly string[]).includes(part),
+  );
   if (exact) return [exact];
 
-  const matched = RESEARCH_FIELD_OPTIONS.filter((opt) => trimmed.includes(opt));
-  return matched.length ? [...matched] : [];
+  const matched = RESEARCH_FIELD_OPTIONS.find((opt) =>
+    parts.some((part) => part.includes(opt)),
+  );
+  return matched ? [matched] : [];
 }
 
 /** Maps a table row into the data-entry form shape for editing. */
@@ -101,6 +128,11 @@ export function mapTableToFormData(project: ResearchProject): DataEntryFormData 
   const expectedMap = new Map((project.expectedProducts ?? []).map((p) => [p.type, p.count]));
   const actualMap = new Map((project.actualProducts ?? []).map((p) => [p.type, p.count]));
   const categoryTags = mapCategories(project.categories);
+  const leaders = leadersFromProject(
+    project.leaderDetails,
+    project.leadAuthor,
+    project.leadAuthorBirthYear,
+  );
 
   return {
     ...base,
@@ -111,13 +143,14 @@ export function mapTableToFormData(project: ResearchProject): DataEntryFormData 
     gcnIssuedAt: toFormIsoDate(project.certificateResultDate),
     gcnPlace: project.certificateResultIssuingAuthority ?? '',
     title: project.title ?? '',
-    principalInvestigator: project.leadAuthor ?? '',
-    birthYear: project.leadAuthorBirthYear ?? '',
-    members: project.members ?? '',
+    leaders,
+    principalInvestigator: primaryLeaderName(leaders) || project.leadAuthor || '',
+    birthYear: primaryLeaderBirthYear(leaders) || project.leadAuthorBirthYear || '',
+    members: membersFromProject(project.memberDetails, project.members),
     researchFields: mapResearchFields(project.researchField),
     researchType: project.researchType ?? '',
     categoryTags,
-    categoryOther: categoryTags.includes('Khác') ? categoryTags.find((t) => t !== 'Khác') ?? '' : '',
+    categoryOther: mapCategoryOther(project.categories),
     department: project.subDepartment ?? '',
     facultyUnits: mapFacultyUnits(project.department),
     decisionReview: project.approvalDecision ?? '',
@@ -163,6 +196,6 @@ export function mapTableToFormData(project: ResearchProject): DataEntryFormData 
     supervisorId: project.supervisorId ?? '',
     transferForward: Boolean(project.isTransferred),
     liquidationReason: project.terminationReason ?? '',
-    generalNotes: '',
+    generalNotes: project.generalNotes ?? '',
   };
 }

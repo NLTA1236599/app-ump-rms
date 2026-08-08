@@ -15,21 +15,21 @@ import {
 } from 'recharts';
 import {
   BAR_COLOR_ROTATION,
-  type DepartmentDatum,
+  DONUT_BUDGET_COLORS,
+  DONUT_TYPE_COLORS,
+  type DonutDatum,
   type DynamicDatum,
-  getStatusColor,
-  type StatusDatum,
 } from './projectAnalytics.js';
 import type { DynChartType, DynYAxis } from './types.js';
-import { formatTooltipBudgetTriệu, formatTooltipDynamic } from './chartTooltipFormat.js';
+import { formatTooltipDynamic } from './chartTooltipFormat.js';
 
-export type ExpandedChartKind = 'status' | 'department' | 'dynamic' | null;
+export type ExpandedChartKind = 'projectType' | 'department' | 'dynamic' | null;
 
 export type ChartFullscreenModalProps = {
   expanded: ExpandedChartKind;
   onClose: () => void;
-  statusData: StatusDatum[];
-  departmentData: DepartmentDatum[];
+  projectTypeData: DonutDatum[];
+  departmentDonutData: DonutDatum[];
   dynamicChartData: DynamicDatum[];
   dynChartType: DynChartType;
   dynYAxis: DynYAxis;
@@ -38,8 +38,8 @@ export type ChartFullscreenModalProps = {
 export function ChartFullscreenModal({
   expanded,
   onClose,
-  statusData,
-  departmentData,
+  projectTypeData,
+  departmentDonutData,
   dynamicChartData,
   dynChartType,
   dynYAxis,
@@ -61,13 +61,13 @@ export function ChartFullscreenModal({
       >
         <div className="flex items-center justify-between border-b border-slate-100 p-6">
           <h2 className="flex items-center text-2xl font-bold text-slate-800">
-            {expanded === 'status' ? (
+            {expanded === 'projectType' ? (
               <>
-                <span className="mr-3 h-8 w-2 rounded-full bg-blue-600" /> Trạng thái đề tài
+                <span className="mr-3 h-8 w-2 rounded-full bg-[#1a6ec2]" /> Phân bổ theo Loại đề tài
               </>
             ) : expanded === 'department' ? (
               <>
-                <span className="mr-3 h-8 w-2 rounded-full bg-emerald-600" /> Kinh phí theo Đơn vị (Triệu VNĐ)
+                <span className="mr-3 h-8 w-2 rounded-full bg-[#1558a8]" /> Kinh phí theo Đơn vị (Top 5)
               </>
             ) : (
               <>
@@ -87,70 +87,54 @@ export function ChartFullscreenModal({
           </button>
         </div>
         <div className="flex-1 p-8">
-          {expanded === 'status' ? (
+          {expanded === 'projectType' ? (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={statusData}
+                  data={projectTypeData}
                   cx="50%"
                   cy="50%"
                   innerRadius={120}
                   outerRadius={200}
-                  paddingAngle={8}
+                  paddingAngle={4}
                   dataKey="value"
                   label={({ name, value }) => `${name}: ${value}`}
                 >
-                  {statusData.map((entry, index) => (
-                    <Cell key={`fs-${index}`} fill={getStatusColor(entry.name)} />
+                  {projectTypeData.map((_, index) => (
+                    <Cell key={`fs-pt-${index}`} fill={DONUT_TYPE_COLORS[index % DONUT_TYPE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                />
+                <Tooltip contentStyle={{ borderRadius: '12px', fontSize: '12px' }} />
                 <Legend verticalAlign="bottom" height={40} wrapperStyle={{ fontSize: '14px' }} />
               </PieChart>
             </ResponsiveContainer>
           ) : null}
           {expanded === 'department' ? (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={departmentData}
-                layout="vertical"
-                margin={{ top: 0, right: 30, left: 10, bottom: 0 }}
-                barCategoryGap="25%"
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical horizontal />
-                <XAxis
-                  type="number"
-                  tick={{ fontSize: 14, fill: '#64748b' }}
-                  tickFormatter={(val) => new Intl.NumberFormat('vi-VN').format(val)}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={200}
-                  tick={{ fontSize: 14, fill: '#475569', textAnchor: 'end' }}
-                  tickMargin={16}
-                />
+              <PieChart>
+                <Pie
+                  data={departmentDonutData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={120}
+                  outerRadius={200}
+                  paddingAngle={2}
+                  dataKey="value"
+                  label={({ name, value }) => `${name}: ${value}`}
+                >
+                  {departmentDonutData.map((_, index) => (
+                    <Cell
+                      key={`fs-dep-${index}`}
+                      fill={DONUT_BUDGET_COLORS[index % DONUT_BUDGET_COLORS.length]}
+                    />
+                  ))}
+                </Pie>
                 <Tooltip
-                  cursor={{ fill: 'rgba(241, 245, 249, 0.4)' }}
-                  contentStyle={{
-                    borderRadius: '12px',
-                    border: 'none',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                  }}
-                  formatter={formatTooltipBudgetTriệu}
-                  offset={24}
-                  allowEscapeViewBox={{ x: true, y: true }}
+                  formatter={(value) => [`${value ?? 0} triệu VNĐ`, 'Kinh phí']}
+                  contentStyle={{ borderRadius: '12px', fontSize: '12px' }}
                 />
-                <Bar dataKey="budget" radius={[0, 8, 8, 0]} name="Kinh phí">
-                  {departmentData.map((entry, index) => {
-                    const maxBudget = departmentData[0]?.budget || 1;
-                    const intensity = Math.max(0, entry.budget / maxBudget);
-                    return <Cell key={`fb-${index}`} fill={`rgba(37, 99, 235, ${0.4 + 0.6 * intensity})`} />;
-                  })}
-                </Bar>
-              </BarChart>
+                <Legend verticalAlign="bottom" height={40} wrapperStyle={{ fontSize: '14px' }} />
+              </PieChart>
             </ResponsiveContainer>
           ) : null}
           {expanded === 'dynamic' ? (
@@ -179,17 +163,12 @@ export function ChartFullscreenModal({
                     }
                   />
                   <Tooltip
-                    cursor={{ fill: '#f8fafc' }}
-                    contentStyle={{
-                      borderRadius: '16px',
-                      border: 'none',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                    }}
                     formatter={(v) => formatTooltipDynamic(v, dynYAxis, yLabel)}
+                    contentStyle={{ borderRadius: '12px', border: 'none' }}
                   />
-                  <Bar dataKey="value" name={yLabel} radius={[8, 8, 0, 0]}>
+                  <Bar dataKey="value" name={yLabel} radius={[6, 6, 0, 0]}>
                     {dynamicChartData.map((_, index) => (
-                      <Cell key={`db-${index}`} fill={BAR_COLOR_ROTATION[index % BAR_COLOR_ROTATION.length]} />
+                      <Cell key={`c-${index}`} fill={BAR_COLOR_ROTATION[index % BAR_COLOR_ROTATION.length]} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -213,48 +192,38 @@ export function ChartFullscreenModal({
                     }
                   />
                   <Tooltip
-                    contentStyle={{
-                      borderRadius: '16px',
-                      border: 'none',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                    }}
                     formatter={(v) => formatTooltipDynamic(v, dynYAxis, yLabel)}
+                    contentStyle={{ borderRadius: '12px', border: 'none' }}
                   />
                   <Line
                     type="monotone"
                     dataKey="value"
                     stroke="#9333ea"
-                    strokeWidth={4}
-                    dot={{ r: 6, fill: '#9333ea', strokeWidth: 2, stroke: '#fff' }}
-                    activeDot={{ r: 8, strokeWidth: 0, stroke: '#fff' }}
+                    strokeWidth={3}
                     name={yLabel}
                   />
                 </LineChart>
               ) : (
-                <PieChart margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                <PieChart>
                   <Pie
                     data={dynamicChartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={130}
-                    outerRadius={220}
+                    innerRadius={120}
+                    outerRadius={200}
                     paddingAngle={4}
                     dataKey="value"
                     nameKey="name"
                   >
                     {dynamicChartData.map((_, index) => (
-                      <Cell key={`dp-${index}`} fill={BAR_COLOR_ROTATION[index % BAR_COLOR_ROTATION.length]} />
+                      <Cell key={`p-${index}`} fill={BAR_COLOR_ROTATION[index % BAR_COLOR_ROTATION.length]} />
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{
-                      borderRadius: '16px',
-                      border: 'none',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                    }}
                     formatter={(v) => formatTooltipDynamic(v, dynYAxis, yLabel)}
+                    contentStyle={{ borderRadius: '12px', border: 'none' }}
                   />
-                  <Legend verticalAlign="bottom" height={40} wrapperStyle={{ fontSize: '14px' }} />
+                  <Legend verticalAlign="bottom" height={40} />
                 </PieChart>
               )}
             </ResponsiveContainer>

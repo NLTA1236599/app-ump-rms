@@ -1,39 +1,34 @@
 import { RESEARCH_FIELD_OPTIONS } from './constants.js';
+import { FieldLabel } from './FieldLabel.js';
+import { selectBase, selectChevronStyle } from './formStyles.js';
 
 type ResearchFieldSelectorProps = {
   selected: string[];
-  onToggle: (field: string) => void;
+  onChange: (field: string) => void;
 };
 
-/** Multi-choice selector for Lĩnh vực NC */
-export function ResearchFieldSelector({ selected, onToggle }: ResearchFieldSelectorProps) {
+/** Single-select dropdown for Lĩnh vực nghiên cứu */
+export function ResearchFieldSelector({ selected, onChange }: ResearchFieldSelectorProps) {
+  const value = selected[0] ?? '';
+
   return (
     <div id="research-fields">
-      <p className="mb-1.5 block text-xs font-medium text-slate-600">Lĩnh vực NC</p>
-      <div
-        className="flex flex-wrap gap-2"
-        role="group"
-        aria-label="Lĩnh vực NC"
+      <FieldLabel htmlFor="research-field">Lĩnh vực nghiên cứu</FieldLabel>
+      <select
+        id="research-field"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`${selectBase} pr-9`}
+        style={selectChevronStyle}
+        aria-label="Lĩnh vực nghiên cứu"
       >
-        {RESEARCH_FIELD_OPTIONS.map((field) => {
-          const on = selected.includes(field);
-          return (
-            <button
-              key={field}
-              type="button"
-              onClick={() => onToggle(field)}
-              className={[
-                'cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-all duration-150',
-                on
-                  ? 'border border-blue-600 bg-blue-600 text-white'
-                  : 'border border-slate-200 bg-white text-slate-500 hover:border-blue-300 hover:text-blue-500',
-              ].join(' ')}
-            >
-              {field}
-            </button>
-          );
-        })}
-      </div>
+        <option value="">— Chọn lĩnh vực nghiên cứu —</option>
+        {RESEARCH_FIELD_OPTIONS.map((field) => (
+          <option key={field} value={field}>
+            {field}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

@@ -128,12 +128,59 @@ export function InfoSections({
             )}
           </div>
         </div>
-        {field('Chủ nhiệm', 'leadAuthor')}
+        {data.leaderDetails?.length && !isEditing ? (
+          <div className="md:col-span-2 lg:col-span-4">
+            <p className="text-[11px] font-bold uppercase tracking-tight text-slate-500">
+              Chủ nhiệm đề tài
+            </p>
+            <div className="mt-2 space-y-2">
+              {data.leaderDetails.map((l, index) => {
+                const reasonLabel =
+                  l.addReason === 'co_leader'
+                    ? 'Đồng chủ nhiệm'
+                    : l.addReason === 'replacement'
+                      ? 'Thay đổi chủ nhiệm'
+                      : index === 0
+                        ? 'Chủ nhiệm chính'
+                        : undefined;
+                return (
+                  <div
+                    key={l.id}
+                    className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs
+                               text-slate-700"
+                  >
+                    <p className="font-semibold text-slate-800">
+                      {[l.fullName, l.academicTitle].filter(Boolean).join(' — ') || '—'}
+                      {reasonLabel ? (
+                        <span className="ml-2 font-medium text-blue-600">({reasonLabel})</span>
+                      ) : null}
+                    </p>
+                    <p className="mt-1 text-slate-500">
+                      {[
+                        l.projectRole && `Vai trò: ${l.projectRole}`,
+                        l.birthYear && `Năm sinh: ${l.birthYear}`,
+                        l.workUnit && `Đơn vị: ${l.workUnit}`,
+                        l.nationalId && `CCCD: ${l.nationalId}`,
+                        l.email && `Email: ${l.email}`,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ') || '—'}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <>
+            {field('Chủ nhiệm', 'leadAuthor')}
+            {field('Năm sinh', 'leadAuthorBirthYear')}
+          </>
+        )}
         {field('Giới tính', 'leadAuthorGender')}
-        {field('Năm sinh', 'leadAuthorBirthYear')}
         {field('Khoa/Đơn vị', 'department')}
         {field('Bộ môn', 'subDepartment')}
-        {field('Lĩnh vực NC', 'researchField')}
+        {field('Lĩnh vực nghiên cứu', 'researchField')}
         {field('Loại hình NC', 'researchType')}
         <div>
           <p className="text-[11px] font-bold uppercase tracking-tight text-slate-500">

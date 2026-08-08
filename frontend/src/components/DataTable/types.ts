@@ -19,6 +19,29 @@ export type ProductEntry = {
   count: number;
 };
 
+export type ProjectMember = {
+  id: string;
+  fullName: string;
+  academicTitle: string;
+  nationalId: string;
+  email: string;
+  workUnit: string;
+  projectRole: string;
+};
+
+export type ProjectLeader = {
+  id: string;
+  fullName: string;
+  academicTitle: string;
+  nationalId: string;
+  email: string;
+  workUnit: string;
+  projectRole: string;
+  birthYear: string;
+  /** Empty for primary leader; `co_leader` | `replacement` for additional leaders. */
+  addReason: '' | 'co_leader' | 'replacement';
+};
+
 export type HistoryFieldChange = {
   field: string;
   label: string;
@@ -92,7 +115,11 @@ export type ResearchProject = {
   principalEmail?: string;
   leadAuthorBirthYear?: string;
   leadAuthorGender?: string;
+  /** Structured leader rows; `leadAuthor` / `leadAuthorBirthYear` stay in sync with the primary leader. */
+  leaderDetails?: ProjectLeader[];
   members?: string;
+  /** Structured member rows from data entry; `members` keeps a display string of names. */
+  memberDetails?: ProjectMember[];
   department: string;
   subDepartment?: string;
   researchField: string;
@@ -134,6 +161,8 @@ export type ResearchProject = {
   isTransferred?: boolean;
   terminationReason?: string;
   supervisorId?: string;
+  /** Free-text notes from data-entry §8. */
+  generalNotes?: string;
   projectNotes?: ProjectDiscussionNote[];
   noteNotifications?: ProjectNoteNotification[];
   history?: HistoryEntry[];
@@ -162,6 +191,8 @@ export type DataTableProps = {
   onImportFeedback?: (result: ImportFeedback) => void;
   onDeleteMultiple?: (ids: string[]) => void;
   onDeleteAll?: () => void;
+  /** When false, hide RESET and all delete actions (e.g. chuyên viên). Default true. */
+  canDeleteProjects?: boolean;
 };
 
 export type FilterableHeaderProps = {

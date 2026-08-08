@@ -1,4 +1,8 @@
 import type { ProjectStatus, ExecutionProgress, Gender } from './constants.js';
+import type { ProjectLeader } from './projectLeaders.js';
+import type { ProjectMember } from './projectMembers.js';
+
+export type { ProjectLeader, ProjectMember };
 
 export type DataEntryFormData = {
   /** §1 */
@@ -10,9 +14,12 @@ export type DataEntryFormData = {
   gcnPlace: string;
   /** §2 */
   title: string;
+  /** @deprecated Prefer `leaders`; kept in sync for legacy validation/display. */
   principalInvestigator: string;
+  /** @deprecated Prefer `leaders[0].birthYear`. */
   birthYear: string;
-  members: string;
+  leaders: ProjectLeader[];
+  members: ProjectMember[];
   researchFields: string[];
   researchType: string;
   categoryTags: string[];
@@ -59,4 +66,6 @@ export type DataEntryFormData = {
   generalNotes: string;
 };
 
-export type FormErrors = Partial<Record<keyof DataEntryFormData | 'categoryTags', string>>;
+export type FormErrors = Partial<
+  Record<keyof DataEntryFormData | 'categoryTags' | 'leaders', string>
+>;

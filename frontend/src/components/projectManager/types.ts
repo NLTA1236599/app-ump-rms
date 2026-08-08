@@ -19,6 +19,8 @@ export enum ProgressStatus {
 
 export type ResearchProject = {
   id: string;
+  title?: string;
+  leadAuthor?: string;
   department: string;
   status: ProjectStatus | string;
   researchField: string;
@@ -27,13 +29,22 @@ export type ResearchProject = {
   categories?: string;
   startDate?: string | null;
   endDate?: string | null;
+  acceptanceAcademicYear?: string;
   budget: number;
+  /** Kinh phí khoán (nguồn ĐHYD). */
+  budgetLumpSum?: number;
+  /** Kinh phí không khoán (nguồn ĐHYD). */
+  budgetNonLumpSum?: number;
+  /** Kinh phí nguồn khác (không phải ĐHYD). */
+  budgetOtherSources?: number;
+  workflowStep?: number;
   expectedProducts?: ProjectProductEntry[] | string | null;
   actualProducts?: ProjectProductEntry[] | string | null;
 };
 
 export type ProjectFilterState = {
   startYear: string;
+  academicYear: string;
   status: string;
   researchField: string;
   projectType: string;

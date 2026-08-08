@@ -19,8 +19,18 @@ function validate(form: DataEntryFormData): FormErrors {
 
   if (!form.contractNumber.trim()) errors.contractNumber = 'Vui lòng nhập số hợp đồng';
   if (!form.title.trim()) errors.title = 'Vui lòng nhập tên đề tài';
-  if (!form.principalInvestigator.trim())
+  const primaryLeader =
+    form.leaders.find((l) => l.fullName.trim()) ?? form.leaders[0];
+  if (!primaryLeader?.fullName.trim() && !form.principalInvestigator.trim()) {
+    errors.leaders = 'Vui lòng nhập chủ nhiệm đề tài';
     errors.principalInvestigator = 'Vui lòng nhập chủ nhiệm đề tài';
+  }
+  form.leaders.forEach((leader, index) => {
+    if (index === 0 || !leader.fullName.trim()) return;
+    if (leader.addReason !== 'co_leader' && leader.addReason !== 'replacement') {
+      errors.leaders = 'Vui lòng chọn lý do thêm chủ nhiệm (Đồng chủ nhiệm hoặc Thay đổi chủ nhiệm)';
+    }
+  });
   if (!form.categoryTags.length) errors.categoryTags = 'Vui lòng chọn ít nhất 1 loại đề tài';
   if (!form.facultyUnits.length) errors.facultyUnits = 'Vui lòng chọn khoa/đơn vị';
 
@@ -72,14 +82,12 @@ export function useDataEntryForm({
     });
   }, []);
 
-  const toggleCategoryTag = useCallback((tag: string) => {
-    setForm((prev) => {
-      const has = prev.categoryTags.includes(tag);
-      const categoryTags = has
-        ? prev.categoryTags.filter((t) => t !== tag)
-        : [...prev.categoryTags, tag];
-      return { ...prev, categoryTags };
-    });
+  const setCategoryTag = useCallback((tag: string) => {
+    setForm((prev) => ({
+      ...prev,
+      categoryTags: tag ? [tag] : [],
+      categoryOther: tag === 'Khác' ? prev.categoryOther : '',
+    }));
     setErrors((prev) => {
       const next = { ...prev };
       delete next.categoryTags;
@@ -87,14 +95,8 @@ export function useDataEntryForm({
     });
   }, []);
 
-  const toggleResearchField = useCallback((field: string) => {
-    setForm((prev) => {
-      const has = prev.researchFields.includes(field);
-      const researchFields = has
-        ? prev.researchFields.filter((f) => f !== field)
-        : [...prev.researchFields, field];
-      return { ...prev, researchFields };
-    });
+  const setResearchField = useCallback((field: string) => {
+    setForm((prev) => ({ ...prev, researchFields: field ? [field] : [] }));
   }, []);
 
   const setFacultyUnit = useCallback((unit: string) => {
@@ -178,8 +180,8 @@ export function useDataEntryForm({
     isSaving,
     mode,
     setField,
-    toggleCategoryTag,
-    toggleResearchField,
+    setCategoryTag,
+    setResearchField,
     setFacultyUnit,
     setProductCount,
     setProgressReportDate,

@@ -1,16 +1,21 @@
+import type { ReactNode } from 'react';
+
 import { getProgressBadge, getStatusBadge } from './badges.js';
 import { formatDate, getAge } from './formatDate.js';
 import { EyeIcon, PencilIcon, TrashIcon } from './icons.js';
+import { isColumnVisible } from './tableColumns.js';
 import type { ResearchProject } from './types.js';
 
 type ProjectTableRowProps = {
   project: ResearchProject;
   rowIndex: number;
   isSelected: boolean;
+  visibleColumns: Record<string, boolean>;
   onSelect: (id: string) => void;
   onView: (project: ResearchProject) => void;
   onEdit: (project: ResearchProject) => void;
   onDelete: (id: string) => void;
+  canDelete?: boolean;
 };
 
 function categoriesList(categories?: string[] | string) {
@@ -29,20 +34,63 @@ function categoriesList(categories?: string[] | string) {
   );
 }
 
+function leaderDetailsText(p: ResearchProject): string {
+  if (p.leaderDetails?.length) {
+    return p.leaderDetails
+      .map((l, index) => {
+        const reason =
+          l.addReason === 'co_leader'
+            ? 'Đồng CN'
+            : l.addReason === 'replacement'
+              ? 'Thay đổi CN'
+              : index === 0
+                ? 'Chính'
+                : '';
+        return [l.fullName, reason && `(${reason})`, l.academicTitle, l.email]
+          .filter(Boolean)
+          .join(' ');
+      })
+      .join('; ');
+  }
+  return p.leadAuthor || '';
+}
+
+function membersText(p: ResearchProject): string {
+  if (p.memberDetails?.length) {
+    return p.memberDetails
+      .map((m) => [m.fullName, m.academicTitle, m.projectRole].filter(Boolean).join(' — '))
+      .join('; ');
+  }
+  return p.members || '';
+}
+
+function Col({
+  id,
+  visible,
+  children,
+}: {
+  id: string;
+  visible: Record<string, boolean>;
+  children: ReactNode;
+}) {
+  if (!isColumnVisible(visible, id)) return null;
+  return children;
+}
+
 export function ProjectTableRow({
   project: p,
   rowIndex,
   isSelected,
+  visibleColumns,
   onSelect,
   onView,
   onEdit,
   onDelete,
+  canDelete = true,
 }: ProjectTableRowProps) {
   return (
     <tr className="group border-b border-slate-100 transition-colors hover:bg-blue-50/50">
-      <td
-        className="sticky left-0 z-20 bg-white px-3 py-3 align-top group-hover:bg-blue-50/50"
-      >
+      <td className="sticky left-0 z-20 bg-white px-3 py-3 align-top group-hover:bg-blue-50/50">
         <input
           type="checkbox"
           checked={isSelected}
@@ -58,154 +106,271 @@ export function ProjectTableRow({
         {rowIndex}
       </td>
 
-      <td className="px-3 py-3 align-top font-mono text-xs font-bold text-blue-600">
-        {p.contractId}
-      </td>
+      <Col id="contractId" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top font-mono text-xs font-bold text-blue-600">
+          {p.contractId}
+        </td>
+      </Col>
+      <Col id="contractAppendix" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs text-slate-700">{p.contractAppendix}</td>
+      </Col>
+      <Col id="projectCode" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top font-mono text-xs font-bold text-slate-700">
+          {p.projectCode}
+        </td>
+      </Col>
 
-      <td className="px-3 py-3 align-top text-xs">
-        {p.certificateResultNumber && (
-          <div>
-            <span className="text-slate-500">Số:</span> {p.certificateResultNumber}
-          </div>
-        )}
-        {p.certificateResultDate && (
-          <div>
-            <span className="text-slate-500">Ngày:</span> {formatDate(p.certificateResultDate)}
-          </div>
-        )}
-        {p.certificateResultIssuingAuthority && (
-          <div>
-            <span className="text-slate-500">Nơi:</span> {p.certificateResultIssuingAuthority}
-          </div>
-        )}
-      </td>
-
-      <td
-        className="max-w-xs cursor-pointer px-3 py-3 align-top text-sm font-medium text-slate-700
-                   hover:text-blue-700 whitespace-normal break-words"
-        title="Nhấp đúp để xem chi tiết"
-        onDoubleClick={() => onView(p)}
-      >
-        {p.title}
-      </td>
-
-      <td className="px-3 py-3 align-top text-sm font-semibold text-blue-700">{p.leadAuthor}</td>
-      <td className="px-3 py-3 text-center align-top text-xs">{p.leadAuthorBirthYear}</td>
-      <td className="px-3 py-3 text-center align-top text-xs">{getAge(p.leadAuthorBirthYear)}</td>
-
-      <td
-        className="max-w-[200px] px-3 py-3 align-top text-xs whitespace-normal break-words"
-        title={p.members}
-      >
-        {p.members}
-      </td>
-      <td className="px-3 py-3 align-top text-xs text-slate-700">{p.researchField}</td>
-      <td className="px-3 py-3 align-top text-xs text-slate-700">{p.researchType}</td>
-      <td className="flex flex-wrap gap-1 px-3 py-3 align-top">{categoriesList(p.categories)}</td>
-
-      <td
-        className="max-w-[150px] px-3 py-3 align-top text-xs whitespace-normal break-words"
-        title={p.subDepartment}
-      >
-        {p.subDepartment}
-      </td>
-      <td
-        className="max-w-[150px] px-3 py-3 align-top text-xs whitespace-normal break-words"
-        title={p.department}
-      >
-        {p.department}
-      </td>
-
-      <td className="px-3 py-3 align-top text-xs text-slate-700">{p.approvalDecision}</td>
-      <td className="px-3 py-3 align-top text-xs text-slate-700">{p.authorizationDecision}</td>
-      <td className="px-3 py-3 align-top text-xs text-slate-700">{p.appraisalDecision}</td>
-      <td className="px-3 py-3 align-top text-xs text-slate-700">{p.acceptanceDecision}</td>
-
-      <td className="px-3 py-3 text-right align-top font-mono text-xs font-bold text-slate-700">
-        {p.budget?.toLocaleString('vi-VN')}
-      </td>
-      <td className="px-3 py-3 text-right align-top font-mono text-xs text-slate-600">
-        {p.budgetLumpSum?.toLocaleString('vi-VN')}
-      </td>
-      <td className="px-3 py-3 text-right align-top font-mono text-xs text-slate-600">
-        {p.budgetNonLumpSum?.toLocaleString('vi-VN')}
-      </td>
-      <td className="px-3 py-3 text-right align-top font-mono text-xs text-slate-600">
-        {p.budgetOtherSources?.toLocaleString('vi-VN')}
-      </td>
-      <td className="px-3 py-3 text-right align-top font-mono text-xs">
-        {p.budgetBatch1?.toLocaleString('vi-VN')}
-      </td>
-      <td className="px-3 py-3 text-right align-top font-mono text-xs">
-        {p.budgetBatch2?.toLocaleString('vi-VN')}
-      </td>
-      <td className="px-3 py-3 text-right align-top font-mono text-xs">
-        {p.budgetBatch3?.toLocaleString('vi-VN')}
-      </td>
-
-      <td className="px-3 py-3 align-top text-xs text-slate-700">{p.duration}</td>
-      <td className="px-3 py-3 align-top text-xs text-slate-600">{formatDate(p.startDate)}</td>
-      <td className="px-3 py-3 align-top text-xs text-slate-600">{formatDate(p.endDate)}</td>
-      <td className="px-3 py-3 align-top text-xs font-medium text-amber-600">
-        {formatDate(p.extensionDate)}
-      </td>
-
-      <td className="px-3 py-3 align-top text-xs">{formatDate(p.reviewReportingDate)}</td>
-      <td className="px-3 py-3 align-top text-xs">{formatDate(p.progressReportDate1)}</td>
-      <td className="px-3 py-3 align-top text-xs">{formatDate(p.progressReportDate2)}</td>
-      <td className="px-3 py-3 align-top text-xs">{formatDate(p.progressReportDate3)}</td>
-      <td className="px-3 py-3 align-top text-xs">{formatDate(p.progressReportDate4)}</td>
-      <td className="px-3 py-3 align-top">{getProgressBadge(p.progressStatus)}</td>
-      <td
-        className="max-w-[200px] px-3 py-3 align-top text-xs whitespace-normal break-words"
-        title={p.progressReportNote}
-      >
-        {p.progressReportNote}
-      </td>
-      <td className="px-3 py-3 align-top text-xs">{formatDate(p.acceptanceMeetingDate)}</td>
-
-      <td
-        className="max-w-[200px] px-3 py-3 align-top text-xs whitespace-normal break-words"
-        title={p.outputProduct}
-      >
-        {p.outputProduct}
-      </td>
-      <td className="px-3 py-3 align-top">{getStatusBadge(p.status)}</td>
-
-      <td className="px-3 py-3 text-center align-top text-xs">{p.acceptanceYear}</td>
-      <td className="px-3 py-3 text-center align-top text-xs">{p.acceptanceAcademicYear}</td>
-
-      <td className="px-3 py-3 align-top text-xs">
-        {(p.expectedProducts || []).reduce((a, b) => a + b.count, 0)} sản phẩm
-      </td>
-      <td className="px-3 py-3 align-top text-xs">
-        <div className="flex flex-col gap-1">
-          <span className="font-bold">
-            {(p.actualProducts || []).map((x) => `${x.type}(${x.count})`).join('; ')}
-          </span>
-          {p.actualProductDetails && (
-            <span
-              className="max-w-[200px] truncate text-[10px] text-slate-500"
-              title={p.actualProductDetails}
-            >
-              {p.actualProductDetails}
-            </span>
+      <Col id="certificateResultNumber" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs">
+          {p.certificateResultNumber && (
+            <div>
+              <span className="text-slate-500">Số:</span> {p.certificateResultNumber}
+            </div>
           )}
-        </div>
-      </td>
+          {p.certificateResultDate && (
+            <div>
+              <span className="text-slate-500">Ngày:</span> {formatDate(p.certificateResultDate)}
+            </div>
+          )}
+          {p.certificateResultIssuingAuthority && (
+            <div>
+              <span className="text-slate-500">Nơi:</span> {p.certificateResultIssuingAuthority}
+            </div>
+          )}
+        </td>
+      </Col>
 
-      <td className="px-3 py-3 align-top text-xs">{formatDate(p.reminderDate)}</td>
-      <td className="px-3 py-3 align-top text-xs">{formatDate(p.acceptanceCompletionDate)}</td>
-      <td className="px-3 py-3 align-top font-mono text-xs font-bold text-slate-700">
-        {p.projectCode}
-      </td>
-      <td className="px-3 py-3 align-top text-xs">{p.leadAuthorGender}</td>
-      <td className="px-3 py-3 text-center align-top text-xs">{p.isTransferred ? '☑' : ''}</td>
-      <td className="px-3 py-3 align-top text-xs text-red-600">{p.terminationReason}</td>
+      <Col id="title" visible={visibleColumns}>
+        <td
+          className="max-w-xs cursor-pointer px-3 py-3 align-top text-sm font-medium text-slate-700
+                     hover:text-blue-700 whitespace-normal break-words"
+          title="Nhấp đúp để xem chi tiết"
+          onDoubleClick={() => onView(p)}
+        >
+          {p.title}
+        </td>
+      </Col>
 
-      <td
-        className="sticky right-0 z-10 bg-white px-3 py-3 align-top group-hover:bg-blue-50/50"
-      >
+      <Col id="leadAuthor" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-sm font-semibold text-blue-700">{p.leadAuthor}</td>
+      </Col>
+      <Col id="leaderDetails" visible={visibleColumns}>
+        <td
+          className="max-w-[240px] px-3 py-3 align-top text-xs whitespace-normal break-words"
+          title={leaderDetailsText(p)}
+        >
+          {leaderDetailsText(p)}
+        </td>
+      </Col>
+      <Col id="leadAuthorBirthYear" visible={visibleColumns}>
+        <td className="px-3 py-3 text-center align-top text-xs">{p.leadAuthorBirthYear}</td>
+      </Col>
+      <Col id="age" visible={visibleColumns}>
+        <td className="px-3 py-3 text-center align-top text-xs">{getAge(p.leadAuthorBirthYear)}</td>
+      </Col>
+      <Col id="leadAuthorGender" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs">{p.leadAuthorGender}</td>
+      </Col>
+      <Col id="principalEmail" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs text-slate-700">{p.principalEmail}</td>
+      </Col>
+
+      <Col id="members" visible={visibleColumns}>
+        <td
+          className="max-w-[240px] px-3 py-3 align-top text-xs whitespace-normal break-words"
+          title={membersText(p)}
+        >
+          {membersText(p)}
+        </td>
+      </Col>
+      <Col id="researchField" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs text-slate-700">{p.researchField}</td>
+      </Col>
+      <Col id="researchType" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs text-slate-700">{p.researchType}</td>
+      </Col>
+      <Col id="categories" visible={visibleColumns}>
+        <td className="flex flex-wrap gap-1 px-3 py-3 align-top">{categoriesList(p.categories)}</td>
+      </Col>
+
+      <Col id="department" visible={visibleColumns}>
+        <td
+          className="max-w-[150px] px-3 py-3 align-top text-xs whitespace-normal break-words"
+          title={p.department}
+        >
+          {p.department}
+        </td>
+      </Col>
+      <Col id="subDepartment" visible={visibleColumns}>
+        <td
+          className="max-w-[150px] px-3 py-3 align-top text-xs whitespace-normal break-words"
+          title={p.subDepartment}
+        >
+          {p.subDepartment}
+        </td>
+      </Col>
+
+      <Col id="approvalDecision" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs text-slate-700">{p.approvalDecision}</td>
+      </Col>
+      <Col id="authorizationDecision" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs text-slate-700">{p.authorizationDecision}</td>
+      </Col>
+      <Col id="appraisalDecision" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs text-slate-700">{p.appraisalDecision}</td>
+      </Col>
+      <Col id="acceptanceDecision" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs text-slate-700">{p.acceptanceDecision}</td>
+      </Col>
+
+      <Col id="budget" visible={visibleColumns}>
+        <td className="px-3 py-3 text-right align-top font-mono text-xs font-bold text-slate-700">
+          {p.budget?.toLocaleString('vi-VN')}
+        </td>
+      </Col>
+      <Col id="budgetLumpSum" visible={visibleColumns}>
+        <td className="px-3 py-3 text-right align-top font-mono text-xs text-slate-600">
+          {p.budgetLumpSum?.toLocaleString('vi-VN')}
+        </td>
+      </Col>
+      <Col id="budgetNonLumpSum" visible={visibleColumns}>
+        <td className="px-3 py-3 text-right align-top font-mono text-xs text-slate-600">
+          {p.budgetNonLumpSum?.toLocaleString('vi-VN')}
+        </td>
+      </Col>
+      <Col id="budgetOtherSources" visible={visibleColumns}>
+        <td className="px-3 py-3 text-right align-top font-mono text-xs text-slate-600">
+          {p.budgetOtherSources?.toLocaleString('vi-VN')}
+        </td>
+      </Col>
+      <Col id="budgetBatch1" visible={visibleColumns}>
+        <td className="px-3 py-3 text-right align-top font-mono text-xs">
+          {p.budgetBatch1?.toLocaleString('vi-VN')}
+        </td>
+      </Col>
+      <Col id="budgetBatch2" visible={visibleColumns}>
+        <td className="px-3 py-3 text-right align-top font-mono text-xs">
+          {p.budgetBatch2?.toLocaleString('vi-VN')}
+        </td>
+      </Col>
+      <Col id="budgetBatch3" visible={visibleColumns}>
+        <td className="px-3 py-3 text-right align-top font-mono text-xs">
+          {p.budgetBatch3?.toLocaleString('vi-VN')}
+        </td>
+      </Col>
+
+      <Col id="duration" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs text-slate-700">{p.duration}</td>
+      </Col>
+      <Col id="startDate" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs text-slate-600">{formatDate(p.startDate)}</td>
+      </Col>
+      <Col id="endDate" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs text-slate-600">{formatDate(p.endDate)}</td>
+      </Col>
+      <Col id="extensionDate" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs font-medium text-amber-600">
+          {formatDate(p.extensionDate)}
+        </td>
+      </Col>
+
+      <Col id="reviewReportingDate" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs">{formatDate(p.reviewReportingDate)}</td>
+      </Col>
+      <Col id="progressReportDate1" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs">{formatDate(p.progressReportDate1)}</td>
+      </Col>
+      <Col id="progressReportDate2" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs">{formatDate(p.progressReportDate2)}</td>
+      </Col>
+      <Col id="progressReportDate3" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs">{formatDate(p.progressReportDate3)}</td>
+      </Col>
+      <Col id="progressReportDate4" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs">{formatDate(p.progressReportDate4)}</td>
+      </Col>
+      <Col id="progressStatus" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top">{getProgressBadge(p.progressStatus)}</td>
+      </Col>
+      <Col id="progressReportNote" visible={visibleColumns}>
+        <td
+          className="max-w-[200px] px-3 py-3 align-top text-xs whitespace-normal break-words"
+          title={p.progressReportNote}
+        >
+          {p.progressReportNote}
+        </td>
+      </Col>
+      <Col id="acceptanceMeetingDate" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs">{formatDate(p.acceptanceMeetingDate)}</td>
+      </Col>
+
+      <Col id="outputProduct" visible={visibleColumns}>
+        <td
+          className="max-w-[200px] px-3 py-3 align-top text-xs whitespace-normal break-words"
+          title={p.outputProduct}
+        >
+          {p.outputProduct}
+        </td>
+      </Col>
+      <Col id="status" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top">{getStatusBadge(p.status)}</td>
+      </Col>
+
+      <Col id="acceptanceYear" visible={visibleColumns}>
+        <td className="px-3 py-3 text-center align-top text-xs">{p.acceptanceYear}</td>
+      </Col>
+      <Col id="acceptanceAcademicYear" visible={visibleColumns}>
+        <td className="px-3 py-3 text-center align-top text-xs">{p.acceptanceAcademicYear}</td>
+      </Col>
+
+      <Col id="expectedProducts" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs">
+          {(p.expectedProducts || []).reduce((a, b) => a + b.count, 0)} sản phẩm
+        </td>
+      </Col>
+      <Col id="actualProducts" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs">
+          <div className="flex flex-col gap-1">
+            <span className="font-bold">
+              {(p.actualProducts || []).map((x) => `${x.type}(${x.count})`).join('; ')}
+            </span>
+            {p.actualProductDetails && (
+              <span
+                className="max-w-[200px] truncate text-[10px] text-slate-500"
+                title={p.actualProductDetails}
+              >
+                {p.actualProductDetails}
+              </span>
+            )}
+          </div>
+        </td>
+      </Col>
+
+      <Col id="reminderDate" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs">{formatDate(p.reminderDate)}</td>
+      </Col>
+      <Col id="acceptanceCompletionDate" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs">{formatDate(p.acceptanceCompletionDate)}</td>
+      </Col>
+      <Col id="supervisorId" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs text-slate-700">{p.supervisorId}</td>
+      </Col>
+      <Col id="isTransferred" visible={visibleColumns}>
+        <td className="px-3 py-3 text-center align-top text-xs">{p.isTransferred ? '☑' : ''}</td>
+      </Col>
+      <Col id="terminationReason" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs text-red-600">{p.terminationReason}</td>
+      </Col>
+      <Col id="generalNotes" visible={visibleColumns}>
+        <td
+          className="max-w-[200px] px-3 py-3 align-top text-xs whitespace-normal break-words"
+          title={p.generalNotes}
+        >
+          {p.generalNotes}
+        </td>
+      </Col>
+
+      <td className="sticky right-0 z-10 bg-white px-3 py-3 align-top group-hover:bg-blue-50/50">
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -225,35 +390,39 @@ export function ProjectTableRow({
           >
             <PencilIcon className="h-4 w-4" />
           </button>
-          <button
-            type="button"
-            onClick={() => onDelete(p.id)}
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-50 text-red-500
-                       hover:bg-red-100"
-            title="Xóa"
-          >
-            <TrashIcon className="h-4 w-4" />
-          </button>
+          {canDelete ? (
+            <button
+              type="button"
+              onClick={() => onDelete(p.id)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-50 text-red-500
+                         hover:bg-red-100"
+              title="Xóa"
+            >
+              <TrashIcon className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
       </td>
 
-      <td className="px-3 py-3 align-top text-xs text-slate-500">
-        {p.history?.[0] ? (
-          <div className="flex flex-col gap-0.5">
-            <span className="font-bold text-slate-700">@{p.history[0].user}</span>
-            <span className="text-slate-500">
-              {(() => {
-                const d = new Date(p.history[0].timestamp);
-                if (Number.isNaN(d.getTime())) return p.history[0].timestamp;
-                return d.toLocaleString('vi-VN');
-              })()}
-            </span>
-            <span className="line-clamp-2 text-slate-400">{p.history[0].action}</span>
-          </div>
-        ) : (
-          '---'
-        )}
-      </td>
+      <Col id="history" visible={visibleColumns}>
+        <td className="px-3 py-3 align-top text-xs text-slate-500">
+          {p.history?.[0] ? (
+            <div className="flex flex-col gap-0.5">
+              <span className="font-bold text-slate-700">@{p.history[0].user}</span>
+              <span className="text-slate-500">
+                {(() => {
+                  const d = new Date(p.history[0].timestamp);
+                  if (Number.isNaN(d.getTime())) return p.history[0].timestamp;
+                  return d.toLocaleString('vi-VN');
+                })()}
+              </span>
+              <span className="line-clamp-2 text-slate-400">{p.history[0].action}</span>
+            </div>
+          ) : (
+            '---'
+          )}
+        </td>
+      </Col>
     </tr>
   );
 }

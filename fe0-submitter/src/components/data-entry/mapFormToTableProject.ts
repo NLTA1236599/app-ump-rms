@@ -2,6 +2,12 @@ import type { ResearchProject } from '../../types/researchProject.js';
 import { ProjectStatus as TableProjectStatus } from '../../types/researchProject.js';
 
 import type { Gender, ProjectStatus } from './constants.js';
+import {
+  normalizeLeaders,
+  primaryLeaderBirthYear,
+  primaryLeaderName,
+} from './projectLeaders.js';
+import { membersToDisplayString, normalizeMembers } from './projectMembers.js';
 import type { DataEntryFormData } from './types.js';
 
 function makeProjectId(): string {
@@ -32,7 +38,7 @@ const PROGRESS_LABELS = {
   on_time: 'Đúng hạn',
   late: 'Trễ hạn',
   extended: 'Gia hạn',
-  completed: 'Hoàn thành',
+  completed: 'Nghiệm thu',
 } as const;
 
 export function mapFormToTableProject(
@@ -48,16 +54,29 @@ export function mapFormToTableProject(
     certificateResultNumber: form.gcnNumber.trim() || undefined,
     certificateResultDate: form.gcnIssuedAt || undefined,
     certificateResultIssuingAuthority: form.gcnPlace.trim() || undefined,
-    leadAuthor: form.principalInvestigator.trim(),
+    leadAuthor:
+      primaryLeaderName(form.leaders) || form.principalInvestigator.trim(),
     principalEmail: form.principalEmail.trim() || undefined,
-    leadAuthorBirthYear: form.birthYear.trim() || undefined,
+    leadAuthorBirthYear:
+      primaryLeaderBirthYear(form.leaders) || form.birthYear.trim() || undefined,
     leadAuthorGender: GENDER_LABELS[form.principalGender],
-    members: form.members.trim() || undefined,
+    leaderDetails: (() => {
+      const normalized = normalizeLeaders(form.leaders);
+      return normalized.length > 0 ? normalized : undefined;
+    })(),
+    members: membersToDisplayString(form.members) || undefined,
+    memberDetails: (() => {
+      const normalized = normalizeMembers(form.members);
+      return normalized.length > 0 ? normalized : undefined;
+    })(),
     department: form.facultyUnits.join('; '),
     subDepartment: form.department.trim() || undefined,
     researchField: form.researchFields.join('; '),
     researchType: form.researchType.trim() || undefined,
-    categories: form.categoryTags,
+    categories:
+      form.categoryTags.includes('Khác') && form.categoryOther.trim()
+        ? ['Khác', form.categoryOther.trim()]
+        : form.categoryTags,
     approvalDecision: form.decisionReview.trim() || undefined,
     authorizationDecision: form.decisionApprove.trim() || undefined,
     budget: Number(form.totalBudget) || 0,
@@ -95,6 +114,12 @@ export function mapFormToTableProject(
     isTransferred: form.transferForward,
     terminationReason: form.liquidationReason.trim() || undefined,
     supervisorId: form.supervisorId.trim() || undefined,
+    generalNotes: form.generalNotes.trim() || undefined,
     history: existing?.history ?? [],
+    projectNotes: existing?.projectNotes,
+    noteNotifications: existing?.noteNotifications,
+    workflowStep: existing?.workflowStep,
+    workflowHistory: existing?.workflowHistory,
+    workflowTodos: existing?.workflowTodos,
   };
 }

@@ -24,7 +24,9 @@ const FIELD_LABELS: Record<string, string> = {
   principalEmail: 'Email chủ nhiệm',
   leadAuthorBirthYear: 'Năm sinh chủ nhiệm',
   leadAuthorGender: 'Giới tính chủ nhiệm',
+  leaderDetails: 'Chi tiết chủ nhiệm',
   members: 'Thành viên',
+  memberDetails: 'Chi tiết thành viên',
   department: 'Khoa/Đơn vị',
   subDepartment: 'Bộ môn/Đơn vị trực thuộc',
   researchField: 'Lĩnh vực nghiên cứu',
@@ -66,6 +68,7 @@ const FIELD_LABELS: Record<string, string> = {
   isTransferred: 'Chuyển tiếp',
   terminationReason: 'Lý do thanh lý',
   supervisorId: 'Chuyên viên phụ trách',
+  generalNotes: 'Ghi chú chung',
 };
 
 function isProductList(value: unknown): value is ProductEntry[] {
@@ -101,6 +104,31 @@ export function formatHistoryFieldValue(field: string, value: unknown): string {
   if (isProductList(value)) {
     if (value.length === 0) return '(trống)';
     return value.map((p) => `${p.type}: ${p.count}`).join('; ');
+  }
+  if ((field === 'memberDetails' || field === 'leaderDetails') && Array.isArray(value)) {
+    if (value.length === 0) return '(trống)';
+    return value
+      .map((item) => {
+        if (item == null || typeof item !== 'object') return String(item);
+        const m = item as {
+          fullName?: string;
+          academicTitle?: string;
+          projectRole?: string;
+          birthYear?: string;
+          addReason?: string;
+        };
+        const reason =
+          m.addReason === 'co_leader'
+            ? 'Đồng chủ nhiệm'
+            : m.addReason === 'replacement'
+              ? 'Thay đổi chủ nhiệm'
+              : undefined;
+        const parts = [m.fullName, m.academicTitle, m.projectRole, m.birthYear, reason].filter(
+          Boolean,
+        );
+        return parts.join(' — ') || JSON.stringify(item);
+      })
+      .join('; ');
   }
   if (Array.isArray(value)) {
     if (value.length === 0) return '(trống)';
