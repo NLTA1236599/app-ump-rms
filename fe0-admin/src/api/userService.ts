@@ -6,6 +6,7 @@ export async function getUsers(): Promise<AdminUserRow[]> {
   return data.users.map((user) => ({
     ...user,
     allowed_units: Array.isArray(user.allowed_units) ? user.allowed_units : [],
+    email_verified: Boolean(user.email_verified),
   }));
 }
 
@@ -17,6 +18,10 @@ export async function updateAllowedUnits(id: string, allowedUnits: string[]): Pr
   await httpClient.patch(`/admin/users/${id}/allowed-units`, {
     allowed_units: allowedUnits,
   });
+}
+
+export async function grantAccess(id: string): Promise<void> {
+  await httpClient.patch(`/admin/users/${id}/grant-access`);
 }
 
 export async function deleteUser(id: string): Promise<void> {

@@ -1,4 +1,4 @@
-import { APP_BASE_URL } from './reminder.config.js';
+import { publicAppBaseUrl } from '../../config/publicAppUrl.js';
 import type { DueReminder, ReminderRecipient } from './reminder.types.js';
 
 function daysRemaining(dueDate: string, offsetDays: number): number {
@@ -15,7 +15,7 @@ export function buildReminderEmail(reminder: DueReminder, recipient: ReminderRec
   const remaining = daysRemaining(reminder.dueDate, reminder.offsetDays);
   const dueLabel = formatDueDate(reminder.dueDate);
   const roleLabel = recipient.role === 'LEADER' ? 'Chủ nhiệm đề tài' : 'Chuyên viên phụ trách';
-  const base = APP_BASE_URL.replace(/\/$/, '');
+  const base = publicAppBaseUrl();
   const link = `${base}/?projectId=${encodeURIComponent(reminder.projectId)}`;
   const whenLabel = remaining === 0 ? 'Đúng hạn hôm nay' : `Trước ${remaining} ngày`;
 

@@ -122,16 +122,24 @@ CREATE TABLE IF NOT EXISTS feature_permissions (
 );
 
 INSERT INTO feature_permissions (feature, allowed_roles) VALUES
-  ('project.create',        ARRAY['admin', 'leader']),
-  ('project.view',          ARRAY['admin', 'leader', 'specialist', 'user']),
-  ('project.edit',          ARRAY['admin', 'leader']),
-  ('project.delete',        ARRAY['admin']),
-  ('project.upload',        ARRAY['admin', 'leader']),
-  ('report.view',           ARRAY['admin', 'leader', 'specialist']),
-  ('report.export',         ARRAY['admin']),
-  ('admin.users',           ARRAY['admin']),
-  ('admin.permissions',     ARRAY['admin'])
+  ('tong-quan',           ARRAY['admin', 'leader', 'specialist', 'user']),
+  ('tien-do-thuc-hien',   ARRAY['admin', 'leader', 'specialist', 'user']),
+  ('du-lieu-de-tai',      ARRAY['admin', 'leader', 'specialist', 'user']),
+  ('nhap-moi-du-lieu',    ARRAY['admin', 'leader', 'specialist', 'user']),
+  ('ke-khai-ho-so',       ARRAY['admin', 'leader', 'specialist', 'user']),
+  ('loc-trung-de-tai',    ARRAY['admin', 'leader', 'specialist', 'user'])
 ON CONFLICT (feature) DO NOTHING;
+
+-- Replace legacy CRUD feature keys with the KHCN sidebar catalog.
+DELETE FROM feature_permissions
+WHERE feature NOT IN (
+  'tong-quan',
+  'tien-do-thuc-hien',
+  'du-lieu-de-tai',
+  'nhap-moi-du-lieu',
+  'ke-khai-ho-so',
+  'loc-trung-de-tai'
+);
 
 -- Email reminder: parse ISO date strings from research_projects JSONB
 CREATE OR REPLACE FUNCTION jsonb_text_to_date(value TEXT)

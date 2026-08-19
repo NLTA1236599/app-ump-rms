@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { DataTableView } from '../DataTable/index.js';
 import type { ResearchProject as TableProject } from '../DataTable/types.js';
@@ -8,6 +8,7 @@ import { ProgressTrackingPage } from '../ProgressTracking/index.js';
 import { WorkflowProcessPage } from '../WorkflowProcess/index.js';
 
 import {
+  DE_TAI_KHCN_SIDEBAR_ITEMS,
   DEFAULT_DE_TAI_KHCN_SIDEBAR_ITEM,
   type DeTaiKhcnSidebarItemId,
 } from './deTaiKhcnSidebarNav.js';
@@ -19,6 +20,7 @@ import {
 import { TabSidebar } from './TabSidebar.js';
 import { usePersistedTableProjects } from './usePersistedTableProjects.js';
 import type { ResearchProject } from './types.js';
+import { useAllowedFeatures } from '../../hooks/useAllowedFeatures.js';
 
 export type ProjectManagerDashboardProps = {
   chatHandler?: (query: string, projects: ResearchProject[]) => Promise<string>;
@@ -100,16 +102,38 @@ export function ProjectManagerDashboard({
   onInitialViewConsumed,
 }: ProjectManagerDashboardProps) {
   const persisted = usePersistedTableProjects();
+  const allowedFeatures = useAllowedFeatures();
   const [activeItemId, setActiveItemId] = useState<DeTaiKhcnSidebarItemId>(
     DEFAULT_DE_TAI_KHCN_SIDEBAR_ITEM,
   );
   const [overviewViewProjectId, setOverviewViewProjectId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  const visibleItems = useMemo(() => {
+    if (!allowedFeatures) return [];
+    return DE_TAI_KHCN_SIDEBAR_ITEMS.filter((item) => allowedFeatures.has(item.id));
+  }, [allowedFeatures]);
+
+  const canOpen = (id: DeTaiKhcnSidebarItemId) =>
+    Boolean(allowedFeatures?.has(id));
+
+  const goToSidebar = (id: DeTaiKhcnSidebarItemId) => {
+    if (!canOpen(id)) return;
+    setActiveItemId(id);
+  };
+
+  useEffect(() => {
+    if (!allowedFeatures) return;
+    if (allowedFeatures.has(activeItemId)) return;
+    const fallback = visibleItems[0]?.id;
+    if (fallback) setActiveItemId(fallback);
+  }, [allowedFeatures, activeItemId, visibleItems]);
+
   useEffect(() => {
     if (!initialViewProjectId && !overviewViewProjectId) return;
+    if (allowedFeatures && !allowedFeatures.has('du-lieu-de-tai')) return;
     setActiveItemId('du-lieu-de-tai');
-  }, [initialViewProjectId, overviewViewProjectId]);
+  }, [initialViewProjectId, overviewViewProjectId, allowedFeatures]);
 
   const effectiveViewProjectId = initialViewProjectId ?? overviewViewProjectId;
 
@@ -128,8 +152,9 @@ export function ProjectManagerDashboard({
     onSaveProject: persisted.onSaveProject,
     onUpdateProject: persisted.onUpdateProject,
     onSyncProject: persisted.onSyncProject,
-    onNavigateSidebar: setActiveItemId,
+    onNavigateSidebar: goToSidebar,
     onViewProjectFromOverview: (projectId) => {
+      if (!canOpen('du-lieu-de-tai')) return;
       setOverviewViewProjectId(projectId);
       setActiveItemId('du-lieu-de-tai');
     },
@@ -137,7 +162,7 @@ export function ProjectManagerDashboard({
     onInitialViewConsumed: handleInitialViewConsumed,
   };
 
-  if (persisted.loading) {
+  if (persisted.loading || !allowedFeatures) {
     return (
       <div className="flex min-h-[calc(100vh-110px)] items-center justify-center text-sm text-slate-500">
         Đang tải dữ liệu đề tài…
@@ -155,10 +180,11 @@ export function ProjectManagerDashboard({
 
       <TabSidebar
         activeItemId={activeItemId}
-        onItemSelect={setActiveItemId}
+        onItemSelect={goToSidebar}
         tableProjects={persisted.tableProjects}
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((v) => !v)}
+        items={visibleItems}
       />
 
       <div
@@ -166,7 +192,15 @@ export function ProjectManagerDashboard({
           sidebarCollapsed ? TAB_SIDEBAR_COLLAPSED_OFFSET_CLASS : TAB_SIDEBAR_OFFSET_CLASS
         }`}
       >
-        <div className="p-2 md:p-3">{renderSidebarContent(activeItemId, projectData, chatHandler)}</div>
+        <div className="p-2 md:p-3">
+          {canOpen(activeItemId) ? (
+            renderSidebarContent(activeItemId, projectData, chatHandler)
+          ) : (
+            <div className="rounded-lg border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500">
+              Tài khoản của bạn không được phép xem mục này.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

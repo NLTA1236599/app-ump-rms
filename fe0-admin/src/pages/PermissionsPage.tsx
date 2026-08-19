@@ -5,6 +5,19 @@ import type { FeaturePermission, UserRole } from '../types/index.js';
 
 const ALL_ROLES: UserRole[] = ['admin', 'leader', 'specialist', 'user'];
 
+const FEATURE_LABELS: Record<string, string> = {
+  'tong-quan': 'Tổng quan',
+  'tien-do-thuc-hien': 'Tiến độ thực hiện',
+  'du-lieu-de-tai': 'Dữ liệu đề tài',
+  'nhap-moi-du-lieu': 'Nhập dữ liệu',
+  'ke-khai-ho-so': 'Kê khai hồ sơ',
+  'loc-trung-de-tai': 'Lọc trùng đề tài',
+};
+
+function permissionLabel(permission: FeaturePermission): string {
+  return permission.label || FEATURE_LABELS[permission.feature] || permission.feature;
+}
+
 export function PermissionsPage() {
   const [permissions, setPermissions] = useState<FeaturePermission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +92,9 @@ export function PermissionsPage() {
           <tbody className="divide-y divide-gray-100">
             {permissions.map((permission) => (
               <tr key={permission.feature} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-mono text-gray-700">{permission.feature}</td>
+                <td className="px-6 py-4 font-medium text-gray-800">
+                  {permissionLabel(permission)}
+                </td>
                 {ALL_ROLES.map((role) => (
                   <td key={role} className="px-4 py-4 text-center">
                     <input

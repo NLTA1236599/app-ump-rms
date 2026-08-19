@@ -1,6 +1,9 @@
 import type { Request, Response, NextFunction } from 'express';
 import { authService } from '../../backend/compositionRoot.js';
+import { PermissionRepository } from '../admin/permission.repository.js';
 import { mapAuthDatabaseError } from './mapAuthDatabaseError.js';
+
+const permissionRepo = new PermissionRepository();
 
 function clientIp(req: Request): string {
   const forwarded = req.headers['x-forwarded-for'];
@@ -74,5 +77,15 @@ export async function getMe(req: Request, res: Response, next: NextFunction) {
     res.json({ user });
   } catch (e) {
     next(mapAuthDatabaseError(e));
+  }
+}
+
+export async function getMyFeatures(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = (req as Request & { user: { role: string } }).user;
+    const features = await permissionRepo.featuresForRole(user.role ?? '');
+    res.json({ features });
+  } catch (e) {
+    next(e);
   }
 }

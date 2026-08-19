@@ -4,6 +4,7 @@ import {
   deleteUser,
   getAllUsers,
   getPermissions,
+  grantUserAccess,
   updatePermission,
   updateUserAllowedUnits,
   updateUserRole,
@@ -16,6 +17,7 @@ adminRoutes.use(requireAuth, requireRole('admin'));
 adminRoutes.get('/users', getAllUsers);
 adminRoutes.patch('/users/:id/role', updateUserRole);
 adminRoutes.patch('/users/:id/allowed-units', updateUserAllowedUnits);
+adminRoutes.patch('/users/:id/grant-access', grantUserAccess);
 adminRoutes.delete('/users/:id', deleteUser);
 
 adminRoutes.get('/permissions', getPermissions);

@@ -17,10 +17,12 @@ export type AdminUserRow = {
   full_name: string;
   role: string;
   allowed_units: string[];
+  email_verified: boolean;
   created_at: string;
 };
 
 export type FeaturePermission = {
   feature: string;
+  label?: string;
   allowed_roles: string[];
 };

@@ -6,11 +6,6 @@ export const REMINDER_CRON = process.env.REMINDER_CRON ?? '';
 
 export const REMINDER_TIMEZONE = process.env.REMINDER_TIMEZONE ?? 'Asia/Ho_Chi_Minh';
 
-export const APP_BASE_URL =
-  process.env.APP_BASE_URL ??
-  process.env.FRONTEND_ORIGIN?.split(',')[0]?.trim() ??
-  'http://localhost:5173';
-
 /** When true, also run the three legacy hard-coded jobs. */
 export const REMINDER_LEGACY_JOBS = process.env.REMINDER_LEGACY_JOBS === 'true';
 

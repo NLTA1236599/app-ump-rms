@@ -99,7 +99,7 @@ export const UNIT_MEMBERS: UnitMember[] = [
   },
   {
     id: 'm04',
-    fullName: 'Đặng Thị Cẩm Chương',
+    fullName: 'Hoàng Thị Cẩm Chương',
     role: 'Chuyên viên',
     email: null,
     homeUnit: PKHCN,
@@ -107,7 +107,7 @@ export const UNIT_MEMBERS: UnitMember[] = [
   },
   {
     id: 'm05',
-    fullName: 'Đặng Thị Phương',
+    fullName: 'Hoàng Thị Phương',
     role: 'Chuyên viên',
     email: null,
     homeUnit: PKHCN,
@@ -147,15 +147,7 @@ export const UNIT_MEMBERS: UnitMember[] = [
   },
   {
     id: 'm10',
-    fullName: 'Nguyễn Thị Bích Trâm',
-    role: 'Chuyên viên',
-    email: null,
-    homeUnit: PKHCN,
-    allowedUnits: [],
-  },
-  {
-    id: 'm11',
-    fullName: 'Nguyễn Thị Cẩm Tiên',
+    fullName: 'Trương Thị Ngọc Trâm',
     role: 'Chuyên viên',
     email: null,
     homeUnit: PKHCN,
@@ -171,7 +163,7 @@ export const UNIT_MEMBERS: UnitMember[] = [
   },
   {
     id: 'm13',
-    fullName: 'Phan Thị Thanh Huyền',
+    fullName: 'Tạ Thị Thanh Huyền',
     role: 'Chuyên viên',
     email: null,
     homeUnit: PKHCN,
@@ -179,7 +171,7 @@ export const UNIT_MEMBERS: UnitMember[] = [
   },
   {
     id: 'm14',
-    fullName: 'Trần Quốc Vũ',
+    fullName: 'Đỗ Quốc Vũ',
     role: 'Chuyên viên',
     email: null,
     homeUnit: PKHCN,

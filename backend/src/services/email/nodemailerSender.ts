@@ -2,14 +2,6 @@ import nodemailer from 'nodemailer';
 
 import type { EmailPayload, IEmailSender } from './IEmailSender.js';
 
-function appBaseUrl(): string {
-  return (
-    process.env.APP_BASE_URL?.trim() ||
-    process.env.FRONTEND_ORIGIN?.split(',')[0]?.trim() ||
-    'https://www.ump-khcn.com'
-  );
-}
-
 function mailPass(): string {
   // Gmail App Passwords are often copied with spaces — strip them.
   return (process.env.MAIL_PASS ?? '').replace(/\s+/g, '');
@@ -19,11 +11,20 @@ function mailUser(): string {
   return (process.env.MAIL_USER ?? '').trim();
 }
 
-function mailFrom(): string {
+const MAIL_FROM_NAME = 'UMP-RMS (Phần mềm QLKHCN P.KHCN)';
+
+function mailFromName(): string {
   const configured = (process.env.MAIL_FROM ?? '').trim();
-  if (configured) return configured;
-  const user = mailUser();
-  return user ? `UMP-RMS <${user}>` : 'UMP-RMS';
+  if (!configured) return MAIL_FROM_NAME;
+
+  const angled = configured.match(/^(.*)<([^>]+)>\s*$/);
+  if (angled) {
+    const name = angled[1].trim().replace(/^["']|["']$/g, '');
+    return name || MAIL_FROM_NAME;
+  }
+
+  if (configured.includes('@')) return MAIL_FROM_NAME;
+  return configured;
 }
 
 function stripHtml(html: string): string {
@@ -59,33 +60,31 @@ export class NodemailerSender implements IEmailSender {
   });
 
   async send(payload: EmailPayload): Promise<void> {
-    const from = mailFrom();
     const user = mailUser();
+    // From address must be the authenticated mailbox so Gmail SPF/DKIM stay aligned.
+    const from = {
+      name: mailFromName(),
+      address: user,
+    };
     const replyTo = (payload.replyTo ?? process.env.MAIL_REPLY_TO ?? user).trim() || undefined;
     const text = (payload.text ?? '').trim() || stripHtml(payload.html);
-    const base = appBaseUrl().replace(/\/$/, '');
 
     const headers: Record<string, string> = {
-      'X-Mailer': 'UMP-RMS',
       'X-Auto-Response-Suppress': 'OOF, AutoReply',
       ...(payload.headers ?? {}),
     };
 
-    // Helps Gmail/Outlook treat the message as a legitimate app notification.
-    if (!headers['List-Unsubscribe'] && (base || user)) {
-      const parts: string[] = [];
-      if (base) parts.push(`<${base}/>`);
-      if (user) parts.push(`<mailto:${user}?subject=unsubscribe>`);
-      if (parts.length > 0) {
-        headers['List-Unsubscribe'] = parts.join(', ');
-        headers['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click';
-      }
+    // mailto-only: a homepage URL (especially localhost) plus fake One-Click
+    // is a junk-mail signal. Real One-Click needs a dedicated RFC 8058 endpoint.
+    if (!headers['List-Unsubscribe'] && user) {
+      headers['List-Unsubscribe'] = `<mailto:${user}?subject=unsubscribe>`;
     }
 
     await this.transporter.sendMail({
       from,
       to: payload.to,
       replyTo,
+      envelope: user ? { from: user, to: payload.to } : undefined,
       subject: payload.subject,
       text,
       html: payload.html,

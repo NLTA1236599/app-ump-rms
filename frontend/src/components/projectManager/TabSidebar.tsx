@@ -5,6 +5,7 @@ import type { ResearchProject as TableProject } from '../DataTable/types.js';
 
 import {
   DE_TAI_KHCN_SIDEBAR_ITEMS,
+  type DeTaiKhcnSidebarItem,
   type DeTaiKhcnSidebarItemId,
 } from './deTaiKhcnSidebarNav.js';
 import { SidebarMenuItem } from './SidebarMenuItem.js';
@@ -21,6 +22,7 @@ type TabSidebarProps = {
   tableProjects?: TableProject[];
   collapsed?: boolean;
   onToggleCollapsed?: () => void;
+  items?: DeTaiKhcnSidebarItem[];
 };
 
 /** Fixed left sidebar for "Đề tài KHCN" — spec: `BHXH-sidebar-analysis.md` */
@@ -30,6 +32,7 @@ export function TabSidebar({
   tableProjects = [],
   collapsed = false,
   onToggleCollapsed,
+  items = DE_TAI_KHCN_SIDEBAR_ITEMS,
 }: TabSidebarProps) {
   const duplicateGroupCount = useMemo(() => {
     const groups = getDuplicateGroups(tableProjects, {
@@ -97,7 +100,7 @@ export function TabSidebar({
       </div>
 
       <nav className="py-1">
-        {DE_TAI_KHCN_SIDEBAR_ITEMS.map((item) => (
+        {items.map((item) => (
           <SidebarMenuItem
             key={item.id}
             id={item.id}

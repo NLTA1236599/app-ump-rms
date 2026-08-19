@@ -6,6 +6,7 @@ export type AdminUserRow = {
   display_name: string | null;
   role: string;
   allowed_units: string[];
+  email_verified: boolean;
   created_at: string;
 };
 
@@ -14,13 +15,15 @@ export class AdminUserRepository {
     const { rows } = await pool.query<AdminUserRow>(
       `SELECT id, username, display_name, role,
               COALESCE(allowed_units, '{}') AS allowed_units,
+              email_verified,
               created_at
        FROM users
-       ORDER BY created_at DESC`,
+       ORDER BY email_verified ASC, created_at DESC`,
     );
     return rows.map((row) => ({
       ...row,
       allowed_units: Array.isArray(row.allowed_units) ? row.allowed_units : [],
+      email_verified: Boolean(row.email_verified),
     }));
   }
 
@@ -49,6 +52,40 @@ export class AdminUserRepository {
       allowedUnits,
     ]);
     return (r.rowCount ?? 0) > 0;
+  }
+
+  async grantAccess(id: string): Promise<'granted' | 'already' | 'missing'> {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const { rows } = await client.query<{ email_verified: boolean }>(
+        'SELECT email_verified FROM users WHERE id = $1 FOR UPDATE',
+        [id],
+      );
+      if (!rows[0]) {
+        await client.query('ROLLBACK');
+        return 'missing';
+      }
+      if (rows[0].email_verified) {
+        await client.query('COMMIT');
+        return 'already';
+      }
+
+      await client.query('UPDATE users SET email_verified = TRUE WHERE id = $1', [id]);
+      await client.query(
+        `UPDATE registration_otp_codes
+         SET used_at = NOW()
+         WHERE user_id = $1 AND used_at IS NULL`,
+        [id],
+      );
+      await client.query('COMMIT');
+      return 'granted';
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
   }
 
   async deleteById(id: string): Promise<boolean> {

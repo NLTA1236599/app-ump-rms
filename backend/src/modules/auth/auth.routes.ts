@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import {
   getMe,
+  getMyFeatures,
   postLogin,
   postRegister,
   postResendOtp,
@@ -28,3 +29,4 @@ authRoutes
   .all(methodNotAllowed(['POST']));
 
 authRoutes.get('/me', requireAuth, getMe);
+authRoutes.get('/features', requireAuth, getMyFeatures);
