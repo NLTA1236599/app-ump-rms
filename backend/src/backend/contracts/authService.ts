@@ -9,9 +9,10 @@ export type RegisterResult = {
 };
 
 export type ResendOtpResult = {
-  emailVerificationRequired: true;
+  emailVerificationRequired: boolean;
   otpTtlSeconds: number;
   otpDeliveryChannel: OtpDeliveryChannel;
+  alreadyVerified?: boolean;
 };
 
 /** Application port consumed by HTTP adapters (guide §3 D — controller depends on abstraction). */

@@ -76,7 +76,8 @@ export class NodemailerSender implements IEmailSender {
 
     // mailto-only: a homepage URL (especially localhost) plus fake One-Click
     // is a junk-mail signal. Real One-Click needs a dedicated RFC 8058 endpoint.
-    if (!headers['List-Unsubscribe'] && user) {
+    // Skip on transactional OTP so mailbox providers do not classify it as a newsletter.
+    if (!payload.transactional && !headers['List-Unsubscribe'] && user) {
       headers['List-Unsubscribe'] = `<mailto:${user}?subject=unsubscribe>`;
     }
 

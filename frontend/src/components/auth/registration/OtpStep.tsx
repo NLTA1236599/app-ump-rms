@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type ClipboardEvent, type FormEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type FormEvent,
+} from 'react';
 import { useAuthContext } from '../../../contexts/AuthContext.js';
 import {
   DEFAULT_OTP_TTL_SECONDS,
@@ -14,6 +22,9 @@ type OtpStepProps = {
   otpDeliveryChannel: OtpDeliveryChannel;
   onVerified: () => void;
   onBackToForm: () => void;
+  onGoToLogin?: () => void;
+  /** When jumping from unverified-login, send a fresh code immediately. */
+  autoResendOnMount?: boolean;
 };
 
 function formatMmSs(totalSeconds: number): string {
@@ -45,19 +56,31 @@ export function OtpStep({
   otpDeliveryChannel,
   onVerified,
   onBackToForm,
+  onGoToLogin,
+  autoResendOnMount = false,
 }: OtpStepProps) {
   const { verifyOtp, resendOtp } = useAuthContext();
   const [digits, setDigits] = useState<string[]>(() => Array.from({ length: OTP_LENGTH }, () => ''));
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(() => deliveryChannelHelp(otpDeliveryChannel));
+  const [info, setInfo] = useState<string | null>(() =>
+    autoResendOnMount
+      ? 'Đang gửi mã OTP mới tới email của bạn…'
+      : deliveryChannelHelp(otpDeliveryChannel)
+  );
   const [busy, setBusy] = useState(false);
+  const [alreadyVerified, setAlreadyVerified] = useState(false);
   const [ttlLeft, setTtlLeft] = useCountdown(otpTtlSeconds || DEFAULT_OTP_TTL_SECONDS);
-  const [cooldown, setCooldown] = useCountdown(RESEND_COOLDOWN_SECONDS);
+  const [cooldown, setCooldown] = useCountdown(
+    autoResendOnMount ? 0 : RESEND_COOLDOWN_SECONDS
+  );
   const [channel, setChannel] = useState(otpDeliveryChannel);
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const autoResendDone = useRef(false);
+  const busyRef = useRef(false);
+  const verifiedRef = useRef(false);
 
   const code = useMemo(() => digits.join(''), [digits]);
-  const canSubmit = code.length === OTP_LENGTH && !busy;
+  const canSubmit = code.length === OTP_LENGTH && !busy && !alreadyVerified;
 
   const setDigitAt = (index: number, value: string) => {
     const d = value.replace(/\D/g, '').slice(-1);
@@ -92,28 +115,63 @@ export function OtpStep({
       onVerified();
       return;
     }
+    if (result.alreadyVerified) {
+      verifiedRef.current = true;
+      setAlreadyVerified(true);
+      setError(result.message);
+      return;
+    }
     setError(result.message);
     setDigits(Array.from({ length: OTP_LENGTH }, () => ''));
     inputsRef.current[0]?.focus();
   };
 
-  const onResend = async () => {
-    if (cooldown > 0 || busy) return;
+  const onResend = useCallback(async () => {
+    if (busyRef.current || verifiedRef.current) return;
+    busyRef.current = true;
     setError(null);
     setBusy(true);
     const result = await resendOtp(email);
+    busyRef.current = false;
     setBusy(false);
     if (!result.ok) {
       setError(result.message);
       return;
     }
+    if (result.alreadyVerified || result.emailVerificationRequired === false) {
+      verifiedRef.current = true;
+      setAlreadyVerified(true);
+      setError('Tài khoản đã được xác minh. Hãy đăng nhập.');
+      setInfo(null);
+      return;
+    }
     setChannel(result.otpDeliveryChannel);
-    setInfo(deliveryChannelHelp(result.otpDeliveryChannel) ?? 'Đã gửi lại mã OTP.');
+    setInfo(
+      deliveryChannelHelp(result.otpDeliveryChannel) ??
+        'Đã gửi mã mới. Mã cũ không còn hiệu lực. Kiểm tra cả hộp thư rác.'
+    );
     setTtlLeft(result.otpTtlSeconds || DEFAULT_OTP_TTL_SECONDS);
     setCooldown(RESEND_COOLDOWN_SECONDS);
     setDigits(Array.from({ length: OTP_LENGTH }, () => ''));
     inputsRef.current[0]?.focus();
-  };
+  }, [email, resendOtp, setCooldown, setTtlLeft]);
+
+  useEffect(() => {
+    if (!autoResendOnMount || !email || autoResendDone.current) return;
+    autoResendDone.current = true;
+    const key = `rms-otp-autoresend:${email}`;
+    try {
+      const last = Number(sessionStorage.getItem(key) || '0');
+      if (Date.now() - last < 20_000) {
+        setInfo(deliveryChannelHelp('smtp'));
+        return;
+      }
+      sessionStorage.setItem(key, String(Date.now()));
+    } catch {
+      /* ignore quota / private mode */
+    }
+    void onResend();
+  }, [autoResendOnMount, email, onResend]);
 
   return (
     <div className="flex flex-col">
@@ -167,32 +225,44 @@ export function OtpStep({
           </p>
         ) : null}
 
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="h-[52px] w-full rounded-[11px] bg-[#1a1a1a] text-[15px] font-semibold text-white outline-none transition-[background,opacity] enabled:hover:bg-[#2d2d2d] enabled:focus-visible:ring-2 enabled:focus-visible:ring-[#1a1a1a] enabled:focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
-        >
-          {busy ? 'Đang xác minh…' : 'Xác minh'}
-        </button>
+        {alreadyVerified ? (
+          <button
+            type="button"
+            onClick={() => onGoToLogin?.()}
+            className="h-[52px] w-full rounded-[11px] bg-[#1a1a1a] text-[15px] font-semibold text-white outline-none transition-[background,opacity] hover:bg-[#2d2d2d] focus-visible:ring-2 focus-visible:ring-[#1a1a1a] focus-visible:ring-offset-2"
+          >
+            Đăng nhập
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="h-[52px] w-full rounded-[11px] bg-[#1a1a1a] text-[15px] font-semibold text-white outline-none transition-[background,opacity] enabled:hover:bg-[#2d2d2d] enabled:focus-visible:ring-2 enabled:focus-visible:ring-[#1a1a1a] enabled:focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            {busy ? 'Đang xác minh…' : 'Xác minh'}
+          </button>
+        )}
       </form>
 
-      <div className="mt-4 flex flex-col items-center gap-2 text-[13px]">
-        <button
-          type="button"
-          disabled={cooldown > 0 || busy}
-          onClick={() => void onResend()}
-          className="font-medium text-[#1d4ed8] underline-offset-2 enabled:hover:underline disabled:cursor-not-allowed disabled:text-[#9ca3af]"
-        >
-          {cooldown > 0 ? `Gửi lại mã (${cooldown}s)` : 'Gửi lại mã'}
-        </button>
-        <button
-          type="button"
-          onClick={onBackToForm}
-          className="text-[#6b7280] underline-offset-2 hover:underline"
-        >
-          Quay lại form đăng ký
-        </button>
-      </div>
+      {!alreadyVerified ? (
+        <div className="mt-4 flex flex-col items-center gap-2 text-[13px]">
+          <button
+            type="button"
+            disabled={cooldown > 0 || busy}
+            onClick={() => void onResend()}
+            className="font-medium text-[#1d4ed8] underline-offset-2 enabled:hover:underline disabled:cursor-not-allowed disabled:text-[#9ca3af]"
+          >
+            {cooldown > 0 ? `Gửi lại mã (${cooldown}s)` : 'Gửi lại mã'}
+          </button>
+          <button
+            type="button"
+            onClick={onBackToForm}
+            className="text-[#6b7280] underline-offset-2 hover:underline"
+          >
+            Quay lại form đăng ký
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

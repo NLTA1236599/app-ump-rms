@@ -93,7 +93,8 @@ export function useAuth() {
       return { ok: true as const };
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Xác minh OTP thất bại.';
-      return { ok: false as const, message };
+      const alreadyVerified = e instanceof ApiHttpError && e.status === 409;
+      return { ok: false as const, message, alreadyVerified };
     }
   }, []);
 

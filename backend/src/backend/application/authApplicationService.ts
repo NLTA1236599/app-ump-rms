@@ -4,6 +4,7 @@ import type { IEmailSender } from '../../services/email/IEmailSender.js';
 import {
   registrationOtpHtml,
   registrationOtpSubject,
+  registrationOtpText,
 } from '../../services/email/templates/registrationOtpTemplate.js';
 import { checkResendRateLimit } from '../../modules/auth/authRateLimit.js';
 import { validateInstitutionalEmail } from '../../modules/auth/institutionalEmail.js';
@@ -14,13 +15,19 @@ import {
   resolveConfiguredDeliveryChannel,
   type OtpDeliveryChannel,
 } from '../../modules/auth/otpConfig.js';
-import { generateOtpCode, hashOtp, isSixDigitOtp, otpHashesEqual } from '../../modules/auth/otpCrypto.js';
+import {
+  generateOtpCode,
+  hashOtp,
+  isSixDigitOtp,
+  normalizeOtpInput,
+  otpHashesEqual,
+} from '../../modules/auth/otpCrypto.js';
 import type {
   IAuthService,
   RegisterResult,
   ResendOtpResult,
 } from '../contracts/authService.js';
-import type { IAuthUserRepository } from '../contracts/authUserRepository.js';
+import type { AuthUserRow, IAuthUserRepository } from '../contracts/authUserRepository.js';
 import type { IPasswordHasher } from '../contracts/passwordHasher.js';
 import type { IRegistrationOtpRepository } from '../contracts/registrationOtpRepository.js';
 import type { ITokenSigner } from '../contracts/tokenSigner.js';
@@ -31,7 +38,13 @@ function httpError(message: string, status: number): Error {
   return err;
 }
 
-const GENERIC_OTP_REJECT = 'Mã OTP không hợp lệ hoặc đã hết hạn.';
+const GENERIC_OTP_REJECT =
+  'Mã OTP không hợp lệ hoặc đã hết hạn. Nếu vừa gửi lại mã, hãy nhập mã mới nhất trong email (kể cả thư rác).';
+const OTP_EXPIRED_RESEND =
+  'Mã OTP đã hết hạn hoặc chưa được gửi. Hãy bấm Gửi lại mã để nhận mã mới.';
+const ALREADY_VERIFIED_MSG = 'Tài khoản đã được xác minh. Hãy đăng nhập.';
+const OTP_MAIL_FAILED_MSG =
+  'Không gửi được email OTP. Kiểm tra hộp thư rác hoặc thử lại sau ít phút.';
 const UNVERIFIED_LOGIN_MSG =
   'Email chưa được xác minh. Vui lòng nhập mã OTP từ email hoặc gửi lại mã trong quy trình đăng ký.';
 /** Same message for unknown user and wrong password — prevents user enumeration (BUG-018). */
@@ -95,6 +108,10 @@ export class AuthApplicationService implements IAuthService {
     }
 
     const channel = await this.deliverOtp(email, plaintextOtp, ttlMinutes);
+    if (channel === 'smtp_failed') {
+      // Account exists; client can retry via resend once SMTP recovers.
+      console.warn('[Auth] OTP email failed after register; user can resend');
+    }
 
     return {
       user,
@@ -106,21 +123,25 @@ export class AuthApplicationService implements IAuthService {
 
   async verifyOtp(email: string, otp: string): Promise<void> {
     const emailResult = validateInstitutionalEmail(email);
-    if (!emailResult.ok || !isSixDigitOtp(otp)) {
+    const code = normalizeOtpInput(otp);
+    if (!emailResult.ok || !isSixDigitOtp(code)) {
       throw httpError(GENERIC_OTP_REJECT, 400);
     }
 
-    const row = await this.users.findByUsername(emailResult.normalized);
-    if (!row || row.email_verified) {
+    const row = await this.resolveUserByEmail(emailResult.normalized);
+    if (!row) {
       throw httpError(GENERIC_OTP_REJECT, 400);
+    }
+    if (row.email_verified) {
+      throw httpError(ALREADY_VERIFIED_MSG, 409);
     }
 
     const pending = await this.otps.findLatestPending(row.id, getOtpMaxFailedAttempts());
     if (!pending) {
-      throw httpError(GENERIC_OTP_REJECT, 400);
+      throw httpError(OTP_EXPIRED_RESEND, 400);
     }
 
-    const submittedHash = hashOtp(otp);
+    const submittedHash = hashOtp(code);
     if (!otpHashesEqual(submittedHash, pending.otpHash)) {
       await this.otps.incrementFailedAttempts(pending.id);
       throw httpError(GENERIC_OTP_REJECT, 400);
@@ -165,9 +186,18 @@ export class AuthApplicationService implements IAuthService {
       );
     }
 
-    const row = await this.users.findByUsername(emailResult.normalized);
-    if (!row || row.email_verified) {
+    const row = await this.resolveUserByEmail(emailResult.normalized);
+    if (!row) {
+      console.warn('[Auth] OTP resend skipped: user not found');
       return safeEnvelope();
+    }
+    if (row.email_verified) {
+      return {
+        emailVerificationRequired: false,
+        otpTtlSeconds: ttlSeconds,
+        otpDeliveryChannel: configuredChannel,
+        alreadyVerified: true,
+      };
     }
 
     const ttlMinutes = getOtpTtlMinutes();
@@ -187,7 +217,11 @@ export class AuthApplicationService implements IAuthService {
       client.release();
     }
 
-    const channel = await this.deliverOtp(emailResult.normalized, plaintextOtp, ttlMinutes);
+    const mailTo = row.username.includes('@') ? row.username : emailResult.normalized;
+    const channel = await this.deliverOtp(mailTo, plaintextOtp, ttlMinutes);
+    if (channel === 'smtp_failed') {
+      throw httpError(OTP_MAIL_FAILED_MSG, 503);
+    }
     return {
       emailVerificationRequired: true,
       otpTtlSeconds: ttlSeconds,
@@ -197,12 +231,7 @@ export class AuthApplicationService implements IAuthService {
 
   async login(username: string, password: string): Promise<{ token: string; user: User }> {
     const normalized = username.trim().toLowerCase();
-    let row = await this.users.findByUsername(normalized);
-    // Legacy accounts stored local-part only (e.g. seed admin `nltanh`).
-    if (!row && normalized.includes('@')) {
-      const local = normalized.slice(0, normalized.indexOf('@'));
-      if (local) row = await this.users.findByUsername(local);
-    }
+    const row = await this.resolveUserByEmail(normalized);
     if (!row || typeof row.password !== 'string' || !row.password) {
       await this.passwords.compare(password, DUMMY_PASSWORD_HASH).catch(() => false);
       throw httpError(INVALID_CREDENTIALS_MSG, 401);
@@ -229,6 +258,17 @@ export class AuthApplicationService implements IAuthService {
     return this.users.findProfileById(userId);
   }
 
+  /** Full institutional email first, then legacy local-part usernames (seed admin `nltanh`). */
+  private async resolveUserByEmail(email: string): Promise<AuthUserRow | null> {
+    const normalized = email.trim().toLowerCase();
+    let row = await this.users.findByUsername(normalized);
+    if (!row && normalized.includes('@')) {
+      const local = normalized.slice(0, normalized.indexOf('@'));
+      if (local) row = await this.users.findByUsername(local);
+    }
+    return row;
+  }
+
   private async deliverOtp(
     to: string,
     otp: string,
@@ -240,6 +280,8 @@ export class AuthApplicationService implements IAuthService {
         to,
         subject: registrationOtpSubject(),
         html: registrationOtpHtml(otp, ttlMinutes),
+        text: registrationOtpText(otp, ttlMinutes),
+        transactional: true,
       });
       return configured;
     } catch (e) {

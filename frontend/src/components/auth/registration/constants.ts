@@ -12,9 +12,11 @@ export function deliveryChannelHelp(channel: OtpDeliveryChannel | string | undef
     case 'log_only':
       return 'Môi trường phát triển: mã OTP được ghi vào log máy chủ (chưa cấu hình SMTP).';
     case 'smtp_failed':
-      return 'Tài khoản đã tạo nhưng gửi email thất bại. Dùng «Gửi lại mã» sau khi vận hành sửa SMTP.';
+      return 'Gửi email thất bại. Bấm «Gửi lại mã» hoặc kiểm tra cấu hình SMTP với quản trị viên.';
     case 'none':
       return 'Không gửi được email xác minh. Liên hệ quản trị viên.';
+    case 'smtp':
+      return 'Mã đã gửi qua email. Nếu không thấy, kiểm tra hộp thư rác (Spam). Mã cũ hết hiệu lực khi gửi lại.';
     default:
       return null;
   }

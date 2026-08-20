@@ -12,6 +12,7 @@ export type ResendOtpResponse = {
   emailVerificationRequired: boolean;
   otpTtlSeconds: number;
   otpDeliveryChannel: OtpDeliveryChannel;
+  alreadyVerified?: boolean;
 };
 
 export interface IAuthService {

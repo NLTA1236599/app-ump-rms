@@ -5,6 +5,13 @@ export function generateOtpCode(): string {
   return String(randomInt(0, 1_000_000)).padStart(6, '0');
 }
 
+/** Strip copy-paste noise (spaces, letter-spacing artifacts, zero-width chars). */
+export function normalizeOtpInput(otp: string): string {
+  return String(otp ?? '')
+    .normalize('NFKC')
+    .replace(/[^\d]/g, '');
+}
+
 export function hashOtp(otp: string): string {
   return createHash('sha256').update(otp, 'utf8').digest('hex');
 }
@@ -22,5 +29,5 @@ export function otpHashesEqual(a: string, b: string): boolean {
 }
 
 export function isSixDigitOtp(otp: string): boolean {
-  return /^\d{6}$/.test(otp);
+  return /^\d{6}$/.test(normalizeOtpInput(otp));
 }

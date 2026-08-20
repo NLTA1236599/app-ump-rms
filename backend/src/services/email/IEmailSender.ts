@@ -7,6 +7,8 @@ export type EmailPayload = {
   /** Optional headers (List-Unsubscribe, etc.). */
   headers?: Record<string, string>;
   replyTo?: string;
+  /** Transactional mail (OTP): skip List-Unsubscribe so providers do not treat it as bulk. */
+  transactional?: boolean;
 };
 
 /** Abstraction — jobs depend on this, never on nodemailer directly. */

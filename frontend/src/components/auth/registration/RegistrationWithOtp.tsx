@@ -30,12 +30,14 @@ export function RegistrationWithOtp({
   const [email, setEmail] = useState('');
   const [otpTtlSeconds, setOtpTtlSeconds] = useState(DEFAULT_OTP_TTL_SECONDS);
   const [otpDeliveryChannel, setOtpDeliveryChannel] = useState<OtpDeliveryChannel>('smtp');
+  const [autoResendOnMount, setAutoResendOnMount] = useState(false);
 
   useEffect(() => {
     if (!resumeOtp?.email) return;
     setEmail(resumeOtp.email);
     setOtpTtlSeconds(resumeOtp.otpTtlSeconds ?? DEFAULT_OTP_TTL_SECONDS);
     setOtpDeliveryChannel('smtp');
+    setAutoResendOnMount(true);
     setStep('otp');
     onResumeConsumed?.();
   }, [resumeOtp, onResumeConsumed]);
@@ -44,6 +46,7 @@ export function RegistrationWithOtp({
     setEmail(payload.email);
     setOtpTtlSeconds(payload.otpTtlSeconds);
     setOtpDeliveryChannel(payload.otpDeliveryChannel);
+    setAutoResendOnMount(false);
     setStep('otp');
   }, []);
 
@@ -53,8 +56,13 @@ export function RegistrationWithOtp({
         email={email}
         otpTtlSeconds={otpTtlSeconds}
         otpDeliveryChannel={otpDeliveryChannel}
+        autoResendOnMount={autoResendOnMount}
         onVerified={() => setStep('success')}
-        onBackToForm={() => setStep('form')}
+        onBackToForm={() => {
+          setAutoResendOnMount(false);
+          setStep('form');
+        }}
+        onGoToLogin={onSwitchToLogin}
       />
     );
   }

@@ -9,12 +9,14 @@ CREATE TABLE IF NOT EXISTS users (
   password    VARCHAR(255) NOT NULL,
   role        VARCHAR(50)  NOT NULL DEFAULT 'user',
   display_name VARCHAR(255),
-  email_verified BOOLEAN NOT NULL DEFAULT TRUE,
+  email_verified BOOLEAN NOT NULL DEFAULT FALSE,
   created_at  TIMESTAMPTZ  DEFAULT NOW()
 );
 
 -- Existing DBs created before email verification: keep current users loginable.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT TRUE;
+-- New inserts (without an explicit flag) must complete OTP before login.
+ALTER TABLE users ALTER COLUMN email_verified SET DEFAULT FALSE;
 
 -- Unit-scoped topic access (empty = see all departments). Managed by fe0-admin.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS allowed_units TEXT[] NOT NULL DEFAULT '{}';

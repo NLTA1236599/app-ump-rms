@@ -2,6 +2,7 @@
 -- Safe to run on DBs that already applied schema.sql
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE users ALTER COLUMN email_verified SET DEFAULT FALSE;
 
 CREATE TABLE IF NOT EXISTS registration_otp_codes (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
