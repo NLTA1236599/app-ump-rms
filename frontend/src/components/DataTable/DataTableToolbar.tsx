@@ -15,25 +15,25 @@ type ContractSearchRowProps = {
 
 export function ContractSearchRow({ value, onChange, onSearch }: ContractSearchRowProps) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="flex-shrink-0 text-sm font-medium text-slate-700">Số hợp đồng</span>
+    <div className="flex items-center gap-2">
+      <span className="flex-shrink-0 text-xs font-medium text-slate-700">Số hợp đồng</span>
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && onSearch()}
         placeholder="Nhập số hợp đồng..."
-        className="min-w-[180px] border-0 border-b border-slate-400 bg-transparent pb-1 text-sm
+        className="min-w-[160px] border-0 border-b border-slate-400 bg-transparent pb-0.5 text-xs
                    text-slate-700 focus:border-blue-500 focus:outline-none"
       />
       <button
         type="button"
         onClick={onSearch}
-        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-600
+        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-blue-600
                    shadow-sm transition-colors duration-150 hover:bg-blue-700"
         aria-label="Tìm kiếm theo số hợp đồng"
       >
-        <MagnifyingGlassIcon className="h-4 w-4 text-white" />
+        <MagnifyingGlassIcon className="h-3.5 w-3.5 text-white" />
       </button>
     </div>
   );
@@ -77,11 +77,11 @@ export function ActionButtonRow({
           <button
             type="button"
             onClick={onImportClick}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-black
-                       uppercase tracking-widest text-white shadow-md shadow-blue-200 transition-colors
+            className="flex items-center gap-1 rounded-md bg-blue-600 px-2.5 py-1.5 text-[10px] font-bold
+                       uppercase tracking-wide text-white shadow-sm transition-colors
                        hover:bg-blue-700"
           >
-            <ArrowUpTrayIcon className="h-4 w-4" /> NHẬP EXCEL
+            <ArrowUpTrayIcon className="h-3.5 w-3.5" /> NHẬP EXCEL
           </button>
           <input
             ref={fileInputRef}
@@ -96,19 +96,19 @@ export function ActionButtonRow({
       <button
         type="button"
         onClick={onExport}
-        className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black
-                   uppercase tracking-widest text-white shadow-md shadow-emerald-200 transition-colors
+        className="flex items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1.5 text-[10px] font-bold
+                   uppercase tracking-wide text-white shadow-sm transition-colors
                    hover:bg-emerald-700"
       >
-        <ArrowDownTrayIcon className="h-4 w-4" /> XUẤT EXCEL
+        <ArrowDownTrayIcon className="h-3.5 w-3.5" /> XUẤT EXCEL
       </button>
 
       {canDeleteProjects ? (
         <button
           type="button"
           onClick={onReset}
-          className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2
-                     text-xs font-black uppercase tracking-widest text-red-600 transition-colors
+          className="flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5
+                     text-[10px] font-bold uppercase tracking-wide text-red-600 transition-colors
                      hover:bg-red-100"
         >
           RESET
@@ -119,8 +119,8 @@ export function ActionButtonRow({
         <button
           type="button"
           onClick={onDeleteSelected}
-          className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-black
-                     uppercase tracking-widest text-white shadow-md shadow-red-200 transition-colors
+          className="flex items-center gap-1 rounded-md bg-red-600 px-2.5 py-1.5 text-[10px] font-bold
+                     uppercase tracking-wide text-white shadow-sm transition-colors
                      hover:bg-red-700"
         >
           XÓA ĐÃ CHỌN ({selectedCount})
@@ -131,8 +131,8 @@ export function ActionButtonRow({
         <button
           type="button"
           onClick={onDeleteAll}
-          className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-2
-                     text-xs font-black uppercase tracking-widest text-red-700 transition-colors
+          className="flex items-center gap-1 rounded-md border border-red-300 bg-white px-2.5 py-1.5
+                     text-[10px] font-bold uppercase tracking-wide text-red-700 transition-colors
                      hover:bg-red-50"
         >
           XÓA TẤT CẢ ({totalCount})
@@ -155,13 +155,13 @@ type PageSizeRowProps = {
 export function PageSizeRow({ pageSize, onChange }: PageSizeRowProps) {
   return (
     <div className="flex items-center gap-2">
-      <span className="flex-shrink-0 text-sm text-slate-600">Bản ghi mỗi trang:</span>
+      <span className="flex-shrink-0 text-xs text-slate-600">Bản ghi mỗi trang:</span>
       <div className="relative">
         <select
           value={pageSize}
           onChange={(e) => onChange(Number(e.target.value))}
           className="w-16 cursor-pointer appearance-none border-0 border-b border-slate-400
-                     bg-transparent pb-0.5 pr-4 text-sm text-slate-700 focus:border-blue-500
+                     bg-transparent pb-0.5 pr-4 text-xs text-slate-700 focus:border-blue-500
                      focus:outline-none"
         >
           {PAGE_SIZE_OPTIONS.map((n) => (
@@ -200,8 +200,8 @@ type DataTableToolbarProps = {
 export function DataTableToolbar(props: DataTableToolbarProps) {
   return (
     <div
-      className="mb-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 pb-3
-                 pt-4 shadow-sm"
+      className="mb-2 flex flex-col gap-2 rounded-lg border border-slate-200 bg-white px-3 pb-2
+                 pt-2.5 shadow-sm"
     >
       <ContractSearchRow
         value={props.contractIdSearch}

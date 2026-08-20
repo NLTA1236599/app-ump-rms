@@ -58,13 +58,13 @@ export function ColumnVisibilityDropdown({ visibleColumns, onChange }: Props) {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={listId}
-        className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2
-                   text-xs font-black uppercase tracking-widest text-slate-700 transition-colors
+        className="flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5
+                   text-[10px] font-bold uppercase tracking-wide text-slate-700 transition-colors
                    hover:bg-slate-50"
       >
         Cột hiển thị ({visibleCount}/{TABLE_COLUMNS.length})
         <ChevronDownIcon
-          className={`h-4 w-4 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`h-3.5 w-3.5 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
 

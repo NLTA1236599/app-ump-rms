@@ -31,28 +31,28 @@ export function IdentityBar({ onLogout, onHomeClick }: IdentityBarProps) {
   const userLabel = resolveUserDisplayName(user?.displayName, user?.username);
 
   return (
-    <div className="h-16 md:h-[68px]" style={{ backgroundColor: HEADER_IDENTITY_BG }}>
+    <div className="h-14" style={{ backgroundColor: HEADER_IDENTITY_BG }}>
       <div
         className={`mx-auto flex h-full max-w-[1600px] items-center justify-between ${HEADER_HORIZONTAL_PADDING}`}
       >
         <button
           type="button"
           onClick={onHomeClick}
-          className="flex min-w-0 items-center gap-3 text-left"
+          className="flex min-w-0 items-center gap-2.5 text-left"
           aria-label="Trang chủ Đại học Y Dược TP. Hồ Chí Minh"
         >
           {sealOk ? (
             <img
               src="/ump-seal.png"
               alt="Logo Đại học Y Dược TP. Hồ Chí Minh"
-              width={46}
-              height={46}
-              className="size-11 shrink-0 rounded-full object-cover md:size-[46px]"
+              width={36}
+              height={36}
+              className="size-9 shrink-0 rounded-full object-cover"
               onError={() => setSealOk(false)}
             />
           ) : (
             <span
-              className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-[#005b8e] md:size-[46px]"
+              className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-[#005b8e]"
               aria-hidden
             >
               UMP
@@ -60,17 +60,17 @@ export function IdentityBar({ onLogout, onHomeClick }: IdentityBarProps) {
           )}
 
           <div className="flex min-w-0 flex-col">
-            <span className="truncate text-[11px] font-normal tracking-normal text-white/80">
+            <span className="truncate text-[10px] font-normal leading-tight tracking-normal text-white/80">
               {INSTITUTION_SUB_LABEL}
             </span>
-            <span className="truncate text-lg font-black uppercase leading-tight tracking-tight text-white md:text-xl">
+            <span className="truncate text-sm font-bold uppercase leading-tight tracking-tight text-white md:text-base">
               {INSTITUTION_MAIN_LABEL}
             </span>
           </div>
         </button>
 
-        <div className="flex shrink-0 items-center gap-4">
-          <span className="max-w-[200px] truncate text-sm font-medium text-white" title={userLabel}>
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="max-w-[180px] truncate text-xs font-medium text-white" title={userLabel}>
             {userLabel}
           </span>
 
@@ -81,7 +81,7 @@ export function IdentityBar({ onLogout, onHomeClick }: IdentityBarProps) {
           <button
             type="button"
             onClick={onLogout}
-            className="flex items-center gap-2 rounded-full border border-white/20 bg-transparent px-3 py-1.5 text-sm font-medium text-white transition-all duration-150 hover:border-red-400 hover:bg-red-500/80"
+            className="flex items-center gap-1.5 rounded-full border border-white/20 bg-transparent px-2.5 py-1 text-xs font-medium text-white transition-all duration-150 hover:border-red-400 hover:bg-red-500/80"
             aria-label="Đăng xuất khỏi hệ thống"
           >
             <HeaderLogoutIcon className="size-4" />

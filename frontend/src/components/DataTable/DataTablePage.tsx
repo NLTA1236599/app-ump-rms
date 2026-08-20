@@ -70,6 +70,7 @@ export function DataTablePage({
         onEdit={onEdit}
         onDelete={onDelete}
         canDeleteProjects={canDeleteProjects}
+        supervisorEmailById={table.supervisorEmailById}
       />
     </div>
   );

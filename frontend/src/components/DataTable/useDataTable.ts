@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 
+import { useSupervisorEmailLookup } from '../DataEntry/useSupervisorAccounts.js';
+
 import { DEFAULT_PAGE_SIZE } from './constants.js';
 import { dedupeProjects } from './dedupeProjects.js';
 import { exportProjectsToExcel } from './excelExport.js';
@@ -30,6 +32,7 @@ export function useDataTable({
     () => loadVisibleColumns(),
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const supervisorEmailById = useSupervisorEmailLookup();
 
   const setVisibleColumns = useCallback((next: Record<string, boolean>) => {
     setVisibleColumnsState(next);
@@ -44,9 +47,10 @@ export function useDataTable({
           statusFilter,
           columnFilters,
           contractIdSearch,
+          supervisorEmailById,
         }),
       ),
-    [projects, searchTerm, statusFilter, columnFilters, contractIdSearch],
+    [projects, searchTerm, statusFilter, columnFilters, contractIdSearch, supervisorEmailById],
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredProjects.length / pageSize));
@@ -169,7 +173,8 @@ export function useDataTable({
     e.target.value = '';
   };
 
-  const exportExcel = () => exportProjectsToExcel(filteredProjects, visibleColumns);
+  const exportExcel = () =>
+    exportProjectsToExcel(filteredProjects, visibleColumns, supervisorEmailById);
 
   return {
     contractIdSearch,
@@ -200,5 +205,6 @@ export function useDataTable({
     triggerImport,
     handleFileUpload,
     exportExcel,
+    supervisorEmailById,
   };
 }

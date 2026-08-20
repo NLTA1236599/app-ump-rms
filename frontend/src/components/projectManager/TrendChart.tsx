@@ -41,10 +41,10 @@ export function TrendChart({ data }: TrendChartProps) {
       </div>
 
       <div className="p-1.5">
-        <div className="h-[120px]">
+        <div className="h-[min(22vh,200px)] min-h-[140px]">
           {sliced.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={sliced} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+              <ComposedChart data={sliced} margin={{ top: 8, right: 12, left: 4, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <XAxis dataKey="period" tick={{ fontSize: 9, fill: '#94a3b8' }} />
                 <YAxis

@@ -1,4 +1,4 @@
-import { PROJECT_TYPE_TAGS } from '../DataEntry/constants.js';
+import { PROJECT_TYPE_TAGS, REVIEW_BATCH_OPTIONS } from '../DataEntry/constants.js';
 
 import { ProgressStatus, ProjectStatus, type ResearchProject } from './types.js';
 
@@ -22,6 +22,19 @@ export function getProjectTypeOptions(projects: ResearchProject[]): string[] {
     (tag) => !PROJECT_TYPE_TAGS.includes(tag as (typeof PROJECT_TYPE_TAGS)[number]),
   );
   return [...PROJECT_TYPE_TAGS, ...extras.sort()];
+}
+
+export function getReviewBatchOptions(projects: ResearchProject[]): string[] {
+  const fromData = new Set<string>();
+  for (const project of projects) {
+    const batch = project.reviewBatch?.trim();
+    if (batch) fromData.add(batch);
+  }
+
+  const extras = [...fromData].filter(
+    (tag) => !REVIEW_BATCH_OPTIONS.includes(tag as (typeof REVIEW_BATCH_OPTIONS)[number]),
+  );
+  return [...REVIEW_BATCH_OPTIONS, ...extras.sort()];
 }
 
 export function extractYearFromDate(dateValue: unknown): string | null {
@@ -192,6 +205,7 @@ export function filterProjects(
     researchField: string;
     projectType: string;
     department: string;
+    reviewBatch: string;
   },
 ): ResearchProject[] {
   return projects.filter((p) => {
@@ -214,6 +228,9 @@ export function filterProjects(
     const matchProjectType =
       filters.projectType === 'all' ||
       parseProjectCategories(p.categories).includes(filters.projectType);
+    const matchReviewBatch =
+      filters.reviewBatch === 'all' ||
+      (p.reviewBatch?.trim() ?? '') === filters.reviewBatch;
 
     return (
       matchYear &&
@@ -221,7 +238,8 @@ export function filterProjects(
       matchStatus &&
       matchDepartment &&
       matchResearchField &&
-      matchProjectType
+      matchProjectType &&
+      matchReviewBatch
     );
   });
 }

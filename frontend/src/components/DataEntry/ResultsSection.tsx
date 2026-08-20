@@ -17,7 +17,7 @@ export function ResultsSection({ form, setField }: Props) {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="lg:col-span-6">
-          <FieldLabel htmlFor="output">Sản phẩm đầu ra (Tóm tắt)</FieldLabel>
+          <FieldLabel htmlFor="output">Sản phẩm dự kiến</FieldLabel>
           <input
             id="output"
             type="text"

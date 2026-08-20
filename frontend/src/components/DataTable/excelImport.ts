@@ -36,6 +36,7 @@ function mapRow(headers: string[], row: unknown[]): Partial<ResearchProject> {
       p.certificateResultIssuingAuthority = val ? String(val) : '';
     else if (header.includes('chuyên viên') || header.includes('cv phụ trách'))
       p.supervisorId = val ? String(val) : '';
+    else if (header.includes('đợt xét duyệt')) p.reviewBatch = val ? String(val) : '';
     else if (header.includes('ghi chú chung')) p.generalNotes = val ? String(val) : '';
     else if (header.includes('qđ xét duyệt') || header.includes('quyết định xét duyệt'))
       p.approvalDecision = val ? String(val) : '';

@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { validateInstitutionalEmail } from '../auth/institutionalEmail.js';
 import type { ResearchProject } from '../DataTable/types.js';
 
 import { cloneFormData } from './cloneFormData.js';
@@ -33,12 +32,6 @@ function validate(form: DataEntryFormData): FormErrors {
   });
   if (!form.categoryTags.length) errors.categoryTags = 'Vui lòng chọn ít nhất 1 loại đề tài';
   if (!form.facultyUnits.length) errors.facultyUnits = 'Vui lòng chọn khoa/đơn vị';
-
-  const email = form.principalEmail.trim();
-  if (email) {
-    const emailResult = validateInstitutionalEmail(email);
-    if (!emailResult.ok) errors.principalEmail = emailResult.message;
-  }
 
   const code = form.projectCode.trim();
   if (code && !isCompleteProjectCode(code)) {

@@ -116,6 +116,7 @@ export function mapFormToTableProject(
     isTransferred: form.transferForward,
     terminationReason: form.liquidationReason.trim() || undefined,
     supervisorId: form.supervisorId.trim() || undefined,
+    reviewBatch: form.reviewBatch.trim() || undefined,
     generalNotes: form.generalNotes.trim() || undefined,
     history: existing?.history ?? [],
     projectNotes: existing?.projectNotes,

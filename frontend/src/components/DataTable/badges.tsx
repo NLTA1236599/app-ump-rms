@@ -1,7 +1,7 @@
 import { ProjectStatus } from './types.js';
 
 const BADGE_BASE =
-  'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide';
+  'inline-flex items-center px-1.5 py-px rounded-full text-[9px] font-bold uppercase tracking-wide';
 
 const STATUS_STYLES: Record<string, { className: string; label: string }> = {
   [ProjectStatus.NEW_REGISTRATION]: { className: 'bg-violet-100 text-violet-700', label: 'Đăng ký mới' },

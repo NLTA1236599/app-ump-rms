@@ -16,8 +16,8 @@ export function FilterableHeader({
 
   return (
     <th
-      className={`relative sticky top-0 z-20 whitespace-nowrap bg-slate-50 px-3 py-2 text-left
-                  text-xs font-black uppercase tracking-widest text-slate-600 shadow-sm ${className}`}
+      className={`relative sticky top-0 z-20 whitespace-nowrap bg-slate-50 px-2 py-1.5 text-left
+                  text-[10px] font-semibold uppercase tracking-wide text-slate-600 shadow-sm ${className}`}
       style={{ minWidth }}
     >
       <div className="flex items-center gap-1">

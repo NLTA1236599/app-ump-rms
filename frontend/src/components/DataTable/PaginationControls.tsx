@@ -6,7 +6,7 @@ type PaginationButtonProps = {
 };
 
 function PaginationButton({ label, onClick, disabled, active }: PaginationButtonProps) {
-  const base = 'flex h-7 w-7 items-center justify-center rounded text-xs';
+  const base = 'flex h-6 w-6 items-center justify-center rounded text-[10px]';
   const stateClass = active
     ? 'border border-blue-600 bg-blue-600 font-bold text-white'
     : 'border border-slate-200 text-slate-600 hover:bg-slate-50';
@@ -40,7 +40,7 @@ export function PaginationControls({
   );
 
   return (
-    <div className="mt-3 flex items-center justify-end gap-1 px-4 pb-3">
+    <div className="mt-2 flex items-center justify-end gap-1 px-3 pb-2">
       <PaginationButton label="◀◀" onClick={() => onPageChange(1)} disabled={currentPage === 1} />
       <PaginationButton
         label="◀"

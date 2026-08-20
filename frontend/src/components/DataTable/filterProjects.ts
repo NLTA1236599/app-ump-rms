@@ -5,6 +5,7 @@ export type FilterOptions = {
   statusFilter: ProjectStatus | 'ALL';
   columnFilters: ColumnFilters;
   contractIdSearch: string;
+  supervisorEmailById?: ReadonlyMap<string, string>;
 };
 
 function fieldToFilterString(raw: unknown): string {
@@ -18,7 +19,7 @@ function fieldToFilterString(raw: unknown): string {
 }
 
 export function filterProjects(projects: ResearchProject[], opts: FilterOptions): ResearchProject[] {
-  const { searchTerm, statusFilter, columnFilters, contractIdSearch } = opts;
+  const { searchTerm, statusFilter, columnFilters, contractIdSearch, supervisorEmailById } = opts;
 
   return projects
     .filter((p) => {
@@ -39,7 +40,10 @@ export function filterProjects(projects: ResearchProject[], opts: FilterOptions)
     .filter((p) =>
       Object.entries(columnFilters).every(([colId, filterVal]) => {
         if (!filterVal) return true;
-        const raw = p[colId as keyof ResearchProject];
+        const raw =
+          colId === 'supervisorId'
+            ? supervisorEmailById?.get(p.supervisorId ?? '') || p.supervisorId
+            : p[colId as keyof ResearchProject];
         return fieldToFilterString(raw).toLowerCase().includes(filterVal.toLowerCase());
       }),
     );

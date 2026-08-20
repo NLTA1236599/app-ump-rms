@@ -264,6 +264,7 @@ export function InfoSections({
         {field('Phụ lục hợp đồng', 'contractAppendix')}
         {field('Ngày ký HĐ', 'contractDate', { isDate: true })}
         {field('QĐ Xét duyệt', 'approvalDecision')}
+        {field('Đợt xét duyệt', 'reviewBatch')}
         {field('QĐ Phê duyệt', 'authorizationDecision')}
         {field('QĐ giám định', 'appraisalDecision')}
         {field('QĐ nghiệm thu', 'acceptanceDecision')}

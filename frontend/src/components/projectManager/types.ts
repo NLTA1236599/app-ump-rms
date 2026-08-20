@@ -30,6 +30,8 @@ export type ResearchProject = {
   startDate?: string | null;
   endDate?: string | null;
   acceptanceAcademicYear?: string;
+  /** Review round, e.g. `Đợt 1/2025`. */
+  reviewBatch?: string;
   budget: number;
   /** Kinh phí khoán (nguồn ĐHYD). */
   budgetLumpSum?: number;
@@ -49,6 +51,7 @@ export type ProjectFilterState = {
   researchField: string;
   projectType: string;
   department: string;
+  reviewBatch: string;
 };
 
 export type DynChartType = 'bar' | 'line' | 'pie';

@@ -1340,7 +1340,7 @@ export function ProjectDetail({
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-110px)] flex-col bg-slate-50">
+    <div className="flex min-h-[calc(100vh-96px)] flex-col bg-slate-50">
       <DetailTopBar onBack={onBack} />
 
       <div className="flex min-h-0 flex-1">

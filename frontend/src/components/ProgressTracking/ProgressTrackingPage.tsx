@@ -68,7 +68,7 @@ export function ProgressTrackingPage({ projects = [] }: ProgressTrackingPageProp
   };
 
   return (
-    <div className="animate-fadeIn space-y-4">
+    <div className="animate-fadeIn space-y-2">
       <NotificationsPanel items={announcements} />
 
       <KanbanSectionHeader view={view} onViewChange={setView} />

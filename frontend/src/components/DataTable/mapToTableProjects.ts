@@ -21,6 +21,7 @@ export function mapTableToPmProjects(projects: ResearchProject[]): PmProject[] {
     startDate: p.startDate != null ? String(p.startDate) : null,
     endDate: p.endDate != null ? String(p.endDate) : null,
     acceptanceAcademicYear: p.acceptanceAcademicYear,
+    reviewBatch: p.reviewBatch,
     budget: p.budget,
     budgetLumpSum: p.budgetLumpSum,
     budgetNonLumpSum: p.budgetNonLumpSum,

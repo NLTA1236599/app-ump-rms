@@ -22,64 +22,70 @@ export function TaskCard({ task, onOpen }: TaskCardProps) {
           onOpen();
         }
       }}
-      className="mb-2 cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
+      className="mb-1.5 min-w-0 cursor-pointer rounded-lg border border-slate-200 bg-white p-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
     >
-      <div className="flex items-start justify-between gap-2">
-        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-amber-600">
+      <div className="flex items-start justify-between gap-1">
+        <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-amber-600">
           THƯỜNG
         </span>
-        <span className="flex items-center gap-1 text-xs text-slate-400">
-          <CalendarIcon className="h-3 w-3 text-slate-400" aria-hidden />
-          {task.dueDate}
+        <span className="flex min-w-0 items-center gap-0.5 text-[10px] text-slate-400">
+          <CalendarIcon className="h-2.5 w-2.5 shrink-0 text-slate-400" aria-hidden />
+          <span className="truncate">{task.dueDate}</span>
         </span>
       </div>
 
-      <h3 className="mt-2 line-clamp-2 text-sm font-semibold text-slate-800 transition-colors hover:text-blue-600">
+      <h3
+        className="mt-1 line-clamp-2 text-[11px] font-semibold leading-snug text-slate-800 transition-colors hover:text-blue-600"
+        title={task.title}
+      >
         {task.title}
       </h3>
 
       {task.categories?.length ? (
-        <div className="mt-2 flex flex-wrap gap-1">
+        <div className="mt-1 flex flex-wrap gap-0.5">
           {task.categories.map((tag) => (
             <span
               key={tag}
-              className="rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase text-slate-500 bg-slate-100"
+              className="rounded px-1 py-px text-[8px] font-semibold uppercase text-slate-500 bg-slate-100"
             >
               {tag}
             </span>
           ))}
         </div>
       ) : (
-        <div className="mt-2 flex flex-wrap gap-1">
-          <span className="rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase text-slate-500 bg-slate-100">
+        <div className="mt-1 flex flex-wrap gap-0.5">
+          <span className="rounded px-1 py-px text-[8px] font-semibold uppercase text-slate-500 bg-slate-100">
             TIẾN ĐỘ
           </span>
         </div>
       )}
 
-      <div className="mt-2 rounded-xl bg-slate-50/50 p-2.5 text-xs">
+      <div className="mt-1.5 rounded-md bg-slate-50/50 px-1.5 py-1 text-[10px] leading-snug">
         <p>
           <span className="text-slate-400">Bắt đầu:</span>{' '}
           <span className="font-medium text-slate-600">—</span>
         </p>
-        <p className="mt-1">
+        <p>
           <span className="text-slate-400">Kết thúc:</span>{' '}
           <span className="font-medium text-slate-600">{task.dueDate}</span>
         </p>
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-2 text-xs">
+      <div className="mt-1.5 flex items-center justify-between gap-1 text-[10px]">
         {task.unit ? (
-          <span className={`max-w-[55%] truncate rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-widest ${tagColorClasses(task.unit)}`}>
+          <span
+            className={`max-w-[50%] truncate rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${tagColorClasses(task.unit)}`}
+            title={task.unit}
+          >
             {task.unit}
           </span>
         ) : (
           <span />
         )}
         {task.owner ? (
-          <span className="flex min-w-0 items-center gap-1.5 text-slate-500">
+          <span className="flex min-w-0 items-center gap-1 text-slate-500" title={task.owner}>
             <span
-              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${avatarTintFromString(task.owner)}`}
+              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[8px] font-bold text-white ${avatarTintFromString(task.owner)}`}
             >
               {task.owner.trim().charAt(0).toUpperCase() || '?'}
             </span>
@@ -89,7 +95,7 @@ export function TaskCard({ task, onOpen }: TaskCardProps) {
       </div>
 
       {task.note ? (
-        <p className="mt-2 rounded-xl border border-slate-100 bg-white p-2 text-xs italic text-slate-500 line-clamp-2">
+        <p className="mt-1 rounded-md border border-slate-100 bg-white p-1 text-[10px] italic text-slate-500 line-clamp-2">
           {task.note}
         </p>
       ) : null}

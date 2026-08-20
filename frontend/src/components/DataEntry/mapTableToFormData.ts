@@ -194,6 +194,7 @@ export function mapTableToFormData(project: ResearchProject): DataEntryFormData 
     principalGender: mapGender(project.leadAuthorGender),
     principalEmail: String(project.principalEmail ?? ''),
     supervisorId: project.supervisorId ?? '',
+    reviewBatch: project.reviewBatch ?? '',
     transferForward: Boolean(project.isTransferred),
     liquidationReason: project.terminationReason ?? '',
     generalNotes: project.generalNotes ?? '',

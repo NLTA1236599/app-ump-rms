@@ -59,6 +59,7 @@ export const defaultFormData: DataEntryFormData = {
   principalGender: 'male',
   principalEmail: '',
   supervisorId: '',
+  reviewBatch: '',
   transferForward: false,
   liquidationReason: '',
   generalNotes: '',

@@ -68,6 +68,7 @@ const FIELD_LABELS: Record<string, string> = {
   isTransferred: 'Chuyển tiếp',
   terminationReason: 'Lý do thanh lý',
   supervisorId: 'Chuyên viên phụ trách',
+  reviewBatch: 'Đợt xét duyệt',
   generalNotes: 'Ghi chú chung',
 };
 

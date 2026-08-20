@@ -27,6 +27,7 @@ type DataTableGridProps = {
   onEdit: (project: ResearchProject) => void;
   onDelete: (id: string) => void | boolean | Promise<void | boolean>;
   canDeleteProjects?: boolean;
+  supervisorEmailById?: ReadonlyMap<string, string>;
 };
 
 function Col({
@@ -63,6 +64,7 @@ export function DataTableGrid({
   onEdit,
   onDelete,
   canDeleteProjects = true,
+  supervisorEmailById,
 }: DataTableGridProps) {
   const headerProps = {
     columnFilters,
@@ -86,7 +88,7 @@ export function DataTableGrid({
             <tr className="border-b border-slate-200 bg-slate-50">
               <th
                 className="sticky left-0 top-0 z-40 w-[50px] min-w-[50px] border-b border-slate-200
-                           bg-slate-50 px-3 py-2 text-center shadow-sm"
+                           bg-slate-50 px-2 py-1.5 text-center shadow-sm"
               >
                 <input
                   type="checkbox"
@@ -98,8 +100,8 @@ export function DataTableGrid({
               </th>
               <th
                 className="sticky left-[50px] top-0 z-30 w-[50px] min-w-[50px] border-b
-                           border-slate-200 bg-slate-50 px-3 py-2 text-xs font-black uppercase
-                           tracking-widest text-slate-600 shadow-sm"
+                           border-slate-200 bg-slate-50 px-2 py-1.5 text-[10px] font-semibold uppercase
+                           tracking-wide text-slate-600 shadow-sm"
               >
                 TT
               </th>
@@ -140,8 +142,8 @@ export function DataTableGrid({
               </Col>
               <Col id="age" visible={visibleColumns}>
                 <th
-                  className="sticky top-0 z-20 min-w-[60px] border-b border-slate-200 bg-slate-50 px-3 py-2
-                             text-xs font-black uppercase tracking-widest text-slate-600 shadow-sm"
+                  className="sticky top-0 z-20 min-w-[60px] border-b border-slate-200 bg-slate-50 px-2 py-1.5
+                             text-[10px] font-semibold uppercase tracking-wide text-slate-600 shadow-sm"
                 >
                   Tuổi
                 </th>
@@ -267,7 +269,10 @@ export function DataTableGrid({
                 <FilterableHeader label="Thời điểm NT" colId="acceptanceCompletionDate" minWidth="100px" {...headerProps} />
               </Col>
               <Col id="supervisorId" visible={visibleColumns}>
-                <FilterableHeader label="CV phụ trách" colId="supervisorId" minWidth="140px" {...headerProps} />
+                <FilterableHeader label="CV phụ trách" colId="supervisorId" minWidth="180px" {...headerProps} />
+              </Col>
+              <Col id="reviewBatch" visible={visibleColumns}>
+                <FilterableHeader label="Đợt xét duyệt" colId="reviewBatch" minWidth="120px" {...headerProps} />
               </Col>
               <Col id="isTransferred" visible={visibleColumns}>
                 <FilterableHeader label="Chuyển tiếp" colId="isTransferred" minWidth="80px" {...headerProps} />
@@ -280,8 +285,8 @@ export function DataTableGrid({
               </Col>
 
               <th
-                className="sticky right-0 top-0 z-30 min-w-[120px] border-b border-slate-200 bg-slate-50
-                           px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-600 shadow-sm"
+                className="sticky right-0 top-0 z-30 min-w-[108px] border-b border-slate-200 bg-slate-50
+                           px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600 shadow-sm"
               >
                 Hành Động
               </th>
@@ -291,7 +296,7 @@ export function DataTableGrid({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-100 text-sm">
+          <tbody className="divide-y divide-slate-100 text-xs">
             {paginatedProjects.map((p, idx) => (
               <ProjectTableRow
                 key={p.id}
@@ -304,6 +309,11 @@ export function DataTableGrid({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 canDelete={canDeleteProjects}
+                supervisorEmail={
+                  p.supervisorId && supervisorEmailById
+                    ? supervisorEmailById.get(p.supervisorId) ?? ''
+                    : ''
+                }
               />
             ))}
             {filteredCount === 0 && (

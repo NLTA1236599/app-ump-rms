@@ -10,10 +10,10 @@ type KanbanSectionHeaderProps = {
 /** Zone 2 header row — spec §4 */
 export function KanbanSectionHeader({ view, onViewChange }: KanbanSectionHeaderProps) {
   return (
-    <header className="mb-4 flex items-center justify-between">
+    <header className="mb-2 flex items-center justify-between">
       <div className="flex items-center gap-2 text-slate-800">
-        <ClipboardIcon className="h-5 w-5 shrink-0 text-slate-600" />
-        <h2 className="text-lg font-bold tracking-tight sm:text-xl">Tiến độ thực hiện</h2>
+        <ClipboardIcon className="h-4 w-4 shrink-0 text-slate-600" />
+        <h2 className="text-base font-bold tracking-tight sm:text-lg">Tiến độ thực hiện</h2>
       </div>
 
       <div className="flex h-9 items-center rounded-2xl bg-slate-200/50 p-1">

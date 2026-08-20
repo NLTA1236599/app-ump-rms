@@ -8,7 +8,6 @@ const FIELD_ELEMENT_IDS: Partial<Record<keyof FormErrors, string>> = {
   leaders: 'leaders-editor',
   categoryTags: 'category-tags',
   facultyUnits: 'faculty-units',
-  principalEmail: 'principal-email',
 };
 
 export function scrollToFirstFormError(errors: FormErrors): void {

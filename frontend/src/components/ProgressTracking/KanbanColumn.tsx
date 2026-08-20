@@ -28,24 +28,29 @@ export function KanbanColumnView({
 
   return (
     <section
-      className={`flex min-h-[520px] flex-col rounded-2xl border p-4 ${theme.bg} ${theme.border}`}
+      className={`flex min-h-[min(62vh,420px)] min-w-0 flex-col rounded-xl border p-2 ${theme.bg} ${theme.border}`}
     >
-      <header className="mb-3 flex items-center justify-between gap-2">
-        <h3 className={`text-xs font-bold uppercase tracking-wider ${theme.title}`}>{label}</h3>
+      <header className="mb-2 flex items-start justify-between gap-1">
+        <h3
+          className={`min-w-0 text-[10px] font-bold uppercase leading-tight tracking-wide ${theme.title}`}
+          title={label}
+        >
+          {label}
+        </h3>
         <span
-          className={`flex h-6 min-w-[1.5rem] items-center justify-center rounded-full border bg-white px-1 text-xs font-medium text-slate-500 ${theme.badgeBorder}`}
+          className={`flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center rounded-full border bg-white px-1 text-[10px] font-medium text-slate-500 ${theme.badgeBorder}`}
         >
           {tasks.length}
         </span>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pb-2">
+      <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pb-1">
         {tasks.map((task) => (
           <TaskCard key={task.id} task={task} onOpen={() => onOpenTask(task)} />
         ))}
       </div>
 
-      <div className={`mt-auto pt-3`}>
+      <div className="mt-auto pt-2">
         {isAdding ? (
           <AddTaskForm columnId={id} onClose={onCloseForm} onSave={onSaveTask} />
         ) : (

@@ -10,10 +10,10 @@ type PrimaryNavBarProps = {
 };
 
 const inactiveTabClass =
-  'shrink-0 px-4 py-2.5 text-sm font-medium text-white/90 transition-colors duration-150 hover:bg-white/10';
+  'shrink-0 px-2.5 py-1.5 text-xs font-medium text-white/90 transition-colors duration-150 hover:bg-white/10 md:px-3';
 
 const activeTabClass =
-  'shrink-0 px-4 py-2.5 text-sm font-semibold bg-white rounded-t-md -mb-px border-b border-white transition-colors duration-150';
+  'shrink-0 px-2.5 py-1.5 text-xs font-semibold bg-white rounded-t-md -mb-px border-b border-white transition-colors duration-150 md:px-3';
 
 export function PrimaryNavBar({ activeTab, isHomeActive, onHomeClick, onTabChange }: PrimaryNavBarProps) {
   return (

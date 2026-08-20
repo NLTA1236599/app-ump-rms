@@ -161,6 +161,8 @@ export type ResearchProject = {
   isTransferred?: boolean;
   terminationReason?: string;
   supervisorId?: string;
+  /** Review round, e.g. `Đợt 1/2025`. */
+  reviewBatch?: string;
   /** Free-text notes from data-entry §8. */
   generalNotes?: string;
   projectNotes?: ProjectDiscussionNote[];

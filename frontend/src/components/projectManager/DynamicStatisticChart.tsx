@@ -4,7 +4,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
   Line,
   LineChart,
   Pie,
@@ -14,6 +13,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { ChartLegendList } from './ChartLegendList.js';
+import { PIE_INNER_PCT, PIE_OUTER_PCT } from './chartPieLayout.js';
 import { exportChartToExcel } from './exportChartToExcel.js';
 import { formatTooltipDynamic } from './chartTooltipFormat.js';
 import {
@@ -106,9 +107,9 @@ export function DynamicStatisticChart({
           </button>
         </div>
       </div>
-      <div className="p-2">
+      <div className="p-1.5">
 
-      <div className="mb-2 flex flex-wrap items-center gap-1.5 rounded-md border border-slate-100 bg-slate-50 p-1.5">
+      <div className="mb-1.5 flex flex-wrap items-center gap-1.5 rounded-md border border-slate-100 bg-slate-50 p-1.5">
         <div className="min-w-[140px] flex-1">
           <label className="mb-0.5 block text-[9px] font-bold uppercase tracking-wider text-slate-500">
             Loại biểu đồ
@@ -196,13 +197,56 @@ export function DynamicStatisticChart({
         </div>
       </div>
 
-      <div className="relative h-[170px] rounded-md bg-white" ref={dynamicChartRef as Ref<HTMLDivElement>}>
+      <div className="relative h-[clamp(140px,24vh,200px)] overflow-hidden rounded-md bg-white" ref={dynamicChartRef as Ref<HTMLDivElement>}>
         {dynamicChartData.length > 0 ? (
+          dynChartType === 'pie' ? (
+              <div className="flex h-full min-h-0 flex-col gap-1 lg:flex-row lg:items-center">
+                <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+                      <Pie
+                        data={dynamicChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={PIE_INNER_PCT}
+                        outerRadius={PIE_OUTER_PCT}
+                        paddingAngle={3}
+                        dataKey="value"
+                        nameKey="name"
+                      >
+                        {dynamicChartData.map((_, index) => (
+                          <Cell
+                            key={`p-${index}`}
+                            fill={BAR_COLOR_ROTATION[index % BAR_COLOR_ROTATION.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: '12px',
+                          border: 'none',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        }}
+                        formatter={(v) => formatTooltipDynamic(v, dynYAxis, yLabel)}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <ChartLegendList
+                  items={dynamicChartData.map((d, index) => ({
+                    name: d.name,
+                    color: BAR_COLOR_ROTATION[index % BAR_COLOR_ROTATION.length],
+                    detail: String(d.value),
+                  }))}
+                  className="max-h-[64px] overflow-y-auto px-1 lg:max-h-full lg:w-[36%] lg:flex-col lg:flex-nowrap"
+                />
+              </div>
+          ) : (
           <ResponsiveContainer width="100%" height="100%">
             {dynChartType === 'bar' ? (
               <BarChart
                 data={dynamicChartData}
-                margin={{ top: 8, right: 12, left: 0, bottom: 28 }}
+                margin={{ top: 12, right: 16, left: 4, bottom: 36 }}
                 barCategoryGap="20%"
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
@@ -240,8 +284,8 @@ export function DynamicStatisticChart({
                   ))}
                 </Bar>
               </BarChart>
-            ) : dynChartType === 'line' ? (
-              <LineChart data={dynamicChartData} margin={{ top: 8, right: 12, left: 0, bottom: 28 }}>
+            ) : (
+              <LineChart data={dynamicChartData} margin={{ top: 12, right: 16, left: 4, bottom: 36 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <XAxis
                   dataKey="name"
@@ -280,34 +324,9 @@ export function DynamicStatisticChart({
                   name={yLabel}
                 />
               </LineChart>
-            ) : (
-              <PieChart margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
-                <Pie
-                  data={dynamicChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={36}
-                  outerRadius={58}
-                  paddingAngle={3}
-                  dataKey="value"
-                  nameKey="name"
-                >
-                  {dynamicChartData.map((_, index) => (
-                    <Cell key={`p-${index}`} fill={BAR_COLOR_ROTATION[index % BAR_COLOR_ROTATION.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: '12px',
-                    border: 'none',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  }}
-                  formatter={(v) => formatTooltipDynamic(v, dynYAxis, yLabel)}
-                />
-                <Legend verticalAlign="bottom" height={36} />
-              </PieChart>
             )}
           </ResponsiveContainer>
+          )
         ) : (
           <div className="flex h-full flex-col items-center justify-center text-slate-400">
             <svg className="mb-3 h-12 w-12 text-slate-300 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">

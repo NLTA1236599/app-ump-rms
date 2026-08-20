@@ -22,7 +22,7 @@ export function KanbanBoard({
   onOpenTask,
 }: KanbanBoardProps) {
   return (
-    <div className="grid min-h-[520px] grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 xl:gap-6">
+    <div className="grid min-h-0 grid-cols-4 gap-2">
       {KANBAN_COLUMNS.map((column) => (
         <KanbanColumnView
           key={column.id}

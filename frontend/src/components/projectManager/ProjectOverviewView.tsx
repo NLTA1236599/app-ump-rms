@@ -15,8 +15,8 @@ import {
 import { StatsRow } from './StatsRow.js';
 import type { DynChartType, DynYAxis, ResearchProject } from './types.js';
 
-/** Equal spacing between overview sections (~8px). */
-const SECTION_GAP = 'gap-2';
+/** Equal spacing between overview sections. */
+const SECTION_GAP = 'gap-1.5';
 
 export type ProjectOverviewViewProps = {
   projects: ResearchProject[];
@@ -33,6 +33,7 @@ export function ProjectOverviewView({ projects }: ProjectOverviewViewProps) {
   const [researchField, setResearchField] = useState('all');
   const [projectType, setProjectType] = useState('all');
   const [department, setDepartment] = useState('all');
+  const [reviewBatch, setReviewBatch] = useState('all');
 
   const [dynChartType, setDynChartType] = useState<DynChartType>('bar');
   const [dynXAxis, setDynXAxis] = useState('department');
@@ -54,8 +55,9 @@ export function ProjectOverviewView({ projects }: ProjectOverviewViewProps) {
         researchField,
         projectType,
         department,
+        reviewBatch,
       }),
-    [projects, startYear, academicYear, status, researchField, projectType, department],
+    [projects, startYear, academicYear, status, researchField, projectType, department, reviewBatch],
   );
 
   const chartYears = useMemo(() => getChartYears(projects), [projects]);
@@ -78,10 +80,11 @@ export function ProjectOverviewView({ projects }: ProjectOverviewViewProps) {
     setResearchField('all');
     setProjectType('all');
     setDepartment('all');
+    setReviewBatch('all');
   };
 
   return (
-    <div className="relative animate-fadeIn pb-3">
+    <div className="relative animate-fadeIn pb-2">
       <GlobalFilterBar
         projects={projects}
         filteredCount={filtered.length}
@@ -91,12 +94,14 @@ export function ProjectOverviewView({ projects }: ProjectOverviewViewProps) {
         researchField={researchField}
         projectType={projectType}
         department={department}
+        reviewBatch={reviewBatch}
         onStartYear={setStartYear}
         onAcademicYear={setAcademicYear}
         onStatus={setStatus}
         onResearchField={setResearchField}
         onProjectType={setProjectType}
         onDepartment={setDepartment}
+        onReviewBatch={setReviewBatch}
         onReset={resetFilters}
       />
 

@@ -326,6 +326,12 @@ const EXPORT_COLUMNS: ExportColumn[] = [
     value: (p) => p.supervisorId || '',
   },
   {
+    columnId: 'reviewBatch',
+    header: 'Đợt xét duyệt',
+    ml: 12,
+    value: (p) => p.reviewBatch || '',
+  },
+  {
     columnId: 'isTransferred',
     header: 'Chuyển tiếp',
     ml: 10,
@@ -359,11 +365,21 @@ function resolveExportColumns(visibleColumns?: Record<string, boolean>): ExportC
 export function exportProjectsToExcel(
   projects: ResearchProject[],
   visibleColumns?: Record<string, boolean>,
+  supervisorEmailById?: ReadonlyMap<string, string>,
 ): void {
   const uniqueProjects = dedupeProjects(projects);
   const columns = resolveExportColumns(visibleColumns);
   const headers = columns.map((c) => c.header);
-  const dataRows = uniqueProjects.map((p, i) => columns.map((c) => c.value(p, i)));
+  const dataRows = uniqueProjects.map((p, i) =>
+    columns.map((c) => {
+      if (c.columnId === 'supervisorId') {
+        const id = p.supervisorId?.trim();
+        if (!id) return '';
+        return supervisorEmailById?.get(id) || '';
+      }
+      return c.value(p, i);
+    }),
+  );
   const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
   ws['!cols'] = columns.map((c) => ({ wch: c.ml }));
 

@@ -55,6 +55,7 @@ export const TABLE_COLUMNS: TableColumnDef[] = [
   { id: 'reminderDate', label: 'Ngày nhắc' },
   { id: 'acceptanceCompletionDate', label: 'Thời điểm NT' },
   { id: 'supervisorId', label: 'CV phụ trách' },
+  { id: 'reviewBatch', label: 'Đợt xét duyệt' },
   { id: 'isTransferred', label: 'Chuyển tiếp' },
   { id: 'terminationReason', label: 'Lý do thanh lý' },
   { id: 'generalNotes', label: 'Ghi chú chung' },

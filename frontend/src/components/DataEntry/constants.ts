@@ -108,3 +108,12 @@ export type Gender = 'male' | 'female' | 'other';
 export const SUPERVISOR_ACCOUNT_ROLES = ['admin', 'specialist'] as const;
 
 export type SupervisorAccountRole = (typeof SUPERVISOR_ACCOUNT_ROLES)[number];
+
+export const REVIEW_BATCH_OPTIONS = [
+  'Đợt 1/2025',
+  'Đợt 2/2025',
+  'Đợt 1/2026',
+  'Đợt 2/2026',
+] as const;
+
+export type ReviewBatchOption = (typeof REVIEW_BATCH_OPTIONS)[number];

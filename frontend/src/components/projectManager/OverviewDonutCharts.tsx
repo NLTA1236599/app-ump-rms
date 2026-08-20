@@ -1,6 +1,8 @@
 import { type Ref, type RefObject } from 'react';
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
+import { ChartLegendList } from './ChartLegendList.js';
+import { PIE_INNER_PCT, PIE_OUTER_PCT } from './chartPieLayout.js';
 import { exportChartToExcel } from './exportChartToExcel.js';
 import {
   DONUT_BUDGET_COLORS,
@@ -85,61 +87,66 @@ function DonutCard({
 
   return (
     <div className="group overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-      <div className={`flex items-center justify-between px-2 py-1.5 ${titleBarClass}`}>
+      <div className={`flex items-center justify-between px-2 py-1 ${titleBarClass}`}>
         <h3 className="text-[11px] font-bold text-white">{title}</h3>
         <ChartActions onExpand={onExpand} onExport={onExport} />
       </div>
-      <div className="p-1.5">
-        <div className="h-[110px] bg-white" ref={chartRef as Ref<HTMLDivElement>}>
+      <div className="flex flex-col gap-1.5 p-1.5 sm:flex-row sm:items-center">
+        <div
+          className="flex min-w-0 flex-1 flex-col items-center"
+          ref={chartRef as Ref<HTMLDivElement>}
+        >
           {data.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data}
-                  cx="40%"
-                  cy="50%"
-                  innerRadius={28}
-                  outerRadius={44}
-                  dataKey="value"
-                  paddingAngle={2}
-                >
-                  {data.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                  ))}
-                </Pie>
-                <text
-                  x="40%"
-                  y="50%"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  className="fill-slate-700 text-[9px] font-bold"
-                >
-                  {centerLabel}
-                </text>
-                <Tooltip
-                  formatter={(value, name) => {
-                    const num = Number(value) || 0;
-                    const pct = total > 0 ? ((num / total) * 100).toFixed(1) : '0';
-                    return [`${num} ${valueSuffix} (${pct}%)`, String(name ?? '')];
-                  }}
-                  contentStyle={{ borderRadius: '6px', fontSize: '11px' }}
-                />
-                <Legend
-                  layout="vertical"
-                  align="right"
-                  verticalAlign="middle"
-                  iconType="circle"
-                  iconSize={7}
-                  formatter={(value) => <span className="text-[10px] text-slate-600">{value}</span>}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <>
+              <div className="relative mx-auto w-full max-w-[148px]" style={{ aspectRatio: '1 / 1' }}>
+                <div className="absolute inset-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
+                      <Pie
+                        data={data}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={PIE_INNER_PCT}
+                        outerRadius={PIE_OUTER_PCT}
+                        dataKey="value"
+                        paddingAngle={2}
+                      >
+                        {data.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value, name) => {
+                          const num = Number(value) || 0;
+                          const pct = total > 0 ? ((num / total) * 100).toFixed(1) : '0';
+                          return [`${num} ${valueSuffix} (${pct}%)`, String(name ?? '')];
+                        }}
+                        contentStyle={{ borderRadius: '6px', fontSize: '11px' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <p className="mt-1 max-w-full px-1 text-center text-[11px] font-semibold leading-tight text-slate-700">
+                {centerLabel}
+              </p>
+            </>
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-slate-400">
+            <div className="flex h-[120px] items-center justify-center text-sm text-slate-400">
               Chưa có dữ liệu
             </div>
           )}
         </div>
+        {data.length > 0 ? (
+          <ChartLegendList
+            items={data.map((d, index) => ({
+              name: d.name,
+              color: colors[index % colors.length],
+              detail: String(d.value),
+            }))}
+            className="max-h-[120px] overflow-y-auto px-1 sm:max-h-[168px] sm:w-[42%] sm:flex-col sm:flex-nowrap"
+          />
+        ) : null}
       </div>
     </div>
   );
@@ -157,7 +164,7 @@ export function OverviewDonutCharts({
   const budgetTotal = departmentBudgetData.reduce((s, d) => s + d.value, 0);
 
   return (
-    <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-1.5 lg:grid-cols-2">
       <DonutCard
         title="Phân bổ theo Loại đề tài"
         titleBarClass="bg-[#1a6ec2]"

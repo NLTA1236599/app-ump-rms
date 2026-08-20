@@ -1,5 +1,5 @@
 import type { ResearchProject } from './types.js';
-import { extractYearFromDate, getProjectTypeOptions } from './projectAnalytics.js';
+import { extractYearFromDate, getProjectTypeOptions, getReviewBatchOptions } from './projectAnalytics.js';
 
 export type GlobalFilterBarProps = {
   projects: ResearchProject[];
@@ -10,12 +10,14 @@ export type GlobalFilterBarProps = {
   researchField: string;
   projectType: string;
   department: string;
+  reviewBatch: string;
   onStartYear: (v: string) => void;
   onAcademicYear: (v: string) => void;
   onStatus: (v: string) => void;
   onResearchField: (v: string) => void;
   onProjectType: (v: string) => void;
   onDepartment: (v: string) => void;
+  onReviewBatch: (v: string) => void;
   onReset: () => void;
 };
 
@@ -31,7 +33,7 @@ function sortAcademicYearsDesc(years: string[]): string[] {
 }
 
 const selectClass =
-  'flex min-w-[6.25rem] items-center gap-0.5 rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[11px] text-slate-600 outline-none transition hover:border-blue-400 focus:border-[#1a6ec2] focus:ring-1 focus:ring-[#1a6ec2]';
+  'flex shrink-0 min-w-[5.75rem] items-center gap-0.5 rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[11px] text-slate-600 outline-none transition hover:border-blue-400 focus:border-[#1a6ec2] focus:ring-1 focus:ring-[#1a6ec2]';
 
 export function GlobalFilterBar({
   projects,
@@ -42,12 +44,14 @@ export function GlobalFilterBar({
   researchField,
   projectType,
   department,
+  reviewBatch,
   onStartYear,
   onAcademicYear,
   onStatus,
   onResearchField,
   onProjectType,
   onDepartment,
+  onReviewBatch,
   onReset,
 }: GlobalFilterBarProps) {
   const years = Array.from(
@@ -78,12 +82,13 @@ export function GlobalFilterBar({
     .filter(Boolean)
     .sort();
   const projectTypes = getProjectTypeOptions(projects);
+  const reviewBatches = getReviewBatchOptions(projects);
 
   return (
-    <div className="sticky top-0 z-30 -mx-3 mb-2 border-b border-slate-200 bg-[#f0f4f8] px-3 py-1.5 md:-mx-4 md:px-4">
-      <div className="flex flex-col gap-1.5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <h2 className="mr-1 shrink-0 text-[11px] font-semibold text-slate-700">
+    <div className="sticky top-0 z-30 -mx-1.5 mb-1.5 border-b border-slate-200 bg-[#f0f4f8] px-1.5 py-1 md:-mx-2 md:px-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
+        <div className="flex shrink-0 items-center gap-1.5">
+          <h2 className="text-[11px] font-semibold text-slate-700">
             Tổng quan Dashboard
           </h2>
           <span className="rounded-full bg-[#1a6ec2]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#1a6ec2]">
@@ -91,7 +96,7 @@ export function GlobalFilterBar({
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
           <select
             className={selectClass}
             value={academicYear}
@@ -176,10 +181,24 @@ export function GlobalFilterBar({
             ))}
           </select>
 
+          <select
+            className={`${selectClass} min-w-[7.5rem]`}
+            value={reviewBatch}
+            onChange={(e) => onReviewBatch(e.target.value)}
+            aria-label="Đợt xét duyệt"
+          >
+            <option value="all">Đợt xét duyệt</option>
+            {reviewBatches.map((batch) => (
+              <option key={batch} value={batch}>
+                {batch}
+              </option>
+            ))}
+          </select>
+
           <button
             type="button"
             onClick={onReset}
-            className="text-[10px] text-slate-400 underline transition-colors hover:text-red-500"
+            className="shrink-0 text-[10px] text-slate-400 underline transition-colors hover:text-red-500"
           >
             Đặt lại bộ lọc
           </button>

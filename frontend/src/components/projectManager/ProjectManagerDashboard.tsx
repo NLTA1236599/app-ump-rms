@@ -164,14 +164,14 @@ export function ProjectManagerDashboard({
 
   if (persisted.loading || !allowedFeatures) {
     return (
-      <div className="flex min-h-[calc(100vh-110px)] items-center justify-center text-sm text-slate-500">
+      <div className="flex min-h-[calc(100vh-96px)] items-center justify-center text-sm text-slate-500">
         Đang tải dữ liệu đề tài…
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-110px)]">
+    <div className="relative min-h-[calc(100vh-96px)]">
       {persisted.loadError && (
         <div className="mx-4 mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 md:mx-6">
           {persisted.loadError}
@@ -188,11 +188,11 @@ export function ProjectManagerDashboard({
       />
 
       <div
-        className={`min-h-[calc(100vh-110px)] transition-[margin] duration-200 ${
+        className={`min-h-[calc(100vh-96px)] transition-[margin] duration-200 ${
           sidebarCollapsed ? TAB_SIDEBAR_COLLAPSED_OFFSET_CLASS : TAB_SIDEBAR_OFFSET_CLASS
         }`}
       >
-        <div className="p-2 md:p-3">
+        <div className="p-1.5 md:p-2">
           {canOpen(activeItemId) ? (
             renderSidebarContent(activeItemId, projectData, chatHandler)
           ) : (

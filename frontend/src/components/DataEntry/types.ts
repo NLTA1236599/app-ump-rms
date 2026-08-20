@@ -63,6 +63,7 @@ export type DataEntryFormData = {
   principalGender: Gender;
   principalEmail: string;
   supervisorId: string;
+  reviewBatch: string;
   transferForward: boolean;
   liquidationReason: string;
   generalNotes: string;

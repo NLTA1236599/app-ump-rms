@@ -7,7 +7,7 @@ type BreadcrumbProps = {
 
 export function Breadcrumb({ items, onNavigate }: BreadcrumbProps) {
   return (
-    <nav className="mb-0 flex items-center gap-1 py-2 text-sm" aria-label="Breadcrumb">
+    <nav className="mb-0 flex items-center gap-1 py-1 text-xs" aria-label="Breadcrumb">
       {items.map((item, index) => (
         <span key={item.label} className="flex items-center">
           {index > 0 && <span className="mx-1 text-slate-400">&gt;</span>}

@@ -4,6 +4,6 @@ type PageTitleBarProps = {
 
 export function PageTitleBar({ title }: PageTitleBarProps) {
   return (
-    <div className="my-3 w-full bg-gray-100 px-4 py-3 text-sm text-slate-700">{title}</div>
+    <div className="my-1.5 w-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-slate-700">{title}</div>
   );
 }

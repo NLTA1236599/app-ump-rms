@@ -26,7 +26,7 @@ export function SidebarMenuItem({
       title={collapsed ? label : undefined}
       className={[
         'flex w-full items-center border-l-4 text-left text-sm transition-colors duration-150',
-        collapsed ? 'justify-center gap-0 px-2 py-2.5' : 'gap-2.5 px-3 py-2',
+        collapsed ? 'justify-center gap-0 px-2 py-2' : 'gap-2 px-2.5 py-1.5',
         isActive
           ? 'border-[#0072bc] bg-blue-50 font-semibold text-blue-700'
           : 'border-transparent font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600',
