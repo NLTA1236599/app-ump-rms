@@ -1,11 +1,18 @@
 import type { ResearchProject } from '../DataTable/types.js';
 
-import { getProjectYear } from './extractYear.js';
+import { FUZZY_OVERLAP_THRESHOLD } from './constants.js';
+import { getProjectYear, getProjectYears } from './extractYear.js';
+import { normalizeTitle, titleOverlap } from './titleNormalize.js';
 import type { DuplicateFilterOptions, DuplicateGroup, DuplicateStats, MatchMode } from './types.js';
-import { fuzzyNormalizeTitle, normalizeTitle } from './titleNormalize.js';
 
-function getTitleKey(title: string | undefined, matchMode: MatchMode): string {
-  return matchMode === 'fuzzy' ? fuzzyNormalizeTitle(title) : normalizeTitle(title);
+function titlesMatch(a: string | undefined, b: string | undefined, matchMode: MatchMode): boolean {
+  const normA = normalizeTitle(a);
+  const normB = normalizeTitle(b);
+  if (!normA || !normB) return false;
+
+  if (matchMode === 'strict') return normA === normB;
+
+  return titleOverlap(a, b) >= FUZZY_OVERLAP_THRESHOLD;
 }
 
 export function filterProjectsByYearRange(
@@ -14,29 +21,97 @@ export function filterProjectsByYearRange(
   yearTo: number | null,
 ): ResearchProject[] {
   return projects.filter((p) => {
-    const year = getProjectYear(p);
-    if (year === null) return true;
-    if (yearFrom !== null && year < yearFrom) return false;
-    if (yearTo !== null && year > yearTo) return false;
-    return true;
+    const years = getProjectYears(p);
+    if (years.length === 0) return true;
+    return years.some((year) => {
+      if (yearFrom !== null && year < yearFrom) return false;
+      if (yearTo !== null && year > yearTo) return false;
+      return true;
+    });
   });
 }
 
-function titleMatchesQuery(title: string, query: string, matchMode: MatchMode): boolean {
-  const normTitle = normalizeTitle(title);
-  const normQuery = normalizeTitle(query);
-  if (!normQuery) return true;
-
-  if (matchMode === 'strict') {
-    return normTitle.includes(normQuery);
+function toDuplicateGroup(projects: ResearchProject[], key: string): DuplicateGroup {
+  const years = new Set<number>();
+  for (const project of projects) {
+    const year = getProjectYear(project);
+    if (year !== null) years.add(year);
   }
 
-  const titleWords = new Set(normTitle.split(' ').filter((w) => w.length > 2));
-  const queryWords = normQuery.split(' ').filter((w) => w.length > 2);
-  if (queryWords.length === 0) return normTitle.includes(normQuery);
+  const sortedProjects = [...projects].sort((a, b) => {
+    const ya = getProjectYear(a) ?? 0;
+    const yb = getProjectYear(b) ?? 0;
+    return ya - yb;
+  });
 
-  const matched = queryWords.filter((w) => titleWords.has(w)).length;
-  return matched / queryWords.length >= 0.8;
+  return {
+    normalizedTitle: key,
+    representativeTitle: sortedProjects[0]?.title ?? key,
+    years: [...years].sort((a, b) => a - b),
+    projects: sortedProjects,
+  };
+}
+
+function groupByExactTitle(projects: ResearchProject[]): ResearchProject[][] {
+  const map = new Map<string, ResearchProject[]>();
+
+  for (const project of projects) {
+    const key = normalizeTitle(project.title);
+    if (!key) continue;
+    const bucket = map.get(key);
+    if (bucket) bucket.push(project);
+    else map.set(key, [project]);
+  }
+
+  return [...map.values()];
+}
+
+function clusterByOverlap(projects: ResearchProject[]): ResearchProject[][] {
+  const eligible = projects.filter((p) => normalizeTitle(p.title));
+  const n = eligible.length;
+  if (n === 0) return [];
+
+  const parent = Array.from({ length: n }, (_, i) => i);
+  const find = (i: number): number => {
+    while (parent[i] !== i) {
+      parent[i] = parent[parent[i]];
+      i = parent[i];
+    }
+    return i;
+  };
+  const union = (a: number, b: number) => {
+    const ra = find(a);
+    const rb = find(b);
+    if (ra !== rb) parent[rb] = ra;
+  };
+
+  for (let i = 0; i < n; i += 1) {
+    for (let j = i + 1; j < n; j += 1) {
+      if (titlesMatch(eligible[i]?.title, eligible[j]?.title, 'fuzzy')) {
+        union(i, j);
+      }
+    }
+  }
+
+  const clusters = new Map<number, ResearchProject[]>();
+  for (let i = 0; i < n; i += 1) {
+    const root = find(i);
+    const bucket = clusters.get(root);
+    const project = eligible[i];
+    if (!project) continue;
+    if (bucket) bucket.push(project);
+    else clusters.set(root, [project]);
+  }
+
+  return [...clusters.values()];
+}
+
+function sortGroups(groups: DuplicateGroup[]): DuplicateGroup[] {
+  return groups.sort((a, b) => {
+    const yearDiff = b.years.length - a.years.length;
+    if (yearDiff !== 0) return yearDiff;
+    return b.projects.length - a.projects.length;
+  });
 }
 
 export function filterGroupsByTitle(
@@ -47,7 +122,7 @@ export function filterGroupsByTitle(
   const query = titleQuery.trim();
   if (!query) return groups;
 
-  return groups.filter((g) => titleMatchesQuery(g.representativeTitle, query, matchMode));
+  return groups.filter((g) => titlesMatch(g.representativeTitle, query, matchMode));
 }
 
 export function getDuplicateGroups(
@@ -55,39 +130,26 @@ export function getDuplicateGroups(
   options: DuplicateFilterOptions,
 ): DuplicateGroup[] {
   const yearFiltered = filterProjectsByYearRange(projects, options.yearFrom, options.yearTo);
-  const map = new Map<string, { projects: ResearchProject[]; years: Set<number> }>();
+  const query = options.titleQuery?.trim() ?? '';
 
-  for (const project of yearFiltered) {
-    const key = getTitleKey(project.title, options.matchMode);
-    if (!key) continue;
+  const candidates = query
+    ? yearFiltered.filter((p) => titlesMatch(p.title, query, options.matchMode))
+    : yearFiltered;
 
-    const year = getProjectYear(project);
-    if (year === null) continue;
+  const clusters =
+    options.matchMode === 'fuzzy' ? clusterByOverlap(candidates) : groupByExactTitle(candidates);
 
-    if (!map.has(key)) {
-      map.set(key, { projects: [], years: new Set() });
-    }
+  // Searching a specific title: show every match, even a single existing project.
+  // Scanning all titles: only keep real duplicates (2+ projects).
+  const minSize = query ? 1 : 2;
 
-    const entry = map.get(key)!;
-    entry.projects.push(project);
-    entry.years.add(year);
-  }
+  const groups = clusters
+    .filter((cluster) => cluster.length >= minSize)
+    .map((cluster) =>
+      toDuplicateGroup(cluster, normalizeTitle(cluster[0]?.title) || query || 'unknown'),
+    );
 
-  const groups = [...map.entries()]
-    .filter(([, entry]) => entry.years.size >= 2)
-    .map(([key, entry]) => ({
-      normalizedTitle: key,
-      representativeTitle: entry.projects[0]?.title ?? key,
-      years: [...entry.years].sort((a, b) => a - b),
-      projects: [...entry.projects].sort((a, b) => {
-        const ya = getProjectYear(a) ?? 0;
-        const yb = getProjectYear(b) ?? 0;
-        return ya - yb;
-      }),
-    }))
-    .sort((a, b) => b.years.length - a.years.length);
-
-  return filterGroupsByTitle(groups, options.titleQuery ?? '', options.matchMode);
+  return sortGroups(groups);
 }
 
 export function computeDuplicateStats(groups: DuplicateGroup[]): DuplicateStats {
@@ -101,8 +163,7 @@ export function computeDuplicateStats(groups: DuplicateGroup[]): DuplicateStats 
 export function getAvailableYears(projects: ResearchProject[]): number[] {
   const years = new Set<number>();
   for (const p of projects) {
-    const y = getProjectYear(p);
-    if (y !== null) years.add(y);
+    for (const y of getProjectYears(p)) years.add(y);
   }
   return [...years].sort((a, b) => a - b);
 }

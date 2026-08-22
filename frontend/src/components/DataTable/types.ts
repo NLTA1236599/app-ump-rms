@@ -171,6 +171,8 @@ export type ResearchProject = {
   workflowStep?: number;
   workflowHistory?: WorkflowHistoryEntry[];
   workflowTodos?: WorkflowTodo[];
+  /** Manual Kanban column on Tiến độ thực hiện (`review` | `report` | `pre_acceptance` | `completed`). */
+  kanbanColumn?: string;
 };
 
 export type ColumnFilters = Record<string, string>;
@@ -193,7 +195,9 @@ export type DataTableProps = {
   onImportFeedback?: (result: ImportFeedback) => void;
   onDeleteMultiple?: (ids: string[]) => void | Promise<void>;
   onDeleteAll?: () => void | Promise<void>;
-  /** When false, hide RESET and all delete actions (e.g. chuyên viên). Default true. */
+  canRestoreLastDelete?: boolean;
+  onRestoreLastDelete?: () => void | Promise<void | number>;
+  /** When false, hide restore and all delete actions (e.g. chuyên viên). Default true. */
   canDeleteProjects?: boolean;
 };
 

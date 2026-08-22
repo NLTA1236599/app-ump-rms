@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { getUsers, updateAllowedUnits } from '../api/userService.js';
-import { ORG_UNIT_GROUPS, UNIT_MEMBERS, type UnitMember } from '../data/unitMembers.js';
+import { ALL_ORG_UNITS, ORG_UNIT_GROUPS, UNIT_MEMBERS, type UnitMember } from '../data/unitMembers.js';
 import type { AdminUserRow } from '../types/index.js';
 
 type PanelMode = 'grant' | 'units';
@@ -117,17 +117,24 @@ export function TopicPermissionsPage() {
     setSuccessMessage(null);
   };
 
+  const seesAllUnits = selectedUnits.length === 0;
+
   const toggleUnit = (unit: string) => {
-    setSelectedUnits((prev) =>
-      prev.includes(unit) ? prev.filter((item) => item !== unit) : [...prev, unit],
-    );
+    setSelectedUnits((prev) => {
+      // Empty list means every unit is allowed — unchecking one leaves the rest.
+      const current = prev.length === 0 ? ALL_ORG_UNITS : prev;
+      const next = current.includes(unit)
+        ? current.filter((item) => item !== unit)
+        : [...current, unit];
+      return next.length === ALL_ORG_UNITS.length ? [] : next;
+    });
   };
 
   const selectHomeOnly = (member: MemberRow) => {
     setSelectedUnits([member.homeUnit]);
   };
 
-  const clearUnits = () => {
+  const selectAllUnits = () => {
     setSelectedUnits([]);
   };
 
@@ -354,14 +361,24 @@ export function TopicPermissionsPage() {
                         <button
                           type="button"
                           onClick={() => selectHomeOnly(member)}
-                          className="rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+                          className={[
+                            'rounded-full border px-3 py-1 text-xs font-medium transition',
+                            selectedUnits.length === 1 && selectedUnits[0] === member.homeUnit
+                              ? 'border-blue-600 bg-blue-50 text-blue-700'
+                              : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                          ].join(' ')}
                         >
                           Chỉ đơn vị công tác
                         </button>
                         <button
                           type="button"
-                          onClick={clearUnits}
-                          className="rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+                          onClick={selectAllUnits}
+                          className={[
+                            'rounded-full border px-3 py-1 text-xs font-medium transition',
+                            seesAllUnits
+                              ? 'border-blue-600 bg-blue-50 text-blue-700'
+                              : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                          ].join(' ')}
                         >
                           Tất cả đơn vị
                         </button>
@@ -376,7 +393,7 @@ export function TopicPermissionsPage() {
                           </p>
                           <div className="grid gap-1 sm:grid-cols-2">
                             {group.units.map((unit) => {
-                              const checked = selectedUnits.includes(unit);
+                              const checked = seesAllUnits || selectedUnits.includes(unit);
                               const isHome = unit === member.homeUnit;
                               return (
                                 <label

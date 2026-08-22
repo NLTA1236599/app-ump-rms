@@ -1,8 +1,7 @@
-/** Work unit dropdown placeholders (extend when API provides org tree). §9.1 */
+import { FACULTY_UNIT_OPTIONS } from '../DataEntry/constants.js';
+
+/** Same Khoa / Đơn vị list as the Data Entry tab. */
 export const REGISTER_WORK_UNIT_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'Chọn đơn vị công tác...' },
-  { value: 'khoa_duoc', label: 'Khoa Dược' },
-  { value: 'khoa_y', label: 'Khoa Y' },
-  { value: 'phong_khcn', label: 'Phòng KHCN' },
-  { value: 'other', label: 'Đơn vị khác' },
+  ...FACULTY_UNIT_OPTIONS.map((unit) => ({ value: unit, label: unit })),
 ];

@@ -1,4 +1,4 @@
-export type RegisterRoleId = 'specialist' | 'applicant';
+export type RegisterRoleId = 'specialist' | 'applicant' | 'leader';
 
 /** Role card catalogue — `apiRole` is sent to current REST API (server should derive long-term). §10 */
 export const REGISTER_ROLE_CARDS: {
@@ -21,6 +21,13 @@ export const REGISTER_ROLE_CARDS: {
     subtitle: 'Chủ nhiệm đề tài / Thư ký khoa học',
     icon: '👁',
     apiRole: 'user',
+  },
+  {
+    id: 'leader',
+    title: 'Lãnh đạo',
+    subtitle: 'Phê duyệt & điều phối cấp đơn vị',
+    icon: '👔',
+    apiRole: 'leader',
   },
 ];
 

@@ -16,6 +16,8 @@ export function DataTablePage({
   onImportFeedback,
   onDeleteMultiple,
   onDeleteAll,
+  canRestoreLastDelete = false,
+  onRestoreLastDelete,
   canDeleteProjects = true,
 }: DataTableProps) {
   const table = useDataTable({ projects, onImport, onImportFeedback, onDeleteMultiple, onDeleteAll });
@@ -40,7 +42,8 @@ export function DataTablePage({
         onImportClick={table.triggerImport}
         onFileUpload={table.handleFileUpload}
         onExport={table.exportExcel}
-        onReset={table.handleReset}
+        canRestore={canRestoreLastDelete}
+        onRestore={onRestoreLastDelete}
         onDeleteSelected={table.handleDeleteSelected}
         totalCount={projects.length}
         onDeleteAll={table.handleDeleteAll}

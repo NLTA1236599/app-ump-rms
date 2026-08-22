@@ -75,7 +75,7 @@ const PKHCN = 'Phòng Khoa học Công nghệ';
 export const UNIT_MEMBERS: UnitMember[] = [
   {
     id: 'm01',
-    fullName: 'Trưởng đơn vị (test) — P. KHCN',
+    fullName: 'Lãnh đạo',
     role: 'Trưởng phòng',
     email: 'pkhcn.admin@ump.edu.vn',
     homeUnit: PKHCN,

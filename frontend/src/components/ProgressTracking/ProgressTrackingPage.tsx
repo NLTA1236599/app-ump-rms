@@ -23,19 +23,31 @@ function makeTaskId(): string {
 
 export type ProgressTrackingPageProps = {
   projects?: ResearchProject[];
+  onUpdateProject?: (project: ResearchProject) => void | Promise<void>;
 };
 
 /**
  * Full “Tiến độ thực hiện” page body (zones 1‑3 inside the authenticated shell).
  * Matches `ProgressTracking-final-spec.md`; notification copy follows §3 canonical list.
  */
-export function ProgressTrackingPage({ projects = [] }: ProgressTrackingPageProps) {
+export function ProgressTrackingPage({
+  projects = [],
+  onUpdateProject,
+}: ProgressTrackingPageProps) {
   const { user } = useAuthContext();
   const [view, setView] = useState<KanbanViewMode>('kanban');
   const [manualTasks, setManualTasks] = useState<KanbanTask[]>([]);
+  const [columnOverrides, setColumnOverrides] = useState<Record<string, ColumnId>>({});
 
   const projectTasks = useMemo(() => projects.map(projectToKanbanTask), [projects]);
-  const tasks = useMemo(() => [...projectTasks, ...manualTasks], [projectTasks, manualTasks]);
+  const tasks = useMemo(
+    () =>
+      [...projectTasks, ...manualTasks].map((task) => ({
+        ...task,
+        columnId: columnOverrides[task.id] ?? task.columnId,
+      })),
+    [projectTasks, manualTasks, columnOverrides],
+  );
   const announcements = useMemo(
     () => buildProjectAnnouncements(projects, user?.id),
     [projects, user?.id],
@@ -67,6 +79,18 @@ export function ProgressTrackingPage({ projects = [] }: ProgressTrackingPageProp
     setFocusedTaskId(null);
   };
 
+  const handleMoveTask = (taskId: string, toColumn: ColumnId) => {
+    setColumnOverrides((prev) => ({ ...prev, [taskId]: toColumn }));
+    setManualTasks((prev) =>
+      prev.map((task) => (task.id === taskId ? { ...task, columnId: toColumn } : task)),
+    );
+
+    const project = projects.find((item) => item.id === taskId);
+    if (project) {
+      void Promise.resolve(onUpdateProject?.({ ...project, kanbanColumn: toColumn }));
+    }
+  };
+
   return (
     <div className="animate-fadeIn space-y-2">
       <NotificationsPanel items={announcements} />
@@ -81,6 +105,7 @@ export function ProgressTrackingPage({ projects = [] }: ProgressTrackingPageProp
           onCloseForm={() => setAddingToColumnId(null)}
           onSaveTask={handleSaveTask}
           onOpenTask={(task) => setFocusedTaskId(task.id)}
+          onMoveTask={handleMoveTask}
         />
       ) : (
         <CalendarPlaceholder />

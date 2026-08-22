@@ -20,7 +20,15 @@ function monthsUntil(date: Date): number {
   return (date.getFullYear() - now.getFullYear()) * 12 + (date.getMonth() - now.getMonth());
 }
 
+const KANBAN_COLUMN_IDS: ColumnId[] = ['review', 'report', 'pre_acceptance', 'completed'];
+
+export function isKanbanColumnId(value: string | undefined): value is ColumnId {
+  return Boolean(value && (KANBAN_COLUMN_IDS as string[]).includes(value));
+}
+
 export function getProjectKanbanColumn(project: ResearchProject): ColumnId {
+  if (isKanbanColumnId(project.kanbanColumn)) return project.kanbanColumn;
+
   const status = String(project.status ?? '').toLowerCase();
 
   if (status.includes('nghiệm thu') || status.includes('hoàn thành') || status.includes('thanh lý')) {

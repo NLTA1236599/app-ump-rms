@@ -34,6 +34,8 @@ type ProjectDataHandlers = {
   onDelete: (id: string) => Promise<void>;
   onDeleteMultiple: (ids: string[]) => Promise<void>;
   onDeleteAll: () => Promise<void>;
+  canRestoreLastDelete: boolean;
+  onRestoreLastDelete: () => Promise<number>;
   onImport: (rows: Partial<TableProject>[], file?: File) => Promise<void>;
   onSaveProject: (project: TableProject) => Promise<void>;
   onUpdateProject: (project: TableProject) => Promise<void>;
@@ -60,7 +62,12 @@ function renderSidebarContent(
         />
       );
     case 'tien-do-thuc-hien':
-      return <ProgressTrackingPage projects={projectData.tableProjects} />;
+      return (
+        <ProgressTrackingPage
+          projects={projectData.tableProjects}
+          onUpdateProject={projectData.onUpdateProject}
+        />
+      );
     case 'du-lieu-de-tai':
       return (
         <DataTableView
@@ -68,6 +75,8 @@ function renderSidebarContent(
           onDelete={projectData.onDelete}
           onDeleteMultiple={projectData.onDeleteMultiple}
           onDeleteAll={projectData.onDeleteAll}
+          canRestoreLastDelete={projectData.canRestoreLastDelete}
+          onRestoreLastDelete={projectData.onRestoreLastDelete}
           onImport={projectData.onImport}
           onUpdateProject={projectData.onUpdateProject}
           onSyncProject={projectData.onSyncProject}
@@ -148,6 +157,8 @@ export function ProjectManagerDashboard({
     onDelete: persisted.onDelete,
     onDeleteMultiple: persisted.onDeleteMultiple,
     onDeleteAll: persisted.onDeleteAll,
+    canRestoreLastDelete: persisted.canRestoreLastDelete,
+    onRestoreLastDelete: persisted.onRestoreLastDelete,
     onImport: persisted.onImport,
     onSaveProject: persisted.onSaveProject,
     onUpdateProject: persisted.onUpdateProject,

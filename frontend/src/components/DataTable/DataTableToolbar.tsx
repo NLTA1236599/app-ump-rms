@@ -46,7 +46,8 @@ type ActionButtonRowProps = {
   onImportClick: () => void;
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onExport: () => void;
-  onReset: () => void;
+  canRestore?: boolean;
+  onRestore?: () => void | Promise<void | number>;
   onDeleteSelected: () => void;
   totalCount: number;
   onDeleteAll: () => void;
@@ -62,7 +63,8 @@ export function ActionButtonRow({
   onImportClick,
   onFileUpload,
   onExport,
-  onReset,
+  canRestore = false,
+  onRestore,
   onDeleteSelected,
   totalCount,
   onDeleteAll,
@@ -106,12 +108,22 @@ export function ActionButtonRow({
       {canDeleteProjects ? (
         <button
           type="button"
-          onClick={onReset}
+          disabled={!canRestore}
+          onDoubleClick={() => {
+            if (!canRestore) return;
+            void onRestore?.();
+          }}
+          title={
+            canRestore
+              ? 'Nhấp đúp để khôi phục thao tác xóa trước đó'
+              : 'Chưa có thao tác xóa để khôi phục'
+          }
           className="flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5
-                     text-[10px] font-bold uppercase tracking-wide text-red-600 transition-colors
-                     hover:bg-red-100"
+                     text-[10px] font-bold tracking-wide text-red-600 transition-colors
+                     hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-45
+                     disabled:hover:bg-red-50"
         >
-          RESET
+          Khôi phục lại
         </button>
       ) : null}
 
@@ -188,7 +200,8 @@ type DataTableToolbarProps = {
   onImportClick: () => void;
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onExport: () => void;
-  onReset: () => void;
+  canRestore?: boolean;
+  onRestore?: () => void | Promise<void | number>;
   onDeleteSelected: () => void;
   totalCount: number;
   onDeleteAll: () => void;
@@ -215,7 +228,8 @@ export function DataTableToolbar(props: DataTableToolbarProps) {
         onImportClick={props.onImportClick}
         onFileUpload={props.onFileUpload}
         onExport={props.onExport}
-        onReset={props.onReset}
+        canRestore={props.canRestore}
+        onRestore={props.onRestore}
         onDeleteSelected={props.onDeleteSelected}
         totalCount={props.totalCount}
         onDeleteAll={props.onDeleteAll}

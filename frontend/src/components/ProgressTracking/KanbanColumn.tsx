@@ -1,3 +1,5 @@
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { AddTaskForm } from './AddTaskForm.js';
 import type { SaveTaskPayload } from './AddTaskForm.js';
 import { AddTaskFooterButton } from './AddTaskFooterButton.js';
@@ -25,6 +27,7 @@ export function KanbanColumnView({
   onOpenTask,
 }: KanbanColumnViewProps) {
   const { theme, label, id } = column;
+  const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
     <section
@@ -44,11 +47,18 @@ export function KanbanColumnView({
         </span>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pb-1">
-        {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} onOpen={() => onOpenTask(task)} />
-        ))}
-      </div>
+      <SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
+        <div
+          ref={setNodeRef}
+          className={`flex min-h-[8rem] min-w-0 flex-1 flex-col gap-1.5 overflow-y-auto rounded-lg pb-1 ${
+            isOver ? 'bg-white/70 ring-2 ring-blue-300 ring-inset' : ''
+          }`}
+        >
+          {tasks.map((task) => (
+            <TaskCard key={task.id} task={task} onOpen={() => onOpenTask(task)} />
+          ))}
+        </div>
+      </SortableContext>
 
       <div className="mt-auto pt-2">
         {isAdding ? (

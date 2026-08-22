@@ -1,29 +1,18 @@
+import { useEffect, useRef } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { CalendarIcon } from './progressIcons.js';
 import { avatarTintFromString, tagColorClasses } from './colorHash.js';
 import type { KanbanTask } from './types.js';
 
-type TaskCardProps = {
+type TaskCardFaceProps = {
   task: KanbanTask;
-  onOpen: () => void;
 };
 
-/**
- * Compact task card — spec §9 essentials (populate state beyond empty board).
- */
-export function TaskCard({ task, onOpen }: TaskCardProps) {
+/** Visual card only — used by both the board slot and the drag overlay. */
+export function TaskCardFace({ task }: TaskCardFaceProps) {
   return (
-    <article
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
-      className="mb-1.5 min-w-0 cursor-pointer rounded-lg border border-slate-200 bg-white p-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-    >
+    <div className="min-w-0 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
       <div className="flex items-start justify-between gap-1">
         <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-amber-600">
           THƯỜNG
@@ -35,7 +24,7 @@ export function TaskCard({ task, onOpen }: TaskCardProps) {
       </div>
 
       <h3
-        className="mt-1 line-clamp-2 text-[11px] font-semibold leading-snug text-slate-800 transition-colors hover:text-blue-600"
+        className="mt-1 line-clamp-2 text-[11px] font-semibold leading-snug text-slate-800"
         title={task.title}
       >
         {task.title}
@@ -46,7 +35,7 @@ export function TaskCard({ task, onOpen }: TaskCardProps) {
           {task.categories.map((tag) => (
             <span
               key={tag}
-              className="rounded px-1 py-px text-[8px] font-semibold uppercase text-slate-500 bg-slate-100"
+              className="rounded bg-slate-100 px-1 py-px text-[8px] font-semibold uppercase text-slate-500"
             >
               {tag}
             </span>
@@ -54,7 +43,7 @@ export function TaskCard({ task, onOpen }: TaskCardProps) {
         </div>
       ) : (
         <div className="mt-1 flex flex-wrap gap-0.5">
-          <span className="rounded px-1 py-px text-[8px] font-semibold uppercase text-slate-500 bg-slate-100">
+          <span className="rounded bg-slate-100 px-1 py-px text-[8px] font-semibold uppercase text-slate-500">
             TIẾN ĐỘ
           </span>
         </div>
@@ -95,10 +84,52 @@ export function TaskCard({ task, onOpen }: TaskCardProps) {
       </div>
 
       {task.note ? (
-        <p className="mt-1 rounded-md border border-slate-100 bg-white p-1 text-[10px] italic text-slate-500 line-clamp-2">
+        <p className="mt-1 line-clamp-2 rounded-md border border-slate-100 bg-white p-1 text-[10px] italic text-slate-500">
           {task.note}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+type TaskCardProps = {
+  task: KanbanTask;
+  onOpen: () => void;
+};
+
+/**
+ * Compact task card — spec §9 essentials (populate state beyond empty board).
+ */
+export function TaskCard({ task, onOpen }: TaskCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+  });
+  const suppressClick = useRef(false);
+
+  useEffect(() => {
+    if (isDragging) suppressClick.current = true;
+  }, [isDragging]);
+
+  return (
+    <article
+      ref={setNodeRef}
+      style={{
+        transform: isDragging ? undefined : CSS.Transform.toString(transform),
+        transition: isDragging ? undefined : transition,
+        visibility: isDragging ? 'hidden' : 'visible',
+      }}
+      {...attributes}
+      {...listeners}
+      onClick={() => {
+        if (suppressClick.current) {
+          suppressClick.current = false;
+          return;
+        }
+        onOpen();
+      }}
+      className="mb-1.5 min-w-0 cursor-grab touch-none"
+    >
+      <TaskCardFace task={task} />
     </article>
   );
 }

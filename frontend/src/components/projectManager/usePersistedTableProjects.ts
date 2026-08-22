@@ -19,9 +19,11 @@ type UsePersistedTableProjectsResult = {
   overviewProjects: ResearchProject[];
   loading: boolean;
   loadError: string | null;
+  canRestoreLastDelete: boolean;
   onDelete: (id: string) => Promise<void>;
   onDeleteMultiple: (ids: string[]) => Promise<void>;
   onDeleteAll: () => Promise<void>;
+  onRestoreLastDelete: () => Promise<number>;
   onImport: (rows: Partial<TableProject>[], file?: File) => Promise<void>;
   onSaveProject: (project: TableProject) => Promise<void>;
   onUpdateProject: (project: TableProject) => Promise<void>;
@@ -33,8 +35,18 @@ export function usePersistedTableProjects(): UsePersistedTableProjectsResult {
   const [tableProjects, setTableProjects] = useState<TableProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [canRestoreLastDelete, setCanRestoreLastDelete] = useState(false);
   const tableProjectsRef = useRef(tableProjects);
   tableProjectsRef.current = tableProjects;
+  const lastDeletedRef = useRef<TableProject[]>([]);
+  const restoringRef = useRef(false);
+
+  const rememberDeleted = useCallback((ids: string[] | 'all') => {
+    const current = tableProjectsRef.current;
+    lastDeletedRef.current =
+      ids === 'all' ? [...current] : current.filter((project) => ids.includes(project.id));
+    setCanRestoreLastDelete(lastDeletedRef.current.length > 0);
+  }, []);
 
   const actor = useMemo(() => resolveHistoryActor(user), [user]);
 
@@ -79,6 +91,7 @@ export function usePersistedTableProjects(): UsePersistedTableProjectsResult {
 
   const onDelete = useCallback(
     async (id: string) => {
+      rememberDeleted([id]);
       await researchProjectService.deleteOne(id);
       // Optimistic local remove, then hard-sync from server so Excel/UI never keep ghosts.
       setTableProjects((prev) => prev.filter((p) => p.id !== id));
@@ -88,7 +101,7 @@ export function usePersistedTableProjects(): UsePersistedTableProjectsResult {
         /* local filter already applied */
       }
     },
-    [reloadFromServer],
+    [rememberDeleted, reloadFromServer],
   );
 
   const onDeleteMultiple = useCallback(
@@ -96,6 +109,7 @@ export function usePersistedTableProjects(): UsePersistedTableProjectsResult {
       const uniqueIds = [...new Set(ids.filter(Boolean))];
       if (uniqueIds.length === 0) return;
 
+      rememberDeleted(uniqueIds);
       await researchProjectService.deleteMany(uniqueIds);
       const idSet = new Set(uniqueIds);
       setTableProjects((prev) => prev.filter((p) => !idSet.has(p.id)));
@@ -105,16 +119,38 @@ export function usePersistedTableProjects(): UsePersistedTableProjectsResult {
         /* local filter already applied */
       }
     },
-    [reloadFromServer],
+    [rememberDeleted, reloadFromServer],
   );
 
   const onDeleteAll = useCallback(async () => {
+    rememberDeleted('all');
     await researchProjectService.deleteAll();
     setTableProjects([]);
     try {
       await reloadFromServer();
     } catch {
       setTableProjects([]);
+    }
+  }, [rememberDeleted, reloadFromServer]);
+
+  const onRestoreLastDelete = useCallback(async () => {
+    if (restoringRef.current) return 0;
+    const toRestore = lastDeletedRef.current;
+    if (toRestore.length === 0) return 0;
+
+    restoringRef.current = true;
+    try {
+      if (toRestore.length === 1) {
+        await researchProjectService.upsert(toRestore[0]!);
+      } else {
+        await researchProjectService.bulkCreate(toRestore);
+      }
+      lastDeletedRef.current = [];
+      setCanRestoreLastDelete(false);
+      await reloadFromServer();
+      return toRestore.length;
+    } finally {
+      restoringRef.current = false;
     }
   }, [reloadFromServer]);
 
@@ -198,9 +234,11 @@ export function usePersistedTableProjects(): UsePersistedTableProjectsResult {
     overviewProjects,
     loading,
     loadError,
+    canRestoreLastDelete,
     onDelete,
     onDeleteMultiple,
     onDeleteAll,
+    onRestoreLastDelete,
     onImport,
     onSaveProject,
     onUpdateProject,

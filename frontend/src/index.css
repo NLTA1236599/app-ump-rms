@@ -5,3 +5,8 @@
 body {
   @apply antialiased text-slate-800;
 }
+
+body.kanban-dragging,
+body.kanban-dragging * {
+  cursor: grabbing !important;
+}

@@ -14,6 +14,8 @@ type DataTableViewProps = {
   onDelete: (id: string) => void | Promise<void>;
   onDeleteMultiple: (ids: string[]) => void | Promise<void>;
   onDeleteAll: () => void | Promise<void>;
+  canRestoreLastDelete?: boolean;
+  onRestoreLastDelete?: () => void | Promise<void | number>;
   onImport: (rows: Partial<ResearchProject>[], file?: File) => Promise<void>;
   onUpdateProject: (project: ResearchProject) => void | Promise<void>;
   onSyncProject?: (project: ResearchProject) => void;
@@ -26,6 +28,8 @@ export function DataTableView({
   onDelete,
   onDeleteMultiple,
   onDeleteAll,
+  canRestoreLastDelete = false,
+  onRestoreLastDelete,
   onImport,
   onUpdateProject,
   onSyncProject,
@@ -115,6 +119,21 @@ export function DataTableView({
     }
   }, [onDeleteAll, uniqueProjects.length]);
 
+  const handleRestoreLastDelete = useCallback(async () => {
+    if (!onRestoreLastDelete) return;
+    try {
+      const count = await Promise.resolve(onRestoreLastDelete());
+      if (!count) {
+        notify('Chưa có thao tác xóa để khôi phục.');
+        return;
+      }
+      notify(count === 1 ? 'Đã khôi phục đề tài vừa xóa.' : `Đã khôi phục ${count} đề tài vừa xóa.`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Không khôi phục được dữ liệu đã xóa.';
+      notify(msg);
+    }
+  }, [onRestoreLastDelete, notify]);
+
   const handleEdit = (project: ResearchProject) => {
     setEditingProject(project);
   };
@@ -168,6 +187,8 @@ export function DataTableView({
         onImportFeedback={handleImportFeedback}
         onDeleteMultiple={handleDeleteMultiple}
         onDeleteAll={handleDeleteAll}
+        canRestoreLastDelete={canRestoreLastDelete}
+        onRestoreLastDelete={handleRestoreLastDelete}
         canDeleteProjects={canDeleteProjects}
       />
       <ProjectEditModal
