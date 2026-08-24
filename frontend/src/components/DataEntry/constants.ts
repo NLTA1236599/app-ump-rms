@@ -110,6 +110,16 @@ export const SUPERVISOR_ACCOUNT_ROLES = ['admin', 'specialist'] as const;
 export type SupervisorAccountRole = (typeof SUPERVISOR_ACCOUNT_ROLES)[number];
 
 export const REVIEW_BATCH_OPTIONS = [
+  'Đợt 1/2020',
+  'Đợt 2/2020',
+  'Đợt 1/2021',
+  'Đợt 2/2021',
+  'Đợt 1/2022',
+  'Đợt 2/2022',
+  'Đợt 1/2023',
+  'Đợt 2/2023',
+  'Đợt 1/2024',
+  'Đợt 2/2024',
   'Đợt 1/2025',
   'Đợt 2/2025',
   'Đợt 1/2026',
