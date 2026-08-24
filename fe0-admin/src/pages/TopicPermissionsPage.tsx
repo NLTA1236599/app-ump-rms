@@ -6,8 +6,9 @@ import type { AdminUserRow } from '../types/index.js';
 
 type PanelMode = 'grant' | 'units';
 
-type MemberRow = UnitMember & {
+type MemberRow = Omit<UnitMember, 'role'> & {
   userId: string | null;
+  role: string;
 };
 
 function isInstitutionalEmail(email: string): boolean {
@@ -19,38 +20,85 @@ function normalizeEmail(email: string | null | undefined): string {
   return (email ?? '').trim().toLowerCase();
 }
 
+function normalizePersonName(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+const GENERIC_ROSTER_NAMES = new Set(['lanh dao', 'quan tri vien', 'admin']);
+
 function accessSummary(member: MemberRow): string {
   if (member.allowedUnits.length === 0) return 'tất cả đơn vị';
   if (member.allowedUnits.length === 1) return member.allowedUnits[0]!;
   return `${member.allowedUnits.length} đơn vị`;
 }
 
-function findLinkedUser(member: UnitMember, users: AdminUserRow[]): AdminUserRow | undefined {
-  const memberEmail = normalizeEmail(member.email);
-  if (!memberEmail) return undefined;
+function roleLabel(role: string): string {
+  const normalized = role.trim().toLowerCase();
+  if (normalized === 'specialist') return 'Chuyên viên';
+  if (normalized === 'leader') return 'Trưởng phòng';
+  if (normalized === 'admin') return 'Quản trị viên';
+  return role;
+}
 
-  const exact = users.find((user) => normalizeEmail(user.email) === memberEmail);
-  if (exact) return exact;
-
+function emailsMatch(memberEmail: string, userEmail: string): boolean {
+  if (memberEmail === userEmail) return true;
   const local = memberEmail.split('@')[0] ?? '';
-  return users.find((user) => {
-    const email = normalizeEmail(user.email);
-    return email === local || email.startsWith(`${local}@`);
-  });
+  if (!local) return false;
+  return userEmail === local || userEmail.startsWith(`${local}@`);
+}
+
+function findLinkedUser(
+  member: UnitMember,
+  users: AdminUserRow[],
+  claimedIds: Set<string>,
+): AdminUserRow | undefined {
+  const available = users.filter((user) => !claimedIds.has(user.id));
+  const memberEmail = normalizeEmail(member.email);
+
+  if (memberEmail) {
+    const byEmail = available.find((user) => emailsMatch(memberEmail, normalizeEmail(user.email)));
+    if (byEmail) return byEmail;
+  }
+
+  const memberName = normalizePersonName(member.fullName);
+  if (!memberName || GENERIC_ROSTER_NAMES.has(memberName)) return undefined;
+
+  return available.find((user) => normalizePersonName(user.full_name) === memberName);
 }
 
 function mergeMembers(seed: UnitMember[], users: AdminUserRow[]): MemberRow[] {
-  return seed.map((member) => {
-    const linked = findLinkedUser(member, users);
+  const claimedIds = new Set<string>();
+  const rows: MemberRow[] = seed.map((member) => {
+    const linked = findLinkedUser(member, users, claimedIds);
+    if (linked) claimedIds.add(linked.id);
     return {
       ...member,
       userId: linked?.id ?? null,
       email: linked?.email ?? member.email,
       fullName: linked?.full_name || member.fullName,
-      // API is source of truth once the account is linked.
       allowedUnits: linked ? linked.allowed_units : member.allowedUnits,
     };
   });
+
+  for (const user of users) {
+    if (claimedIds.has(user.id)) continue;
+    rows.push({
+      id: `user-${user.id}`,
+      fullName: user.full_name,
+      role: roleLabel(user.role),
+      email: user.email,
+      homeUnit: 'Chưa xác định',
+      allowedUnits: user.allowed_units,
+      userId: user.id,
+    });
+  }
+
+  return rows;
 }
 
 export function TopicPermissionsPage() {
@@ -67,7 +115,7 @@ export function TopicPermissionsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const accountCount = useMemo(
-    () => members.filter((member) => Boolean(member.email)).length,
+    () => members.filter((member) => Boolean(member.userId)).length,
     [members],
   );
 
@@ -162,20 +210,9 @@ export function TopicPermissionsPage() {
         linked.allowed_units.length > 0 ? linked.allowed_units : [member.homeUnit];
       await updateAllowedUnits(linked.id, nextUnits);
 
-      setMembers((prev) =>
-        prev.map((row) =>
-          row.id === member.id
-            ? {
-                ...row,
-                email: linked.email,
-                userId: linked.id,
-                fullName: linked.full_name || row.fullName,
-                allowedUnits: nextUnits,
-              }
-            : row,
-        ),
-      );
-      setSuccessMessage(`Đã cấp quyền cho ${member.fullName}.`);
+      const refreshed = await getUsers();
+      setMembers(mergeMembers(UNIT_MEMBERS, refreshed));
+      setSuccessMessage(`Đã liên kết tài khoản ${linked.email} với ${member.fullName}.`);
       setExpandedId(null);
       window.setTimeout(() => setSuccessMessage(null), 2500);
     } catch {
@@ -252,11 +289,11 @@ export function TopicPermissionsPage() {
       <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
         <div className="space-y-3 border-b border-gray-100 px-6 py-5">
           <p className="text-sm leading-relaxed text-gray-500">
-            Danh sách thành viên đơn vị. Thành viên chưa có tài khoản: nhập email ump.edu.vn đã đăng
-            ký để cấp quyền (người dùng tự đăng ký trước — không tạo mật khẩu ở đây). Sau khi có tài
-            khoản, quản trị viên chọn đơn vị / trung tâm / khoa mà thành viên được xem đề tài (bỏ
-            trống = thấy đề tài của tất cả đơn vị). Phân quyền được lưu vào hệ thống và áp dụng khi
-            đăng nhập cổng dữ liệu đề tài.
+            Danh sách thành viên đơn vị được ghép với tài khoản đã đăng ký theo email hoặc họ tên.
+            Cấp quyền truy cập ở tab Quản lý người dùng chỉ cho phép đăng nhập (bỏ OTP), không tự
+            hiện ở đây nếu chưa khớp họ tên/email. Thành viên chưa liên kết: nhập email ump.edu.vn
+            đã đăng ký để gắn tài khoản. Sau khi có tài khoản, chọn đơn vị được xem đề tài (bỏ trống
+            = thấy tất cả). Phân quyền được lưu vào hệ thống và dùng khi gửi mail nhắc.
           </p>
           <p className="text-sm text-gray-600">
             {members.length} thành viên · {accountCount} đã có tài khoản
@@ -265,7 +302,7 @@ export function TopicPermissionsPage() {
 
         <ul className="divide-y divide-gray-100">
           {members.map((member) => {
-            const hasAccount = Boolean(member.email);
+            const hasAccount = Boolean(member.userId);
             const isExpanded = expandedId === member.id;
             const statusText = hasAccount ? member.email : 'chưa có tài khoản';
 
@@ -280,7 +317,6 @@ export function TopicPermissionsPage() {
                     {hasAccount && (
                       <p className="mt-0.5 text-xs text-gray-400">
                         Đơn vị công tác: {member.homeUnit} · Quyền xem đề tài: {accessSummary(member)}
-                        {!member.userId && ' · chưa liên kết tài khoản hệ thống'}
                       </p>
                     )}
                   </div>

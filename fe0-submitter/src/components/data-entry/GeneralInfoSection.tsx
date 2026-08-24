@@ -8,6 +8,7 @@ import { SectionHeader } from './SectionHeader.js';
 import { inputBase, inputError } from './formStyles.js';
 import {
   primaryLeaderBirthYear,
+  primaryLeaderEmail,
   primaryLeaderName,
   type ProjectLeader,
 } from './projectLeaders.js';
@@ -58,6 +59,7 @@ export function GeneralInfoSection({
               setField('leaders', leaders);
               setField('principalInvestigator', primaryLeaderName(leaders));
               setField('birthYear', primaryLeaderBirthYear(leaders));
+              setField('principalEmail', primaryLeaderEmail(leaders));
             }}
           />
         </div>

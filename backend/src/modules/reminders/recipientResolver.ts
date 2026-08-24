@@ -1,5 +1,10 @@
 import { pool } from '../../config/database.js';
+import { resolveSupervisorUserId } from '../research-projects/projectContactFields.js';
 import type { ReminderRecipient } from './reminder.types.js';
+import {
+  listVerifiedSpecialists,
+  specialistsForDepartment,
+} from './specialistByUnit.js';
 
 const USER_EMAIL_SQL = `CASE
   WHEN position('@' in u.username) > 0 THEN u.username
@@ -18,6 +23,7 @@ export class RecipientResolver {
       title: string;
       leader_name: string;
       leader_email: string | null;
+      department: string | null;
       supervisor_id: string | null;
     }>(
       `SELECT
@@ -25,6 +31,7 @@ export class RecipientResolver {
          COALESCE(NULLIF(rp.data->>'leadAuthor', ''), 'Chủ nhiệm đề tài') AS leader_name,
          COALESCE(
            NULLIF(rp.data->>'principalEmail', ''),
+           NULLIF(rp.data#>>'{leaderDetails,0,email}', ''),
            (
              SELECT ${USER_EMAIL_SQL}
              FROM users u
@@ -32,6 +39,7 @@ export class RecipientResolver {
              LIMIT 1
            )
          ) AS leader_email,
+         NULLIF(rp.data->>'department', '') AS department,
          NULLIF(rp.data->>'supervisorId', '') AS supervisor_id
        FROM research_projects rp
        WHERE rp.id = $1`,
@@ -53,8 +61,18 @@ export class RecipientResolver {
 
     add(project.leader_email, project.leader_name, 'LEADER');
 
-    // Prefer join table; fallback to supervisorId on project JSON.
-    const { rows: specialists } = await pool.query<{ email: string; name: string }>(
+    // Primary specialist recipients: verified specialist accounts whose allowed_units
+    // cover this project's department. Email = admin "Quản lý người dùng" Email column.
+    const unitSpecialists = specialistsForDepartment(
+      await listVerifiedSpecialists(),
+      project.department,
+    );
+    for (const specialist of unitSpecialists) {
+      add(specialist.email, specialist.name, 'SPECIALIST');
+    }
+
+    // Also include the per-project Chuyên viên QL if assigned.
+    const { rows: linked } = await pool.query<{ email: string; name: string }>(
       `SELECT
          ${USER_EMAIL_SQL} AS email,
          COALESCE(NULLIF(u.display_name, ''), u.username) AS name
@@ -64,21 +82,24 @@ export class RecipientResolver {
       [projectId],
     );
 
-    for (const specialist of specialists) {
+    for (const specialist of linked) {
       add(specialist.email, specialist.name, 'SPECIALIST');
     }
 
-    if (specialists.length === 0 && project.supervisor_id) {
-      const { rows: supervisorRows } = await pool.query<{ email: string; name: string }>(
-        `SELECT
-           ${USER_EMAIL_SQL} AS email,
-           COALESCE(NULLIF(u.display_name, ''), u.username) AS name
-         FROM users u
-         WHERE u.id = $1`,
-        [project.supervisor_id],
-      );
-      const supervisor = supervisorRows[0];
-      if (supervisor) add(supervisor.email, supervisor.name, 'SPECIALIST');
+    if (linked.length === 0 && project.supervisor_id) {
+      const supervisorId = await resolveSupervisorUserId(project.supervisor_id);
+      if (supervisorId) {
+        const { rows: supervisorRows } = await pool.query<{ email: string; name: string }>(
+          `SELECT
+             ${USER_EMAIL_SQL} AS email,
+             COALESCE(NULLIF(u.display_name, ''), u.username) AS name
+           FROM users u
+           WHERE u.id = $1`,
+          [supervisorId],
+        );
+        const supervisor = supervisorRows[0];
+        if (supervisor) add(supervisor.email, supervisor.name, 'SPECIALIST');
+      }
     }
 
     return recipients;

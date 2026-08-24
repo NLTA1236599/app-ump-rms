@@ -53,6 +53,9 @@ export class NodemailerSender implements IEmailSender {
     port: Number(process.env.MAIL_PORT ?? 587),
     secure: false,
     requireTLS: true,
+    connectionTimeout: 15_000,
+    greetingTimeout: 15_000,
+    socketTimeout: 20_000,
     auth: {
       user: mailUser(),
       pass: mailPass(),
@@ -81,7 +84,7 @@ export class NodemailerSender implements IEmailSender {
       headers['List-Unsubscribe'] = `<mailto:${user}?subject=unsubscribe>`;
     }
 
-    await this.transporter.sendMail({
+    const info = await this.transporter.sendMail({
       from,
       to: payload.to,
       replyTo,
@@ -91,5 +94,22 @@ export class NodemailerSender implements IEmailSender {
       html: payload.html,
       headers,
     });
+
+    const accepted = info.accepted?.map(String) ?? [];
+    const rejected = info.rejected?.map(String) ?? [];
+    console.log('[Email] sent', {
+      to: payload.to,
+      subject: payload.subject,
+      messageId: info.messageId,
+      accepted,
+      rejected,
+      response: info.response,
+    });
+
+    if (rejected.length > 0 || accepted.length === 0) {
+      throw new Error(
+        `SMTP did not accept recipient ${payload.to} (accepted=${accepted.join(',') || 'none'}; rejected=${rejected.join(',') || 'none'})`,
+      );
+    }
   }
 }

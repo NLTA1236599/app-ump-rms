@@ -1,5 +1,6 @@
 import { pool } from '../../config/database.js';
 import { MILESTONE_FIELD_BY_CODE } from './reminder.config.js';
+import { resolveSupervisorUserId } from '../research-projects/projectContactFields.js';
 
 function parseDueDate(raw: unknown): string | null {
   if (raw == null) return null;
@@ -57,12 +58,9 @@ export class MilestoneSyncService {
   }
 
   async syncSpecialist(projectId: string, data: Record<string, unknown>): Promise<void> {
-    const supervisorId = String(data.supervisorId ?? '').trim();
+    const supervisorId = await resolveSupervisorUserId(String(data.supervisorId ?? ''));
     await pool.query(`DELETE FROM project_specialists WHERE project_id = $1`, [projectId]);
     if (!supervisorId) return;
-
-    const { rowCount } = await pool.query(`SELECT 1 FROM users WHERE id = $1`, [supervisorId]);
-    if (!rowCount) return;
 
     await pool.query(
       `INSERT INTO project_specialists (project_id, user_id)

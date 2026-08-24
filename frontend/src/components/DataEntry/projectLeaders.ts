@@ -78,6 +78,11 @@ export function primaryLeaderBirthYear(leaders: ProjectLeader[]): string {
   return normalized[0]?.birthYear ?? '';
 }
 
+export function primaryLeaderEmail(leaders: ProjectLeader[]): string {
+  const normalized = normalizeLeaders(leaders);
+  return normalized[0]?.email.trim() ?? '';
+}
+
 export function leaderAddReasonLabel(reason: LeaderAddReason): string {
   if (reason === 'co_leader') return 'Đồng chủ nhiệm';
   if (reason === 'replacement') return 'Thay đổi chủ nhiệm';

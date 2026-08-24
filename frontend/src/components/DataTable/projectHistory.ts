@@ -67,7 +67,7 @@ const FIELD_LABELS: Record<string, string> = {
   projectCode: 'Mã số đề tài',
   isTransferred: 'Chuyển tiếp',
   terminationReason: 'Lý do thanh lý',
-  supervisorId: 'Chuyên viên phụ trách',
+  supervisorId: 'Chuyên viên QL',
   reviewBatch: 'Đợt xét duyệt',
   generalNotes: 'Ghi chú chung',
 };

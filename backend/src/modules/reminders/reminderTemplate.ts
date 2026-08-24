@@ -14,7 +14,7 @@ function formatDueDate(dueDate: string): string {
 export function buildReminderEmail(reminder: DueReminder, recipient: ReminderRecipient) {
   const remaining = daysRemaining(reminder.dueDate, reminder.offsetDays);
   const dueLabel = formatDueDate(reminder.dueDate);
-  const roleLabel = recipient.role === 'LEADER' ? 'Chủ nhiệm đề tài' : 'Chuyên viên phụ trách';
+  const roleLabel = recipient.role === 'LEADER' ? 'Chủ nhiệm đề tài' : 'Chuyên viên QL';
   const base = publicAppBaseUrl();
   const link = `${base}/?projectId=${encodeURIComponent(reminder.projectId)}`;
   const whenLabel = remaining === 0 ? 'Đúng hạn hôm nay' : `Trước ${remaining} ngày`;

@@ -1,7 +1,52 @@
 import * as XLSX from 'xlsx';
 
 import { formatDate } from './formatDate.js';
-import { ProjectStatus, type ResearchProject } from './types.js';
+import { ProjectStatus, type ProjectLeader, type ResearchProject } from './types.js';
+
+const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+
+function parseLeaderDetailsCell(raw: string): {
+  leaderDetails?: ProjectLeader[];
+  principalEmail?: string;
+  leadAuthor?: string;
+} {
+  const text = raw.trim();
+  if (!text) return {};
+
+  const emails = text.match(EMAIL_RE) ?? [];
+  const segments = text
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const parts = segments.length > 0 ? segments : [text];
+
+  const leaderDetails = parts.map((segment, index) => {
+    const email = (segment.match(EMAIL_RE) ?? [])[0] ?? emails[index] ?? '';
+    const name = segment
+      .split('|')[0]
+      ?.replace(EMAIL_RE, '')
+      .replace(/\([^)]*\)/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return {
+      id: `imported-leader-${index}`,
+      fullName: name ?? '',
+      academicTitle: '',
+      nationalId: '',
+      email,
+      workUnit: '',
+      projectRole: index === 0 ? 'Chủ nhiệm đề tài' : '',
+      birthYear: '',
+      addReason: index === 0 ? ('' as const) : ('co_leader' as const),
+    };
+  });
+
+  return {
+    leaderDetails: leaderDetails.filter((l) => l.fullName || l.email),
+    principalEmail: emails[0],
+    leadAuthor: leaderDetails[0]?.fullName,
+  };
+}
 
 function mapRow(headers: string[], row: unknown[]): Partial<ResearchProject> {
   const p: Partial<ResearchProject> = {};
@@ -16,7 +61,10 @@ function mapRow(headers: string[], row: unknown[]): Partial<ResearchProject> {
     else if (header.includes('ngày ký')) p.contractDate = val ? String(val) : '';
     else if (header.includes('tên đề tài')) p.title = val ? String(val) : '';
     else if (header.includes('chi tiết chủ nhiệm')) {
-      /* structured text kept for display; primary name still mapped below */
+      const parsed = parseLeaderDetailsCell(val ? String(val) : '');
+      if (parsed.leaderDetails?.length) p.leaderDetails = parsed.leaderDetails;
+      if (parsed.principalEmail && !p.principalEmail) p.principalEmail = parsed.principalEmail;
+      if (parsed.leadAuthor && !p.leadAuthor) p.leadAuthor = parsed.leadAuthor;
     } else if (header.includes('chủ nhiệm') && !header.includes('email') && !header.includes('chi tiết'))
       p.leadAuthor = val ? String(val) : '';
     else if (header.includes('năm sinh')) p.leadAuthorBirthYear = val ? String(val) : '';
@@ -102,6 +150,10 @@ function mapRow(headers: string[], row: unknown[]): Partial<ResearchProject> {
   });
 
   const today = new Date().toISOString().split('T')[0];
+
+  if (!p.principalEmail && p.leaderDetails?.[0]?.email) {
+    p.principalEmail = p.leaderDetails[0].email;
+  }
 
   return {
     ...p,

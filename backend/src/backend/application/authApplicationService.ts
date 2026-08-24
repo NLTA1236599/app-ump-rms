@@ -110,7 +110,9 @@ export class AuthApplicationService implements IAuthService {
     const channel = await this.deliverOtp(email, plaintextOtp, ttlMinutes);
     if (channel === 'smtp_failed') {
       // Account exists; client can retry via resend once SMTP recovers.
-      console.warn('[Auth] OTP email failed after register; user can resend');
+      console.warn(`[Auth] OTP email failed after register for ${email}; user can resend`);
+    } else {
+      console.log(`[Auth] OTP delivered via ${channel} to ${email}`);
     }
 
     return {
@@ -282,6 +284,7 @@ export class AuthApplicationService implements IAuthService {
         html: registrationOtpHtml(otp, ttlMinutes),
         text: registrationOtpText(otp, ttlMinutes),
         transactional: true,
+        headers: { 'X-UMP-RMS-Notification': 'registration-otp' },
       });
       return configured;
     } catch (e) {

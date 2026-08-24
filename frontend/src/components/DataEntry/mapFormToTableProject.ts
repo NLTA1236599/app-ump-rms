@@ -5,6 +5,7 @@ import type { Gender, ProjectStatus } from './constants.js';
 import {
   normalizeLeaders,
   primaryLeaderBirthYear,
+  primaryLeaderEmail,
   primaryLeaderName,
 } from './projectLeaders.js';
 import { membersToDisplayString, normalizeMembers } from './projectMembers.js';
@@ -56,7 +57,8 @@ export function mapFormToTableProject(
     certificateResultIssuingAuthority: form.gcnPlace.trim() || undefined,
     leadAuthor:
       primaryLeaderName(form.leaders) || form.principalInvestigator.trim(),
-    principalEmail: form.principalEmail.trim() || undefined,
+    principalEmail:
+      primaryLeaderEmail(form.leaders) || form.principalEmail.trim() || undefined,
     leadAuthorBirthYear:
       primaryLeaderBirthYear(form.leaders) || form.birthYear.trim() || undefined,
     leadAuthorGender: GENDER_LABELS[form.principalGender],

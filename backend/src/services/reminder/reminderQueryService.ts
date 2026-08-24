@@ -3,6 +3,11 @@ import {
   REMINDER_MATCH_WINDOW_SECONDS,
 } from '../../config/reminderConfig.js';
 import { pool } from '../../config/database.js';
+import {
+  listVerifiedSpecialists,
+  mergeSpecialistContacts,
+  specialistsForDepartment,
+} from '../../modules/reminders/specialistByUnit.js';
 import type { IReminderQuery, ProjectRecipient } from './IReminderQuery.js';
 
 type ProjectRow = {
@@ -11,6 +16,7 @@ type ProjectRow = {
   deadline: string;
   leader_name: string;
   leader_email: string | null;
+  department: string | null;
 };
 
 type SpecialistRow = {
@@ -46,13 +52,15 @@ export class ReminderQueryService implements IReminderQuery {
          COALESCE(NULLIF(rp.data->>'leadAuthor', ''), 'Chủ nhiệm đề tài') AS leader_name,
          COALESCE(
            NULLIF(rp.data->>'principalEmail', ''),
+           NULLIF(rp.data#>>'{leaderDetails,0,email}', ''),
            (
              SELECT ${USER_EMAIL_SQL}
              FROM users u
              WHERE u.display_name = rp.data->>'leadAuthor'
              LIMIT 1
            )
-         ) AS leader_email
+         ) AS leader_email,
+         NULLIF(rp.data->>'department', '') AS department
        FROM research_projects rp
        WHERE jsonb_text_to_timestamptz(rp.data->>$1) IS NOT NULL
          AND jsonb_text_to_timestamptz(rp.data->>$1)
@@ -82,6 +90,7 @@ export class ReminderQueryService implements IReminderQuery {
       specialistMap.set(specialist.project_id, list);
     }
 
+    const unitSpecialists = await listVerifiedSpecialists();
     const recipients: ProjectRecipient[] = [];
 
     for (const row of rows) {
@@ -95,7 +104,10 @@ export class ReminderQueryService implements IReminderQuery {
           email: row.leader_email,
           name: row.leader_name,
         },
-        specialists: specialistMap.get(row.id) ?? [],
+        specialists: mergeSpecialistContacts(
+          specialistsForDepartment(unitSpecialists, row.department),
+          specialistMap.get(row.id) ?? [],
+        ),
       });
     }
 

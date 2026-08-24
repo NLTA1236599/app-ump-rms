@@ -487,7 +487,7 @@ function LeftPanel({
           className="flex items-center justify-between rounded-lg border border-slate-200 px-3
                       py-2"
         >
-          <span className="text-xs text-slate-500">Chuyên viên phụ trách</span>
+          <span className="text-xs text-slate-500">Chuyên viên QL</span>
           {supervisorLabel ? (
             <span
               className="max-w-[160px] truncate rounded-full bg-blue-500 px-2 py-0.5 text-[10px]
@@ -500,7 +500,7 @@ function LeftPanel({
             <span
               className="rounded-full bg-blue-500 px-2 py-0.5 text-[10px] font-bold text-white"
             >
-              Chuyên viên phụ trách
+              Chuyên viên QL
             </span>
           )}
         </div>

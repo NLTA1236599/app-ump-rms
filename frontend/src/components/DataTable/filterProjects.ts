@@ -43,7 +43,9 @@ export function filterProjects(projects: ResearchProject[], opts: FilterOptions)
         const raw =
           colId === 'supervisorId'
             ? supervisorEmailById?.get(p.supervisorId ?? '') || p.supervisorId
-            : p[colId as keyof ResearchProject];
+            : colId === 'principalEmail'
+              ? p.principalEmail?.trim() || p.leaderDetails?.[0]?.email?.trim() || ''
+              : p[colId as keyof ResearchProject];
         return fieldToFilterString(raw).toLowerCase().includes(filterVal.toLowerCase());
       }),
     );

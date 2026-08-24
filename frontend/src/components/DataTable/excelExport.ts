@@ -2,7 +2,7 @@ import * as XLSX from 'xlsx';
 
 import { dedupeProjects } from './dedupeProjects.js';
 import { formatDate, getAge } from './formatDate.js';
-import type { ProjectLeader, ProjectMember, ResearchProject } from './types.js';
+import type { ProjectMember, ResearchProject } from './types.js';
 
 type ExportColumn = {
   header: string;
@@ -29,31 +29,8 @@ function formatMemberDetails(members?: ProjectMember[]): string {
     .join('; ');
 }
 
-function formatLeaderDetails(leaders?: ProjectLeader[]): string {
-  if (!leaders?.length) return '';
-  return leaders
-    .map((l, index) => {
-      const reason =
-        l.addReason === 'co_leader'
-          ? 'Đồng chủ nhiệm'
-          : l.addReason === 'replacement'
-            ? 'Thay đổi chủ nhiệm'
-            : index === 0
-              ? 'Chủ nhiệm chính'
-              : undefined;
-      const parts = [
-        l.fullName,
-        reason && `(${reason})`,
-        l.academicTitle && `HH/HV: ${l.academicTitle}`,
-        l.birthYear && `NS: ${l.birthYear}`,
-        l.nationalId && `CCCD: ${l.nationalId}`,
-        l.email && `Email: ${l.email}`,
-        l.workUnit && `ĐV: ${l.workUnit}`,
-        l.projectRole && `Vai trò: ${l.projectRole}`,
-      ].filter(Boolean);
-      return parts.join(' | ');
-    })
-    .join('; ');
+function principalEmailText(p: ResearchProject): string {
+  return p.principalEmail?.trim() || p.leaderDetails?.[0]?.email?.trim() || '';
 }
 
 /** Column order follows Data Entry form sections §1–§8 for Excel download parity. */
@@ -95,14 +72,10 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { columnId: 'title', header: 'Tên đề tài', ml: 40, value: (p) => p.title },
   { columnId: 'leadAuthor', header: 'Chủ nhiệm đề tài', ml: 20, value: (p) => p.leadAuthor },
   {
-    columnId: 'leaderDetails',
-    header: 'Chi tiết chủ nhiệm',
-    ml: 40,
-    value: (p) =>
-      formatLeaderDetails(p.leaderDetails) ||
-      [p.leadAuthor, p.leadAuthorBirthYear && `NS: ${p.leadAuthorBirthYear}`]
-        .filter(Boolean)
-        .join(' | '),
+    columnId: 'principalEmail',
+    header: 'Email chủ nhiệm',
+    ml: 22,
+    value: (p) => principalEmailText(p),
   },
   {
     columnId: 'leadAuthorBirthYear',
@@ -116,12 +89,6 @@ const EXPORT_COLUMNS: ExportColumn[] = [
     header: 'Giới tính',
     ml: 8,
     value: (p) => p.leadAuthorGender || '',
-  },
-  {
-    columnId: 'principalEmail',
-    header: 'Email chủ nhiệm',
-    ml: 22,
-    value: (p) => p.principalEmail || '',
   },
   {
     columnId: 'members',
@@ -321,7 +288,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   },
   {
     columnId: 'supervisorId',
-    header: 'Chuyên viên phụ trách',
+    header: 'Chuyên viên QL',
     ml: 18,
     value: (p) => p.supervisorId || '',
   },
@@ -375,7 +342,7 @@ export function exportProjectsToExcel(
       if (c.columnId === 'supervisorId') {
         const id = p.supervisorId?.trim();
         if (!id) return '';
-        return supervisorEmailById?.get(id) || '';
+        return supervisorEmailById?.get(id) || (id.includes('@') ? id : '');
       }
       return c.value(p, i);
     }),

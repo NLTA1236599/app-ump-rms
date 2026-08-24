@@ -30,7 +30,7 @@ export function resolveSupervisorEmail(
 ): string {
   const id = supervisorId?.trim();
   if (!id) return '';
-  return emailById.get(id) ?? '';
+  return emailById.get(id) ?? (id.includes('@') ? id : '');
 }
 
 export function supervisorEmailByIdMap(users: readonly User[]): Map<string, string> {

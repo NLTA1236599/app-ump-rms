@@ -129,11 +129,11 @@ export function DataTableGrid({
               <Col id="leadAuthor" visible={visibleColumns}>
                 <FilterableHeader label="Chủ nhiệm" colId="leadAuthor" minWidth="150px" {...headerProps} />
               </Col>
-              <Col id="leaderDetails" visible={visibleColumns}>
+              <Col id="principalEmail" visible={visibleColumns}>
                 <FilterableHeader
-                  label="Chi tiết chủ nhiệm"
-                  colId="leaderDetails"
-                  minWidth="280px"
+                  label="Email chủ nhiệm"
+                  colId="principalEmail"
+                  minWidth="180px"
                   {...headerProps}
                 />
               </Col>
@@ -150,9 +150,6 @@ export function DataTableGrid({
               </Col>
               <Col id="leadAuthorGender" visible={visibleColumns}>
                 <FilterableHeader label="Giới tính" colId="leadAuthorGender" minWidth="80px" {...headerProps} />
-              </Col>
-              <Col id="principalEmail" visible={visibleColumns}>
-                <FilterableHeader label="Email CN" colId="principalEmail" minWidth="180px" {...headerProps} />
               </Col>
 
               <Col id="members" visible={visibleColumns}>
@@ -269,7 +266,7 @@ export function DataTableGrid({
                 <FilterableHeader label="Thời điểm NT" colId="acceptanceCompletionDate" minWidth="100px" {...headerProps} />
               </Col>
               <Col id="supervisorId" visible={visibleColumns}>
-                <FilterableHeader label="CV phụ trách" colId="supervisorId" minWidth="180px" {...headerProps} />
+                <FilterableHeader label="Chuyên viên QL" colId="supervisorId" minWidth="180px" {...headerProps} />
               </Col>
               <Col id="reviewBatch" visible={visibleColumns}>
                 <FilterableHeader label="Đợt xét duyệt" colId="reviewBatch" minWidth="120px" {...headerProps} />
@@ -310,8 +307,9 @@ export function DataTableGrid({
                 onDelete={onDelete}
                 canDelete={canDeleteProjects}
                 supervisorEmail={
-                  p.supervisorId && supervisorEmailById
-                    ? supervisorEmailById.get(p.supervisorId) ?? ''
+                  p.supervisorId
+                    ? supervisorEmailById?.get(p.supervisorId) ||
+                      (p.supervisorId.includes('@') ? p.supervisorId : '')
                     : ''
                 }
               />

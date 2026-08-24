@@ -4,6 +4,7 @@ import {
   expandAllowedDepartments,
   projectMatchesAllowedUnits,
 } from './departmentAccess.js';
+import { normalizeProjectContactFields } from './projectContactFields.js';
 import { ResearchProjectRepository } from './research-project.repository.js';
 
 const UNRESTRICTED_ROLES = new Set(['admin', 'leader']);
@@ -47,7 +48,11 @@ export class ResearchProjectService {
     userId: string,
     importFileId?: string | null,
   ) {
-    const saved = await this.repo.insertMany(projects, userId, importFileId);
+    const saved = await this.repo.insertMany(
+      await Promise.all(projects.map((project) => normalizeProjectContactFields(project))),
+      userId,
+      importFileId,
+    );
     await Promise.all(
       saved.map((project) => this.milestones.syncProject(String(project.id), project)),
     );
@@ -55,7 +60,7 @@ export class ResearchProjectService {
   }
 
   async upsert(project: Record<string, unknown>, userId: string) {
-    const saved = await this.repo.upsert(project, userId);
+    const saved = await this.repo.upsert(await normalizeProjectContactFields(project), userId);
     if (saved?.id) {
       await this.milestones.syncProject(String(saved.id), saved);
     }

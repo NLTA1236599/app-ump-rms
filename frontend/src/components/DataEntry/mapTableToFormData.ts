@@ -192,7 +192,7 @@ export function mapTableToFormData(project: ResearchProject): DataEntryFormData 
     reminderAt: toFormIsoDate(project.reminderDate),
     completionAt: toFormIsoDate(project.acceptanceCompletionDate),
     principalGender: mapGender(project.leadAuthorGender),
-    principalEmail: String(project.principalEmail ?? ''),
+    principalEmail: String(project.principalEmail ?? leaders[0]?.email ?? ''),
     supervisorId: project.supervisorId ?? '',
     reviewBatch: project.reviewBatch ?? '',
     transferForward: Boolean(project.isTransferred),

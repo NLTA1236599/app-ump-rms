@@ -35,25 +35,8 @@ function categoriesList(categories?: string[] | string) {
   );
 }
 
-function leaderDetailsText(p: ResearchProject): string {
-  if (p.leaderDetails?.length) {
-    return p.leaderDetails
-      .map((l, index) => {
-        const reason =
-          l.addReason === 'co_leader'
-            ? 'Đồng CN'
-            : l.addReason === 'replacement'
-              ? 'Thay đổi CN'
-              : index === 0
-                ? 'Chính'
-                : '';
-        return [l.fullName, reason && `(${reason})`, l.academicTitle, l.email]
-          .filter(Boolean)
-          .join(' ');
-      })
-      .join('; ');
-  }
-  return p.leadAuthor || '';
+function principalEmailText(p: ResearchProject): string {
+  return p.principalEmail?.trim() || p.leaderDetails?.[0]?.email?.trim() || '';
 }
 
 function membersText(p: ResearchProject): string {
@@ -156,13 +139,8 @@ export function ProjectTableRow({
       <Col id="leadAuthor" visible={visibleColumns}>
         <td className="px-2 py-1.5 align-top text-xs font-semibold text-blue-700">{p.leadAuthor}</td>
       </Col>
-      <Col id="leaderDetails" visible={visibleColumns}>
-        <td
-          className="max-w-[240px] px-2 py-1.5 align-top text-xs whitespace-normal break-words"
-          title={leaderDetailsText(p)}
-        >
-          {leaderDetailsText(p)}
-        </td>
+      <Col id="principalEmail" visible={visibleColumns}>
+        <td className="px-2 py-1.5 align-top text-xs text-slate-700">{principalEmailText(p)}</td>
       </Col>
       <Col id="leadAuthorBirthYear" visible={visibleColumns}>
         <td className="px-2 py-1.5 text-center align-top text-xs">{p.leadAuthorBirthYear}</td>
@@ -172,9 +150,6 @@ export function ProjectTableRow({
       </Col>
       <Col id="leadAuthorGender" visible={visibleColumns}>
         <td className="px-2 py-1.5 align-top text-xs">{p.leadAuthorGender}</td>
-      </Col>
-      <Col id="principalEmail" visible={visibleColumns}>
-        <td className="px-2 py-1.5 align-top text-xs text-slate-700">{p.principalEmail}</td>
       </Col>
 
       <Col id="members" visible={visibleColumns}>
