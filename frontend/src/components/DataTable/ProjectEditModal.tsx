@@ -4,7 +4,7 @@ import type { ResearchProject } from './types.js';
 type ProjectEditModalProps = {
   project: ResearchProject | null;
   onClose: () => void;
-  onSave: (project: ResearchProject) => void;
+  onSave: (project: ResearchProject) => void | Promise<void | ResearchProject>;
 };
 
 export function ProjectEditModal({ project, onClose, onSave }: ProjectEditModalProps) {
@@ -32,9 +32,10 @@ export function ProjectEditModal({ project, onClose, onSave }: ProjectEditModalP
           mode="edit"
           project={project}
           embedded
-          onSaveProject={(updated) => {
-            onSave(updated);
+          onSaveProject={async (updated) => {
+            const saved = await Promise.resolve(onSave(updated));
             onClose();
+            return saved ?? updated;
           }}
           onCancel={onClose}
         />

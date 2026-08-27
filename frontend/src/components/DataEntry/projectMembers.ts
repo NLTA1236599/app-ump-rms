@@ -5,29 +5,26 @@ export type ProjectMember = {
   nationalId: string;
   email: string;
   workUnit: string;
+  department: string;
   projectRole: string;
 };
 
 export function createEmptyMember(): ProjectMember {
+  const base = {
+    fullName: '',
+    academicTitle: '',
+    nationalId: '',
+    email: '',
+    workUnit: '',
+    department: '',
+    projectRole: '',
+  };
   try {
-    return {
-      id: crypto.randomUUID(),
-      fullName: '',
-      academicTitle: '',
-      nationalId: '',
-      email: '',
-      workUnit: '',
-      projectRole: '',
-    };
+    return { id: crypto.randomUUID(), ...base };
   } catch {
     return {
       id: `member-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      fullName: '',
-      academicTitle: '',
-      nationalId: '',
-      email: '',
-      workUnit: '',
-      projectRole: '',
+      ...base,
     };
   }
 }
@@ -39,6 +36,7 @@ export function isMemberEmpty(member: ProjectMember): boolean {
     !member.nationalId.trim() &&
     !member.email.trim() &&
     !member.workUnit.trim() &&
+    !member.department.trim() &&
     !member.projectRole.trim()
   );
 }
@@ -54,6 +52,7 @@ export function normalizeMembers(members: ProjectMember[]): ProjectMember[] {
       nationalId: m.nationalId.trim(),
       email: m.email.trim(),
       workUnit: m.workUnit.trim(),
+      department: m.department.trim(),
       projectRole: m.projectRole.trim(),
     }));
 }
@@ -77,8 +76,9 @@ function coerceMember(raw: unknown, index: number): ProjectMember | null {
   const nationalId = String(raw.nationalId ?? raw.cccd ?? '').trim();
   const email = String(raw.email ?? '').trim();
   const workUnit = String(raw.workUnit ?? raw.unit ?? '').trim();
+  const department = String(raw.department ?? raw.subDepartment ?? '').trim();
   const projectRole = String(raw.projectRole ?? raw.role ?? '').trim();
-  if (!fullName && !academicTitle && !nationalId && !email && !workUnit && !projectRole) {
+  if (!fullName && !academicTitle && !nationalId && !email && !workUnit && !department && !projectRole) {
     return null;
   }
   return {
@@ -88,6 +88,7 @@ function coerceMember(raw: unknown, index: number): ProjectMember | null {
     nationalId,
     email,
     workUnit,
+    department,
     projectRole,
   };
 }

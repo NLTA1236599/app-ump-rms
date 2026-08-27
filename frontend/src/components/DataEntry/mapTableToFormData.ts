@@ -2,6 +2,9 @@ import { formatDate } from '../DataTable/formatDate.js';
 import { ProjectStatus as TableProjectStatus, type ResearchProject } from '../DataTable/types.js';
 
 import { cloneFormData } from './cloneFormData.js';
+import { parseContractAppendix, parseContractNumber } from './contractNumberFormat.js';
+import { extractReviewYear } from './reviewYear.js';
+import { looseDdMmYyyyToIso } from './dateHelpers.js';
 import type { ExecutionProgress, Gender, ProjectStatus } from './constants.js';
 import {
   FACULTY_UNIT_OPTIONS,
@@ -9,6 +12,12 @@ import {
   PROJECT_TYPE_TAGS,
   RESEARCH_FIELD_OPTIONS,
 } from './constants.js';
+import {
+  createDefaultTrainingResults,
+  normalizeTypeIIIRows,
+  normalizeTypeIIRows,
+  normalizeTypeIRows,
+} from './productDetailTypes.js';
 import { leadersFromProject, primaryLeaderBirthYear, primaryLeaderName } from './projectLeaders.js';
 import { membersFromProject } from './projectMembers.js';
 import type { DataEntryFormData } from './types.js';
@@ -133,11 +142,31 @@ export function mapTableToFormData(project: ResearchProject): DataEntryFormData 
     project.leadAuthor,
     project.leadAuthorBirthYear,
   );
+  const legacyDepartment = (project.subDepartment ?? '').trim();
+  if (leaders[0] && !leaders[0].department.trim() && legacyDepartment) {
+    leaders[0] = { ...leaders[0], department: legacyDepartment };
+  }
+
+  const parsed = parseContractNumber(project.contractId);
+  const parsedAppendix = parseContractAppendix(project.contractAppendix);
+  const sequenceNumber =
+    project.registrationSequenceNumber != null ? String(project.registrationSequenceNumber) : '';
+  const sequenceYear =
+    project.registrationSequenceYear != null ? String(project.registrationSequenceYear) : '';
+  const reviewYear = extractReviewYear(project.reviewBatch) ?? extractReviewYear(parsed.year);
+  const signedIso =
+    toFormIsoDate(project.contractDate) || looseDdMmYyyyToIso(parsed.dateDisplay);
 
   return {
     ...base,
     contractNumber: project.contractId ?? '',
+    contractSeq: sequenceNumber || parsed.seq,
+    contractYear: sequenceYear || (reviewYear ? String(reviewYear) : parsed.year),
+    contractSignedAt: signedIso,
     contractAppendix: project.contractAppendix ?? '',
+    contractAppendixSeq: parsedAppendix.seq,
+    contractAppendixYear: parsedAppendix.year,
+    contractAppendixSignedAt: looseDdMmYyyyToIso(parsedAppendix.dateDisplay),
     projectCode: project.projectCode ?? '',
     gcnNumber: project.certificateResultNumber ?? '',
     gcnIssuedAt: toFormIsoDate(project.certificateResultDate),
@@ -161,6 +190,7 @@ export function mapTableToFormData(project: ResearchProject): DataEntryFormData 
     contractedBudget: String(project.budgetLumpSum ?? 0),
     nonContractedBudget: String(project.budgetNonLumpSum ?? 0),
     otherFunding: String(project.budgetOtherSources ?? 0),
+    settledBudget: String(project.budgetSettled ?? 0),
     installment1: String(project.budgetBatch1 ?? 0),
     installment2: String(project.budgetBatch2 ?? 0),
     installment3: String(project.budgetBatch3 ?? 0),
@@ -189,12 +219,19 @@ export function mapTableToFormData(project: ResearchProject): DataEntryFormData 
       actual: String(actualMap.get(row.label) ?? 0),
     })),
     productActualDetail: project.actualProductDetails ?? '',
+    productTypeI: normalizeTypeIRows(project.productTypeI),
+    productTypeII: normalizeTypeIIRows(project.productTypeII),
+    productTypeIII: normalizeTypeIIIRows(project.productTypeIII),
+    trainingResults: createDefaultTrainingResults(project.trainingResults),
+    ipProtectionNote: project.ipProtectionNote ?? '',
     reminderAt: toFormIsoDate(project.reminderDate),
     completionAt: toFormIsoDate(project.acceptanceCompletionDate),
     principalGender: mapGender(project.leadAuthorGender),
     principalEmail: String(project.principalEmail ?? leaders[0]?.email ?? ''),
     supervisorId: project.supervisorId ?? '',
     reviewBatch: project.reviewBatch ?? '',
+    sequenceNumber,
+    sequenceYear,
     transferForward: Boolean(project.isTransferred),
     liquidationReason: project.terminationReason ?? '',
     generalNotes: project.generalNotes ?? '',

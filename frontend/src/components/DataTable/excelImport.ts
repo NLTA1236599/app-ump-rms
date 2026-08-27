@@ -35,6 +35,7 @@ function parseLeaderDetailsCell(raw: string): {
       nationalId: '',
       email,
       workUnit: '',
+      department: '',
       projectRole: index === 0 ? 'Chủ nhiệm đề tài' : '',
       birthYear: '',
       addReason: index === 0 ? ('' as const) : ('co_leader' as const),
@@ -85,6 +86,10 @@ function mapRow(headers: string[], row: unknown[]): Partial<ResearchProject> {
     else if (header.includes('chuyên viên') || header.includes('cv phụ trách'))
       p.supervisorId = val ? String(val) : '';
     else if (header.includes('đợt xét duyệt')) p.reviewBatch = val ? String(val) : '';
+    else if (header === 'số thứ tự' || header.includes('số thứ tự')) {
+      const n = Number(val);
+      if (Number.isInteger(n) && n > 0) p.registrationSequenceNumber = n;
+    }
     else if (header.includes('ghi chú chung')) p.generalNotes = val ? String(val) : '';
     else if (header.includes('qđ xét duyệt') || header.includes('quyết định xét duyệt'))
       p.approvalDecision = val ? String(val) : '';
@@ -117,6 +122,7 @@ function mapRow(headers: string[], row: unknown[]): Partial<ResearchProject> {
     else if (header.includes('khoán') && !header.includes('không')) p.budgetLumpSum = Number(val) || 0;
     else if (header.includes('không khoán')) p.budgetNonLumpSum = Number(val) || 0;
     else if (header.includes('nguồn khác')) p.budgetOtherSources = Number(val) || 0;
+    else if (header.includes('quyết toán')) p.budgetSettled = Number(val) || 0;
     else if (header.includes('đợt 1')) p.budgetBatch1 = Number(val) || 0;
     else if (header.includes('đợt 2')) p.budgetBatch2 = Number(val) || 0;
     else if (header.includes('đợt 3')) p.budgetBatch3 = Number(val) || 0;

@@ -1,11 +1,21 @@
 import type { ProjectStatus } from './constants.js';
-import { PROJECT_STATUS } from './constants.js';
+import { PROJECT_STATUS, REVIEW_BATCH_OPTIONS } from './constants.js';
 import { selectBase, selectChevronStyle } from './formStyles.js';
+import { TagSelector } from './TagSelector.js';
+import { extractReviewYear } from './reviewYear.js';
 
 type FormHeaderProps = {
   mode?: 'create' | 'edit';
   projectStatus: ProjectStatus;
   onProjectStatusChange: (status: ProjectStatus) => void;
+  categoryTags: string[];
+  categoryOther: string;
+  categoryError?: string;
+  onCategoryTagChange: (tag: string) => void;
+  onCategoryOtherChange: (value: string) => void;
+  reviewBatch: string;
+  onReviewBatchChange: (value: string) => void;
+  sequenceNumber: string;
   onCancel: () => void;
   onSave: () => void;
   isSaving: boolean;
@@ -16,18 +26,56 @@ export function FormHeader({
   mode = 'create',
   projectStatus,
   onProjectStatusChange,
+  categoryTags,
+  categoryOther,
+  categoryError,
+  onCategoryTagChange,
+  onCategoryOtherChange,
+  reviewBatch,
+  onReviewBatchChange,
+  sequenceNumber,
   onCancel,
   onSave,
   isSaving,
 }: FormHeaderProps) {
   const title =
     mode === 'create' ? 'Thông tin đề tài' : 'Chỉnh sửa Đề tài';
+  const reviewYear = extractReviewYear(reviewBatch);
+  const showSequence = projectStatus === 'new_registration';
 
   return (
     <header className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-8">
       <h1 className="text-lg font-bold text-slate-800 md:text-xl">{title}</h1>
 
       <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+        <TagSelector
+          variant="inline"
+          selected={categoryTags}
+          otherValue={categoryOther}
+          onChange={onCategoryTagChange}
+          onOtherChange={onCategoryOtherChange}
+          error={categoryError}
+        />
+
+        <label className="flex items-center gap-2">
+          <span className="text-xs font-medium text-slate-500 whitespace-nowrap">Đợt xét duyệt</span>
+          <select
+            id="review-batch"
+            value={reviewBatch}
+            onChange={(e) => onReviewBatchChange(e.target.value)}
+            className={`${selectBase} w-auto min-w-[8.5rem] pr-9 font-bold`}
+            style={selectChevronStyle}
+            aria-label="Đợt xét duyệt"
+          >
+            <option value="">— Chọn đợt —</option>
+            {REVIEW_BATCH_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <label className="flex items-center gap-2">
           <span className="text-xs font-medium text-slate-500 whitespace-nowrap">Tình trạng</span>
           <select
@@ -43,6 +91,25 @@ export function FormHeader({
             ))}
           </select>
         </label>
+
+        {showSequence ? (
+          <label className="flex items-center gap-2">
+            <span className="text-xs font-medium text-slate-500 whitespace-nowrap">
+              Lấy số thứ tự
+            </span>
+            <input
+              id="sequence-number"
+              type="text"
+              readOnly
+              value={sequenceNumber}
+              placeholder={reviewYear ? 'Sẽ cấp khi lưu' : 'Chọn đợt xét duyệt'}
+              title="Số thứ tự được cấp sau khi bấm Lưu"
+              aria-label="Số thứ tự"
+              className={`${selectBase} w-[8.5rem] cursor-default bg-slate-50 text-center font-bold
+                          text-blue-700 placeholder:font-medium placeholder:text-slate-400`}
+            />
+          </label>
+        ) : null}
 
         <button
           type="button"

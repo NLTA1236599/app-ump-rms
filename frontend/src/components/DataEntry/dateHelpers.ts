@@ -24,6 +24,14 @@ export function isoToDisplay(iso: string): string {
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
+/** `20/3/2023` or `20/03/2023` → ISO `YYYY-MM-DD` when the date is valid. */
+export function looseDdMmYyyyToIso(raw: string): string {
+  const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(raw.trim());
+  if (!match) return '';
+  const padded = `${match[1].padStart(2, '0')}/${match[2].padStart(2, '0')}/${match[3]}`;
+  return isValidDdMmYyyy(padded) ? ddMmYyyyToIso(padded) : '';
+}
+
 /** Progressive mask while typing — digits only, auto-inserts `/`. */
 export function formatDateInputMask(raw: string): string {
   const digits = raw.replace(/\D/g, '').slice(0, 8);

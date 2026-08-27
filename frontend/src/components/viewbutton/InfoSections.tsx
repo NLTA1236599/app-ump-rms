@@ -1,5 +1,6 @@
 import type { ResearchProject } from '../DataTable/types.js';
 
+import { ProductDetailView } from '../DataEntry/ProductDetailView.js';
 import { InfoCircleIcon } from './icons.js';
 import { InfoField } from './InfoField.js';
 import { getWorkflowPhaseBadge } from './workflowStatus.js';
@@ -160,6 +161,7 @@ export function InfoSections({
                         l.projectRole && `Vai trò: ${l.projectRole}`,
                         l.birthYear && `Năm sinh: ${l.birthYear}`,
                         l.workUnit && `Đơn vị: ${l.workUnit}`,
+                        l.department && `Bộ môn: ${l.department}`,
                         l.nationalId && `CCCD: ${l.nationalId}`,
                         l.email && `Email: ${l.email}`,
                       ]
@@ -237,6 +239,7 @@ export function InfoSections({
                     {[
                       m.projectRole && `Vai trò: ${m.projectRole}`,
                       m.workUnit && `Đơn vị: ${m.workUnit}`,
+                      m.department && `Bộ môn: ${m.department}`,
                       m.nationalId && `CCCD: ${m.nationalId}`,
                       m.email && `Email: ${m.email}`,
                     ]
@@ -265,6 +268,7 @@ export function InfoSections({
         {field('Ngày ký HĐ', 'contractDate', { isDate: true })}
         {field('QĐ Xét duyệt', 'approvalDecision')}
         {field('Đợt xét duyệt', 'reviewBatch')}
+        {field('Số thứ tự', 'registrationSequenceNumber')}
         {field('QĐ Phê duyệt', 'authorizationDecision')}
         {field('QĐ giám định', 'appraisalDecision')}
         {field('QĐ nghiệm thu', 'acceptanceDecision')}
@@ -285,6 +289,7 @@ export function InfoSections({
         {field('Kinh phí khoán', 'budgetLumpSum', { isCurrency: true })}
         {field('Kinh phí không khoán', 'budgetNonLumpSum', { isCurrency: true })}
         {field('Nguồn khác', 'budgetOtherSources', { isCurrency: true })}
+        {field('Kinh phí được quyết toán', 'budgetSettled', { isCurrency: true })}
         {field('Cấp đợt 1', 'budgetBatch1', { isCurrency: true })}
         {field('Cấp đợt 2', 'budgetBatch2', { isCurrency: true })}
         {field('Cấp đợt 3', 'budgetBatch3', { isCurrency: true })}
@@ -324,6 +329,12 @@ export function InfoSections({
         {field('Năm học NT', 'acceptanceAcademicYear')}
         {field('Sản phẩm đầu ra', 'outputProduct', { className: 'md:col-span-2' })}
         {field('Chi tiết SP thực tế', 'actualProductDetails', { className: 'md:col-span-2' })}
+        <div className="md:col-span-3 lg:col-span-4">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-tight text-slate-500">
+            Sản phẩm chi tiết
+          </p>
+          <ProductDetailView data={data} />
+        </div>
         <div className="md:col-span-2">
           <p className="text-[11px] font-bold uppercase tracking-tight text-slate-500">
             Sản phẩm cam kết

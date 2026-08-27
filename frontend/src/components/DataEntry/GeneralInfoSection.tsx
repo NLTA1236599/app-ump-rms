@@ -1,11 +1,10 @@
-import { FacultyUnitSelector } from './FacultyUnitSelector.js';
 import { LeadersEditor } from './LeadersEditor.js';
 import { MembersEditor } from './MembersEditor.js';
 import { ResearchFieldSelector } from './ResearchFieldSelector.js';
-import { TagSelector } from './TagSelector.js';
 import { FieldLabel } from './FieldLabel.js';
 import { SectionHeader } from './SectionHeader.js';
 import { inputBase, inputError } from './formStyles.js';
+import { allowsCoPrincipal } from './constants.js';
 import {
   primaryLeaderBirthYear,
   primaryLeaderEmail,
@@ -18,18 +17,14 @@ type Props = {
   form: DataEntryFormData;
   errors: FormErrors;
   setField: <K extends keyof DataEntryFormData>(key: K, value: DataEntryFormData[K]) => void;
-  setCategoryTag: (tag: string) => void;
   setResearchField: (field: string) => void;
-  setFacultyUnit: (unit: string) => void;
 };
 
 export function GeneralInfoSection({
   form,
   errors,
   setField,
-  setCategoryTag,
   setResearchField,
-  setFacultyUnit,
 }: Props) {
   return (
     <section>
@@ -55,6 +50,7 @@ export function GeneralInfoSection({
           <LeadersEditor
             leaders={form.leaders}
             error={errors.leaders ?? errors.principalInvestigator}
+            allowCoLeader={allowsCoPrincipal(form.categoryTags)}
             onChange={(leaders: ProjectLeader[]) => {
               setField('leaders', leaders);
               setField('principalInvestigator', primaryLeaderName(leaders));
@@ -78,39 +74,12 @@ export function GeneralInfoSection({
           />
         </div>
         <div className="lg:col-span-2">
-          <TagSelector
-            selected={form.categoryTags}
-            otherValue={form.categoryOther}
-            onChange={setCategoryTag}
-            onOtherChange={(v) => setField('categoryOther', v)}
-            error={errors.categoryTags}
-          />
-        </div>
-        <div className="lg:col-span-2">
           <FieldLabel htmlFor="rtype">Loại hình NC</FieldLabel>
           <input
             id="rtype"
             type="text"
             value={form.researchType}
             onChange={(e) => setField('researchType', e.target.value)}
-            className={inputBase}
-          />
-        </div>
-
-        <div className="lg:col-span-2">
-          <FacultyUnitSelector
-            selected={form.facultyUnits}
-            onChange={setFacultyUnit}
-            error={errors.facultyUnits}
-          />
-        </div>
-        <div className="lg:col-span-2">
-          <FieldLabel htmlFor="dept">Bộ môn</FieldLabel>
-          <input
-            id="dept"
-            type="text"
-            value={form.department}
-            onChange={(e) => setField('department', e.target.value)}
             className={inputBase}
           />
         </div>

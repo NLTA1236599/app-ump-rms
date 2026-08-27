@@ -68,7 +68,17 @@ export function BudgetSection({ form, setField }: Props) {
 
         <div className="mt-4 border-t border-slate-200 pt-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="hidden lg:block" aria-hidden />
+            <div>
+              <FieldLabel htmlFor="settled-budget">Kinh phí được quyết toán</FieldLabel>
+              <input
+                id="settled-budget"
+                type="number"
+                min={0}
+                value={form.settledBudget}
+                onChange={(e) => setField('settledBudget', e.target.value)}
+                className={num.className}
+              />
+            </div>
             <div>
               <FieldLabel htmlFor="dot1">Cấp Đợt 1</FieldLabel>
               <input

@@ -220,6 +220,11 @@ export function ProjectTableRow({
           {p.budgetOtherSources?.toLocaleString('vi-VN')}
         </td>
       </Col>
+      <Col id="budgetSettled" visible={visibleColumns}>
+        <td className="px-2 py-1.5 text-right align-top font-mono text-xs text-slate-600">
+          {p.budgetSettled?.toLocaleString('vi-VN')}
+        </td>
+      </Col>
       <Col id="budgetBatch1" visible={visibleColumns}>
         <td className="px-2 py-1.5 text-right align-top font-mono text-xs">
           {p.budgetBatch1?.toLocaleString('vi-VN')}
@@ -291,6 +296,12 @@ export function ProjectTableRow({
       </Col>
       <Col id="status" visible={visibleColumns}>
         <td className="px-2 py-1.5 align-top">{getStatusBadge(p.status)}</td>
+      </Col>
+
+      <Col id="registrationSequenceNumber" visible={visibleColumns}>
+        <td className="px-2 py-1.5 text-center align-top font-mono text-xs font-bold text-slate-800">
+          {p.registrationSequenceNumber ?? ''}
+        </td>
       </Col>
 
       <Col id="acceptanceYear" visible={visibleColumns}>

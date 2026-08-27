@@ -10,6 +10,12 @@ export const PROJECT_TYPE_TAGS = [
 
 export type ProjectTypeTag = (typeof PROJECT_TYPE_TAGS)[number];
 
+export const SELF_FUNDED_PROJECT_TYPE = 'Tự túc kinh phí' satisfies ProjectTypeTag;
+
+export function allowsCoPrincipal(categoryTags: readonly string[]): boolean {
+  return categoryTags.includes(SELF_FUNDED_PROJECT_TYPE);
+}
+
 export const RESEARCH_FIELD_OPTIONS = [
   'Khoa học tự nhiên',
   'Khoa học kỹ thuật và công nghệ',

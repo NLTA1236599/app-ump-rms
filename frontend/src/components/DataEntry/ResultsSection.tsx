@@ -16,17 +16,7 @@ export function ResultsSection({ form, setField }: Props) {
       <SectionHeader number={6} title="Kết quả & Tình trạng" />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-6">
-          <FieldLabel htmlFor="output">Sản phẩm dự kiến</FieldLabel>
-          <input
-            id="output"
-            type="text"
-            value={form.outputSummary}
-            onChange={(e) => setField('outputSummary', e.target.value)}
-            className={inputBase}
-          />
-        </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-4">
           <FieldLabel htmlFor="status-inline" required>
             Tình trạng
           </FieldLabel>
@@ -44,7 +34,7 @@ export function ResultsSection({ form, setField }: Props) {
             ))}
           </select>
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-4">
           <FieldLabel htmlFor="year-nt">Năm NT</FieldLabel>
           <input
             id="year-nt"
@@ -54,7 +44,7 @@ export function ResultsSection({ form, setField }: Props) {
             className={`${inputBase} text-center`}
           />
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-4">
           <FieldLabel htmlFor="academic">Năm học</FieldLabel>
           <input
             id="academic"

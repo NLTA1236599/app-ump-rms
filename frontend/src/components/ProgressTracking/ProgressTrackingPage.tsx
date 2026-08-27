@@ -23,7 +23,7 @@ function makeTaskId(): string {
 
 export type ProgressTrackingPageProps = {
   projects?: ResearchProject[];
-  onUpdateProject?: (project: ResearchProject) => void | Promise<void>;
+  onUpdateProject?: (project: ResearchProject) => void | Promise<void | ResearchProject>;
 };
 
 /**

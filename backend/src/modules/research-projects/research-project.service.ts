@@ -4,10 +4,14 @@ import {
   expandAllowedDepartments,
   projectMatchesAllowedUnits,
 } from './departmentAccess.js';
+import { httpError, isUniqueViolation } from './pgErrors.js';
 import { normalizeProjectContactFields } from './projectContactFields.js';
 import { ResearchProjectRepository } from './research-project.repository.js';
+import { extractReviewYear, isNewRegistrationStatus } from './reviewYear.js';
 
 const UNRESTRICTED_ROLES = new Set(['admin', 'leader']);
+const SEQUENCE_CONFLICT =
+  'Số thứ tự đã được chuyên viên khác lấy trong năm xét duyệt này.';
 
 export class ResearchProjectService {
   private readonly repo = new ResearchProjectRepository();
@@ -43,24 +47,49 @@ export class ResearchProjectService {
     return this.repo.findAll();
   }
 
+  resolveSequenceYear(project: Record<string, unknown>): number | null {
+    const fromBatch = extractReviewYear(String(project.reviewBatch ?? ''));
+    if (fromBatch) return fromBatch;
+    const stored = Number(project.registrationSequenceYear);
+    if (Number.isInteger(stored) && stored >= 1990) return stored;
+    return null;
+  }
+
   async bulkCreate(
     projects: Record<string, unknown>[],
     userId: string,
     importFileId?: string | null,
   ) {
-    const saved = await this.repo.insertMany(
-      await Promise.all(projects.map((project) => normalizeProjectContactFields(project))),
-      userId,
-      importFileId,
+    const normalized = await Promise.all(
+      projects.map((project) => normalizeProjectContactFields(project)),
     );
-    await Promise.all(
-      saved.map((project) => this.milestones.syncProject(String(project.id), project)),
-    );
-    return saved;
+    try {
+      const saved = await this.repo.insertMany(normalized, userId, importFileId);
+      await Promise.all(
+        saved.map((project) => this.milestones.syncProject(String(project.id), project)),
+      );
+      return saved;
+    } catch (e) {
+      if (isUniqueViolation(e)) throw httpError(SEQUENCE_CONFLICT, 409);
+      throw e;
+    }
   }
 
   async upsert(project: Record<string, unknown>, userId: string) {
-    const saved = await this.repo.upsert(await normalizeProjectContactFields(project), userId);
+    const normalized = await normalizeProjectContactFields(project);
+    const needsSequence = isNewRegistrationStatus(normalized.status);
+    const year = needsSequence ? this.resolveSequenceYear(normalized) : null;
+    if (needsSequence && !year) {
+      throw httpError('Vui lòng chọn đợt xét duyệt để lấy số thứ tự theo năm.', 400);
+    }
+
+    let saved: Record<string, unknown> | null;
+    try {
+      saved = await this.repo.upsert(normalized, userId, needsSequence ? year : null);
+    } catch (e) {
+      if (isUniqueViolation(e)) throw httpError(SEQUENCE_CONFLICT, 409);
+      throw e;
+    }
     if (saved?.id) {
       await this.milestones.syncProject(String(saved.id), saved);
     }

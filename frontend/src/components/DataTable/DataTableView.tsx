@@ -17,7 +17,7 @@ type DataTableViewProps = {
   canRestoreLastDelete?: boolean;
   onRestoreLastDelete?: () => void | Promise<void | number>;
   onImport: (rows: Partial<ResearchProject>[], file?: File) => Promise<void>;
-  onUpdateProject: (project: ResearchProject) => void | Promise<void>;
+  onUpdateProject: (project: ResearchProject) => void | Promise<void | ResearchProject>;
   onSyncProject?: (project: ResearchProject) => void;
   initialViewProjectId?: string | null;
   onInitialViewConsumed?: () => void;
@@ -139,7 +139,7 @@ export function DataTableView({
   };
 
   const handleSaveEdit = (project: ResearchProject) => {
-    void onUpdateProject(project);
+    return onUpdateProject(project);
   };
 
   const handleView = (project: ResearchProject) => {

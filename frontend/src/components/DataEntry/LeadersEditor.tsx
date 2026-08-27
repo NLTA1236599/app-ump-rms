@@ -1,3 +1,5 @@
+import { DepartmentSelect, WorkUnitSelect } from './FacultyUnitSelector.js';
+import { isDepartmentInWorkUnit } from './departmentsByUnit.js';
 import { inputBase, selectBase, selectChevronStyle } from './formStyles.js';
 import {
   createEmptyLeader,
@@ -10,12 +12,13 @@ type Props = {
   leaders: ProjectLeader[];
   onChange: (leaders: ProjectLeader[]) => void;
   error?: string;
+  allowCoLeader?: boolean;
 };
 
 const LEADER_FIELDS: Array<{
   key: keyof Pick<
     ProjectLeader,
-    'fullName' | 'academicTitle' | 'nationalId' | 'email' | 'workUnit' | 'projectRole' | 'birthYear'
+    'fullName' | 'academicTitle' | 'nationalId' | 'email' | 'workUnit' | 'department' | 'projectRole' | 'birthYear'
   >;
   label: string;
   placeholder: string;
@@ -64,6 +67,12 @@ const LEADER_FIELDS: Array<{
     colSpan: 'lg:col-span-1',
   },
   {
+    key: 'department',
+    label: 'Bộ môn',
+    placeholder: 'Bộ môn / Đơn vị trực thuộc...',
+    colSpan: 'lg:col-span-1',
+  },
+  {
     key: 'projectRole',
     label: 'Chức danh thực hiện đề tài',
     placeholder: 'Chủ nhiệm / Đồng chủ nhiệm...',
@@ -71,15 +80,24 @@ const LEADER_FIELDS: Array<{
   },
 ];
 
-export function LeadersEditor({ leaders, onChange, error }: Props) {
+export function LeadersEditor({ leaders, onChange, error, allowCoLeader = false }: Props) {
   const rows = leaders.length > 0 ? leaders : [createEmptyLeader()];
+  const reasonOptions = allowCoLeader
+    ? LEADER_ADD_REASON_OPTIONS
+    : LEADER_ADD_REASON_OPTIONS.filter((opt) => opt.value === 'replacement');
 
   const updateLeader = <K extends keyof ProjectLeader>(id: string, key: K, value: ProjectLeader[K]) => {
     onChange(rows.map((l) => (l.id === id ? { ...l, [key]: value } : l)));
   };
 
   const addLeader = () => {
-    onChange([...rows, createEmptyLeader({ requireReason: true })]);
+    onChange([
+      ...rows,
+      createEmptyLeader({
+        requireReason: true,
+        addReason: allowCoLeader ? 'co_leader' : 'replacement',
+      }),
+    ]);
   };
 
   const removeLeader = (id: string) => {
@@ -109,6 +127,12 @@ export function LeadersEditor({ leaders, onChange, error }: Props) {
           + Thêm chủ nhiệm
         </button>
       </div>
+      {!allowCoLeader ? (
+        <p className="text-[10px] text-slate-500">
+          Đồng chủ nhiệm chỉ áp dụng cho loại đề tài Tự túc kinh phí. Các chủ nhiệm thêm vào được ghi
+          nhận là thay đổi chủ nhiệm.
+        </p>
+      ) : null}
 
       {error ? <p className="text-[10px] text-red-500">{error}</p> : null}
 
@@ -143,14 +167,18 @@ export function LeadersEditor({ leaders, onChange, error }: Props) {
                 </label>
                 <select
                   id={`leader-${leader.id}-reason`}
-                  value={leader.addReason || 'co_leader'}
+                  value={
+                    allowCoLeader
+                      ? leader.addReason || 'co_leader'
+                      : 'replacement'
+                  }
                   onChange={(e) =>
                     updateLeader(leader.id, 'addReason', e.target.value as LeaderAddReason)
                   }
                   className={selectBase}
                   style={selectChevronStyle}
                 >
-                  {LEADER_ADD_REASON_OPTIONS.map((opt) => (
+                  {reasonOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
                     </option>
@@ -173,15 +201,39 @@ export function LeadersEditor({ leaders, onChange, error }: Props) {
                         <span className="text-red-500"> *</span>
                       ) : null}
                     </label>
-                    <input
-                      id={fieldId}
-                      type={field.inputMode === 'email' ? 'email' : 'text'}
-                      inputMode={field.inputMode}
-                      value={leader[field.key]}
-                      onChange={(e) => updateLeader(leader.id, field.key, e.target.value)}
-                      placeholder={field.placeholder}
-                      className={inputBase}
-                    />
+                    {field.key === 'workUnit' ? (
+                      <WorkUnitSelect
+                        id={fieldId}
+                        value={leader.workUnit}
+                        onChange={(value) => {
+                          const nextDept = isDepartmentInWorkUnit(value, leader.department)
+                            ? leader.department
+                            : '';
+                          onChange(
+                            rows.map((l) =>
+                              l.id === leader.id ? { ...l, workUnit: value, department: nextDept } : l,
+                            ),
+                          );
+                        }}
+                      />
+                    ) : field.key === 'department' ? (
+                      <DepartmentSelect
+                        id={fieldId}
+                        workUnit={leader.workUnit}
+                        value={leader.department}
+                        onChange={(value) => updateLeader(leader.id, 'department', value)}
+                      />
+                    ) : (
+                      <input
+                        id={fieldId}
+                        type={field.inputMode === 'email' ? 'email' : 'text'}
+                        inputMode={field.inputMode}
+                        value={leader[field.key]}
+                        onChange={(e) => updateLeader(leader.id, field.key, e.target.value)}
+                        placeholder={field.placeholder}
+                        className={inputBase}
+                      />
+                    )}
                   </div>
                 );
               })}

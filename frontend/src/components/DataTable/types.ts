@@ -1,3 +1,10 @@
+import type {
+  ProductTypeIRow,
+  ProductTypeIIRow,
+  ProductTypeIIIRow,
+  TrainingResultRow,
+} from '../DataEntry/productDetailTypes.js';
+
 export enum ProjectStatus {
   NEW_REGISTRATION = 'Đăng ký mới',
   ONGOING = 'Đang thực hiện',
@@ -26,6 +33,7 @@ export type ProjectMember = {
   nationalId: string;
   email: string;
   workUnit: string;
+  department: string;
   projectRole: string;
 };
 
@@ -36,6 +44,7 @@ export type ProjectLeader = {
   nationalId: string;
   email: string;
   workUnit: string;
+  department: string;
   projectRole: string;
   birthYear: string;
   /** Empty for primary leader; `co_leader` | `replacement` for additional leaders. */
@@ -133,6 +142,7 @@ export type ResearchProject = {
   budgetLumpSum?: number;
   budgetNonLumpSum?: number;
   budgetOtherSources?: number;
+  budgetSettled?: number;
   budgetBatch1?: number;
   budgetBatch2?: number;
   budgetBatch3?: number;
@@ -155,6 +165,11 @@ export type ResearchProject = {
   expectedProducts?: ProductEntry[];
   actualProducts?: ProductEntry[];
   actualProductDetails?: string;
+  productTypeI?: ProductTypeIRow[];
+  productTypeII?: ProductTypeIIRow[];
+  productTypeIII?: ProductTypeIIIRow[];
+  trainingResults?: TrainingResultRow[];
+  ipProtectionNote?: string;
   reminderDate?: string | number | null;
   acceptanceCompletionDate?: string | number | null;
   projectCode?: string;
@@ -163,6 +178,9 @@ export type ResearchProject = {
   supervisorId?: string;
   /** Review round, e.g. `Đợt 1/2025`. */
   reviewBatch?: string;
+  /** Unique yearly registration sequence shared across batches of the same year. */
+  registrationSequenceNumber?: number;
+  registrationSequenceYear?: number;
   /** Free-text notes from data-entry §8. */
   generalNotes?: string;
   projectNotes?: ProjectDiscussionNote[];

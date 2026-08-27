@@ -2,7 +2,7 @@ import { DateField } from './DateField.js';
 import { FieldLabel } from './FieldLabel.js';
 import { SectionHeader } from './SectionHeader.js';
 import { inputBase, inputError, selectBase, selectChevronStyle } from './formStyles.js';
-import { GENDER_OPTIONS, REVIEW_BATCH_OPTIONS } from './constants.js';
+import { GENDER_OPTIONS } from './constants.js';
 import { formatSupervisorLabel, useSupervisorAccounts } from './useSupervisorAccounts.js';
 import type { DataEntryFormData, FormErrors } from './types.js';
 import type { Gender } from './constants.js';
@@ -78,23 +78,6 @@ export function OtherInfoSection({ form, errors, setField }: Props) {
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-4">
-        <div className="lg:col-span-2">
-          <FieldLabel htmlFor="review-batch">Đợt xét duyệt</FieldLabel>
-          <select
-            id="review-batch"
-            value={form.reviewBatch}
-            onChange={(e) => setField('reviewBatch', e.target.value)}
-            className={selectBase}
-            style={selectChevronStyle}
-          >
-            <option value="">— Chọn đợt xét duyệt —</option>
-            {REVIEW_BATCH_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </div>
         <div className="lg:col-span-2">
           <FieldLabel htmlFor="supervisor">Chuyên viên QL</FieldLabel>
           <select

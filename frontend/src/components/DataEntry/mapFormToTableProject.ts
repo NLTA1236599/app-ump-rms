@@ -1,14 +1,36 @@
 import type { ResearchProject } from '../DataTable/types.js';
 import { ProjectStatus as TableProjectStatus } from '../DataTable/types.js';
 
-import type { Gender, ProjectStatus } from './constants.js';
+import { allowsCoPrincipal, type Gender, type ProjectStatus } from './constants.js';
 import {
   normalizeLeaders,
   primaryLeaderBirthYear,
+  primaryLeaderDepartment,
   primaryLeaderEmail,
   primaryLeaderName,
 } from './projectLeaders.js';
 import { membersToDisplayString, normalizeMembers } from './projectMembers.js';
+import {
+  composeContractAppendix,
+  composeContractNumber,
+  resolveAppendixYear,
+  resolveContractSeq,
+  resolveContractYear,
+} from './contractNumberFormat.js';
+import {
+  composeProjectCode,
+  resolveProjectCodeSeq,
+  resolveProjectCodeUnit,
+  resolveProjectCodeYear,
+} from './projectCodeFormat.js';
+import {
+  deriveActualProductsFromDetail,
+  deriveExpectedProductsFromDetail,
+  hasProductDetailData,
+  isTypeIIIRowEmpty,
+  isTypeIIRowEmpty,
+  isTypeIRowEmpty,
+} from './productDetailTypes.js';
 import type { DataEntryFormData } from './types.js';
 
 function makeProjectId(): string {
@@ -42,6 +64,42 @@ const PROGRESS_LABELS = {
   completed: 'Nghiệm thu',
 } as const;
 
+function optionalPositiveInt(raw: string): number | undefined {
+  const n = Number(raw.trim());
+  return Number.isInteger(n) && n > 0 ? n : undefined;
+}
+
+function composeContractId(form: DataEntryFormData, existing?: string): string {
+  const composed = composeContractNumber({
+    seq: resolveContractSeq(form),
+    year: resolveContractYear(form),
+    dateIso: form.contractSignedAt,
+  });
+  return composed || existing || form.contractNumber.trim();
+}
+
+function composeProjectCodeValue(form: DataEntryFormData, existing?: string): string {
+  const composed = composeProjectCode({
+    year: resolveProjectCodeYear(form),
+    unit: resolveProjectCodeUnit(form),
+    seq: resolveProjectCodeSeq(form),
+  });
+  return composed || existing || form.projectCode.trim();
+}
+
+function composeAppendixValue(form: DataEntryFormData): string | undefined {
+  if (!form.contractAppendixSeq.trim()) return undefined;
+  return (
+    composeContractAppendix({
+      seq: form.contractAppendixSeq,
+      year: resolveAppendixYear(form),
+      dateIso: form.contractAppendixSignedAt,
+    }) ||
+    form.contractAppendix.trim() ||
+    undefined
+  );
+}
+
 export function mapFormToTableProject(
   form: DataEntryFormData,
   existing?: ResearchProject,
@@ -49,9 +107,10 @@ export function mapFormToTableProject(
   return {
     id: existing?.id ?? makeProjectId(),
     title: form.title.trim(),
-    contractId: form.contractNumber.trim(),
-    contractAppendix: form.contractAppendix.trim() || undefined,
-    projectCode: form.projectCode.trim(),
+    contractId: composeContractId(form, existing?.contractId),
+    contractDate: form.contractSignedAt || undefined,
+    contractAppendix: composeAppendixValue(form),
+    projectCode: composeProjectCodeValue(form, existing?.projectCode),
     certificateResultNumber: form.gcnNumber.trim() || undefined,
     certificateResultDate: form.gcnIssuedAt || undefined,
     certificateResultIssuingAuthority: form.gcnPlace.trim() || undefined,
@@ -63,7 +122,12 @@ export function mapFormToTableProject(
       primaryLeaderBirthYear(form.leaders) || form.birthYear.trim() || undefined,
     leadAuthorGender: GENDER_LABELS[form.principalGender],
     leaderDetails: (() => {
-      const normalized = normalizeLeaders(form.leaders);
+      const allow = allowsCoPrincipal(form.categoryTags);
+      const normalized = normalizeLeaders(form.leaders).map((leader, index) =>
+        index === 0 || allow || leader.addReason !== 'co_leader'
+          ? leader
+          : { ...leader, addReason: 'replacement' as const },
+      );
       return normalized.length > 0 ? normalized : undefined;
     })(),
     members: membersToDisplayString(form.members) || undefined,
@@ -72,7 +136,8 @@ export function mapFormToTableProject(
       return normalized.length > 0 ? normalized : undefined;
     })(),
     department: form.facultyUnits.join('; '),
-    subDepartment: form.department.trim() || undefined,
+    subDepartment:
+      primaryLeaderDepartment(form.leaders) || form.department.trim() || undefined,
     researchField: form.researchFields.join('; '),
     researchType: form.researchType.trim() || undefined,
     categories:
@@ -87,6 +152,7 @@ export function mapFormToTableProject(
     budgetLumpSum: Number(form.contractedBudget) || 0,
     budgetNonLumpSum: Number(form.nonContractedBudget) || 0,
     budgetOtherSources: Number(form.otherFunding) || 0,
+    budgetSettled: Number(form.settledBudget) || 0,
     budgetBatch1: Number(form.installment1) || 0,
     budgetBatch2: Number(form.installment2) || 0,
     budgetBatch3: Number(form.installment3) || 0,
@@ -106,19 +172,30 @@ export function mapFormToTableProject(
     status: FORM_STATUS_TO_TABLE[form.projectStatus],
     acceptanceYear: form.yearNt.trim() || undefined,
     acceptanceAcademicYear: form.academicYear.trim() || undefined,
-    expectedProducts: form.products
-      .filter((row) => Number(row.committed) > 0)
-      .map((row) => ({ type: row.label, count: Number(row.committed) || 0 })),
-    actualProducts: form.products
-      .filter((row) => Number(row.actual) > 0)
-      .map((row) => ({ type: row.label, count: Number(row.actual) || 0 })),
+    expectedProducts: hasProductDetailData(form)
+      ? deriveExpectedProductsFromDetail(form)
+      : form.products
+          .filter((row) => Number(row.committed) > 0)
+          .map((row) => ({ type: row.label, count: Number(row.committed) || 0 })),
+    actualProducts: hasProductDetailData(form)
+      ? deriveActualProductsFromDetail(form)
+      : form.products
+          .filter((row) => Number(row.actual) > 0)
+          .map((row) => ({ type: row.label, count: Number(row.actual) || 0 })),
     actualProductDetails: form.productActualDetail.trim() || undefined,
+    productTypeI: form.productTypeI.filter((row) => !isTypeIRowEmpty(row)),
+    productTypeII: form.productTypeII.filter((row) => !isTypeIIRowEmpty(row)),
+    productTypeIII: form.productTypeIII.filter((row) => !isTypeIIIRowEmpty(row)),
+    trainingResults: form.trainingResults,
+    ipProtectionNote: form.ipProtectionNote.trim() || undefined,
     reminderDate: form.reminderAt || undefined,
     acceptanceCompletionDate: form.completionAt || undefined,
     isTransferred: form.transferForward,
     terminationReason: form.liquidationReason.trim() || undefined,
     supervisorId: form.supervisorId.trim() || undefined,
     reviewBatch: form.reviewBatch.trim() || undefined,
+    registrationSequenceNumber: optionalPositiveInt(form.sequenceNumber),
+    registrationSequenceYear: optionalPositiveInt(form.sequenceYear),
     generalNotes: form.generalNotes.trim() || undefined,
     history: existing?.history ?? [],
     projectNotes: existing?.projectNotes,

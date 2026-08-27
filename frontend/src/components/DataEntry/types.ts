@@ -1,4 +1,10 @@
 import type { ProjectStatus, ExecutionProgress, Gender } from './constants.js';
+import type {
+  ProductTypeIRow,
+  ProductTypeIIRow,
+  ProductTypeIIIRow,
+  TrainingResultRow,
+} from './productDetailTypes.js';
 import type { ProjectLeader } from './projectLeaders.js';
 import type { ProjectMember } from './projectMembers.js';
 
@@ -7,7 +13,13 @@ export type { ProjectLeader, ProjectMember };
 export type DataEntryFormData = {
   /** §1 */
   contractNumber: string;
+  contractSeq: string;
+  contractYear: string;
+  contractSignedAt: string;
   contractAppendix: string;
+  contractAppendixSeq: string;
+  contractAppendixYear: string;
+  contractAppendixSignedAt: string;
   projectCode: string;
   gcnNumber: string;
   gcnIssuedAt: string;
@@ -36,6 +48,7 @@ export type DataEntryFormData = {
   contractedBudget: string;
   nonContractedBudget: string;
   otherFunding: string;
+  settledBudget: string;
   installment1: string;
   installment2: string;
   installment3: string;
@@ -57,6 +70,11 @@ export type DataEntryFormData = {
   /** §7 */
   products: Array<{ id: string; label: string; committed: string; actual: string }>;
   productActualDetail: string;
+  productTypeI: ProductTypeIRow[];
+  productTypeII: ProductTypeIIRow[];
+  productTypeIII: ProductTypeIIIRow[];
+  trainingResults: TrainingResultRow[];
+  ipProtectionNote: string;
   /** §8 */
   reminderAt: string;
   completionAt: string;
@@ -64,6 +82,8 @@ export type DataEntryFormData = {
   principalEmail: string;
   supervisorId: string;
   reviewBatch: string;
+  sequenceNumber: string;
+  sequenceYear: string;
   transferForward: boolean;
   liquidationReason: string;
   generalNotes: string;

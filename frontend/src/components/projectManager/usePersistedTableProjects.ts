@@ -25,8 +25,8 @@ type UsePersistedTableProjectsResult = {
   onDeleteAll: () => Promise<void>;
   onRestoreLastDelete: () => Promise<number>;
   onImport: (rows: Partial<TableProject>[], file?: File) => Promise<void>;
-  onSaveProject: (project: TableProject) => Promise<void>;
-  onUpdateProject: (project: TableProject) => Promise<void>;
+  onSaveProject: (project: TableProject) => Promise<TableProject>;
+  onUpdateProject: (project: TableProject) => Promise<TableProject>;
   onSyncProject: (project: TableProject) => void;
 };
 
@@ -203,6 +203,7 @@ export function usePersistedTableProjects(): UsePersistedTableProjectsResult {
       const toSave = withCreateHistory(project, actor);
       const saved = await researchProjectService.upsert(toSave);
       setTableProjects((prev) => dedupeProjects([...prev, saved]));
+      return saved;
     },
     [actor],
   );
@@ -219,6 +220,7 @@ export function usePersistedTableProjects(): UsePersistedTableProjectsResult {
         if (idx === -1) return dedupeProjects([...prev, saved]);
         return dedupeProjects(prev.map((p) => (p.id === saved.id ? saved : p)));
       });
+      return saved;
     },
     [actor],
   );

@@ -85,7 +85,7 @@ export function LocTrungDeTaiPage({
   };
 
   const handleSaveEdit = (project: ResearchProject) => {
-    onUpdateProject(project);
+    return onUpdateProject(project);
   };
 
   if (liveViewingProject) {

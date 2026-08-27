@@ -18,7 +18,7 @@ import { useDataEntryForm } from './useDataEntryForm.js';
 type DataEntryPageProps = {
   mode?: 'create' | 'edit';
   project?: ResearchProject;
-  onSaveProject?: (project: ResearchProject) => void | Promise<void>;
+  onSaveProject?: (project: ResearchProject) => void | Promise<void | ResearchProject>;
   onCancel?: () => void;
   embedded?: boolean;
 };
@@ -33,8 +33,9 @@ export function DataEntryPage({
 }: DataEntryPageProps) {
   const { message, notify, dismiss } = useNotification();
   const handleSaved = useCallback(
-    (saved: ResearchProject) => {
-      void Promise.resolve(onSaveProject?.(saved));
+    async (saved: ResearchProject) => {
+      const result = await Promise.resolve(onSaveProject?.(saved));
+      return result ?? saved;
     },
     [onSaveProject],
   );
@@ -47,8 +48,9 @@ export function DataEntryPage({
     setCategoryTag,
     setResearchField,
     setFacultyUnit,
-    setProductCount,
     setProgressReportDate,
+    handleProjectStatusChange,
+    handleReviewBatchChange,
     submit,
     cancel,
   } = useDataEntryForm({
@@ -61,7 +63,13 @@ export function DataEntryPage({
   const handleSave = async () => {
     const result = await submit();
     if (result.ok) {
-      notify(mode === 'edit' ? 'Đã cập nhật đề tài thành công.' : 'Đã lưu đề tài mới thành công.');
+      const seq = result.project.registrationSequenceNumber;
+      const seqNote = seq != null ? ` Số thứ tự: ${seq}.` : '';
+      notify(
+        mode === 'edit'
+          ? `Đã cập nhật đề tài thành công.${seqNote}`
+          : `Đã lưu đề tài mới thành công.${seqNote}`,
+      );
       return;
     }
     notify(result.message);
@@ -72,21 +80,32 @@ export function DataEntryPage({
       <FormHeader
         mode={mode}
         projectStatus={form.projectStatus}
-        onProjectStatusChange={(status) => setField('projectStatus', status)}
+        onProjectStatusChange={handleProjectStatusChange}
+        categoryTags={form.categoryTags}
+        categoryOther={form.categoryOther}
+        categoryError={errors.categoryTags}
+        onCategoryTagChange={setCategoryTag}
+        onCategoryOtherChange={(value) => setField('categoryOther', value)}
+        reviewBatch={form.reviewBatch}
+        onReviewBatchChange={handleReviewBatchChange}
+        sequenceNumber={form.sequenceNumber}
         onCancel={cancel}
         onSave={() => void handleSave()}
         isSaving={isSaving}
       />
 
       <div className="space-y-0 px-6 py-6 sm:px-8">
-        <ContractSection form={form} errors={errors} setField={setField} />
+        <ContractSection
+          form={form}
+          errors={errors}
+          setField={setField}
+          setFacultyUnit={setFacultyUnit}
+        />
         <GeneralInfoSection
           form={form}
           errors={errors}
           setField={setField}
-          setCategoryTag={setCategoryTag}
           setResearchField={setResearchField}
-          setFacultyUnit={setFacultyUnit}
         />
         <DecisionSection form={form} setField={setField} />
         <BudgetSection form={form} setField={setField} />
@@ -96,7 +115,7 @@ export function DataEntryPage({
           setProgressReportDate={setProgressReportDate}
         />
         <ResultsSection form={form} setField={setField} />
-        <ProductDetailSection form={form} setField={setField} setProductCount={setProductCount} />
+        <ProductDetailSection form={form} setField={setField} />
         <OtherInfoSection form={form} errors={errors} setField={setField} />
       </div>
     </div>

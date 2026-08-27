@@ -37,8 +37,8 @@ type ProjectDataHandlers = {
   canRestoreLastDelete: boolean;
   onRestoreLastDelete: () => Promise<number>;
   onImport: (rows: Partial<TableProject>[], file?: File) => Promise<void>;
-  onSaveProject: (project: TableProject) => Promise<void>;
-  onUpdateProject: (project: TableProject) => Promise<void>;
+  onSaveProject: (project: TableProject) => Promise<TableProject>;
+  onUpdateProject: (project: TableProject) => Promise<TableProject>;
   onSyncProject: (project: TableProject) => void;
   onNavigateSidebar: (id: DeTaiKhcnSidebarItemId) => void;
   onViewProjectFromOverview: (projectId: string) => void;

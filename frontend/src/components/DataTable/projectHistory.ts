@@ -1,5 +1,15 @@
 import { formatDate } from './formatDate.js';
 import type { HistoryEntry, HistoryFieldChange, ProductEntry, ResearchProject } from './types.js';
+import {
+  formatTrainingHistory,
+  formatTypeIIIHistory,
+  formatTypeIIHistory,
+  formatTypeIHistory,
+  type ProductTypeIRow,
+  type ProductTypeIIRow,
+  type ProductTypeIIIRow,
+  type TrainingResultRow,
+} from '../DataEntry/productDetailTypes.js';
 
 /** Fields that are not part of the editable "Dữ liệu đề tài" payload for audit. */
 const META_FIELDS = new Set([
@@ -40,6 +50,7 @@ const FIELD_LABELS: Record<string, string> = {
   budgetLumpSum: 'Kinh phí khoán',
   budgetNonLumpSum: 'Kinh phí không khoán',
   budgetOtherSources: 'Kinh phí nguồn khác',
+  budgetSettled: 'Kinh phí được quyết toán',
   budgetBatch1: 'Đợt 1',
   budgetBatch2: 'Đợt 2',
   budgetBatch3: 'Đợt 3',
@@ -62,6 +73,11 @@ const FIELD_LABELS: Record<string, string> = {
   expectedProducts: 'Sản phẩm cam kết',
   actualProducts: 'Sản phẩm thực tế',
   actualProductDetails: 'Chi tiết sản phẩm thực tế',
+  productTypeI: 'Sản phẩm dạng I',
+  productTypeII: 'Sản phẩm dạng II',
+  productTypeIII: 'Sản phẩm dạng III',
+  trainingResults: 'Đào tạo ĐH/SĐH',
+  ipProtectionNote: 'Sản phẩm đăng ký SHCN',
   reminderDate: 'Ngày nhắc nhở',
   acceptanceCompletionDate: 'Thời điểm nghiệm thu',
   projectCode: 'Mã số đề tài',
@@ -69,6 +85,8 @@ const FIELD_LABELS: Record<string, string> = {
   terminationReason: 'Lý do thanh lý',
   supervisorId: 'Chuyên viên QL',
   reviewBatch: 'Đợt xét duyệt',
+  registrationSequenceNumber: 'Số thứ tự',
+  registrationSequenceYear: 'Năm số thứ tự',
   generalNotes: 'Ghi chú chung',
 };
 
@@ -106,6 +124,18 @@ export function formatHistoryFieldValue(field: string, value: unknown): string {
     if (value.length === 0) return '(trống)';
     return value.map((p) => `${p.type}: ${p.count}`).join('; ');
   }
+  if (field === 'productTypeI' && Array.isArray(value)) {
+    return formatTypeIHistory(value as ProductTypeIRow[]);
+  }
+  if (field === 'productTypeII' && Array.isArray(value)) {
+    return formatTypeIIHistory(value as ProductTypeIIRow[]);
+  }
+  if (field === 'productTypeIII' && Array.isArray(value)) {
+    return formatTypeIIIHistory(value as ProductTypeIIIRow[]);
+  }
+  if (field === 'trainingResults' && Array.isArray(value)) {
+    return formatTrainingHistory(value as TrainingResultRow[]);
+  }
   if ((field === 'memberDetails' || field === 'leaderDetails') && Array.isArray(value)) {
     if (value.length === 0) return '(trống)';
     return value
@@ -115,6 +145,8 @@ export function formatHistoryFieldValue(field: string, value: unknown): string {
           fullName?: string;
           academicTitle?: string;
           projectRole?: string;
+          workUnit?: string;
+          department?: string;
           birthYear?: string;
           addReason?: string;
         };
@@ -124,9 +156,15 @@ export function formatHistoryFieldValue(field: string, value: unknown): string {
             : m.addReason === 'replacement'
               ? 'Thay đổi chủ nhiệm'
               : undefined;
-        const parts = [m.fullName, m.academicTitle, m.projectRole, m.birthYear, reason].filter(
-          Boolean,
-        );
+        const parts = [
+          m.fullName,
+          m.academicTitle,
+          m.projectRole,
+          m.workUnit,
+          m.department,
+          m.birthYear,
+          reason,
+        ].filter(Boolean);
         return parts.join(' — ') || JSON.stringify(item);
       })
       .join('; ');

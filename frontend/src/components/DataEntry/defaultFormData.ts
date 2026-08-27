@@ -1,4 +1,5 @@
 import { PRODUCT_ROWS } from './constants.js';
+import { defaultProductDetailFields } from './productDetailTypes.js';
 import { createEmptyLeader } from './projectLeaders.js';
 import { createEmptyMember } from './projectMembers.js';
 import type { DataEntryFormData } from './types.js';
@@ -12,7 +13,13 @@ const emptyProducts = PRODUCT_ROWS.map((row) => ({
 
 export const defaultFormData: DataEntryFormData = {
   contractNumber: '',
+  contractSeq: '',
+  contractYear: '',
+  contractSignedAt: '',
   contractAppendix: '',
+  contractAppendixSeq: '',
+  contractAppendixYear: '',
+  contractAppendixSignedAt: '',
   projectCode: '',
   gcnNumber: '',
   gcnIssuedAt: '',
@@ -36,6 +43,7 @@ export const defaultFormData: DataEntryFormData = {
   contractedBudget: '0',
   nonContractedBudget: '0',
   otherFunding: '0',
+  settledBudget: '0',
   installment1: '0',
   installment2: '0',
   installment3: '0',
@@ -54,12 +62,15 @@ export const defaultFormData: DataEntryFormData = {
   academicYear: '',
   products: emptyProducts,
   productActualDetail: '',
+  ...defaultProductDetailFields(),
   reminderAt: '',
   completionAt: '',
   principalGender: 'male',
   principalEmail: '',
   supervisorId: '',
   reviewBatch: '',
+  sequenceNumber: '',
+  sequenceYear: '',
   transferForward: false,
   liquidationReason: '',
   generalNotes: '',

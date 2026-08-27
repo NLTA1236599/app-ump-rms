@@ -1,3 +1,5 @@
+import { DepartmentSelect, WorkUnitSelect } from './FacultyUnitSelector.js';
+import { isDepartmentInWorkUnit } from './departmentsByUnit.js';
 import { inputBase } from './formStyles.js';
 import {
   createEmptyMember,
@@ -46,6 +48,12 @@ const MEMBER_FIELDS: Array<{
     key: 'workUnit',
     label: 'Đơn vị công tác',
     placeholder: 'Khoa / Viện / Bệnh viện...',
+    colSpan: 'lg:col-span-1',
+  },
+  {
+    key: 'department',
+    label: 'Bộ môn',
+    placeholder: 'Bộ môn / Đơn vị trực thuộc...',
     colSpan: 'lg:col-span-1',
   },
   {
@@ -122,15 +130,39 @@ export function MembersEditor({ members, onChange }: Props) {
                     >
                       {field.label}
                     </label>
-                    <input
-                      id={fieldId}
-                      type={field.inputMode === 'email' ? 'email' : 'text'}
-                      inputMode={field.inputMode}
-                      value={member[field.key]}
-                      onChange={(e) => updateMember(member.id, field.key, e.target.value)}
-                      placeholder={field.placeholder}
-                      className={inputBase}
-                    />
+                    {field.key === 'workUnit' ? (
+                      <WorkUnitSelect
+                        id={fieldId}
+                        value={member.workUnit}
+                        onChange={(value) => {
+                          const nextDept = isDepartmentInWorkUnit(value, member.department)
+                            ? member.department
+                            : '';
+                          onChange(
+                            rows.map((m) =>
+                              m.id === member.id ? { ...m, workUnit: value, department: nextDept } : m,
+                            ),
+                          );
+                        }}
+                      />
+                    ) : field.key === 'department' ? (
+                      <DepartmentSelect
+                        id={fieldId}
+                        workUnit={member.workUnit}
+                        value={member.department}
+                        onChange={(value) => updateMember(member.id, 'department', value)}
+                      />
+                    ) : (
+                      <input
+                        id={fieldId}
+                        type={field.inputMode === 'email' ? 'email' : 'text'}
+                        inputMode={field.inputMode}
+                        value={member[field.key]}
+                        onChange={(e) => updateMember(member.id, field.key, e.target.value)}
+                        placeholder={field.placeholder}
+                        className={inputBase}
+                      />
+                    )}
                   </div>
                 );
               })}

@@ -195,6 +195,9 @@ export function DataTableGrid({
               <Col id="budgetOtherSources" visible={visibleColumns}>
                 <FilterableHeader label="Nguồn khác" colId="budgetOtherSources" minWidth="120px" className="text-right" {...headerProps} />
               </Col>
+              <Col id="budgetSettled" visible={visibleColumns}>
+                <FilterableHeader label="KP quyết toán" colId="budgetSettled" minWidth="130px" className="text-right" {...headerProps} />
+              </Col>
               <Col id="budgetBatch1" visible={visibleColumns}>
                 <FilterableHeader label="Đợt 1" colId="budgetBatch1" minWidth="100px" className="text-right" {...headerProps} />
               </Col>
@@ -246,6 +249,9 @@ export function DataTableGrid({
               </Col>
               <Col id="status" visible={visibleColumns}>
                 <FilterableHeader label="Tình trạng" colId="status" minWidth="120px" {...headerProps} />
+              </Col>
+              <Col id="registrationSequenceNumber" visible={visibleColumns}>
+                <FilterableHeader label="Số thứ tự" colId="registrationSequenceNumber" minWidth="90px" {...headerProps} />
               </Col>
               <Col id="acceptanceYear" visible={visibleColumns}>
                 <FilterableHeader label="Năm NT" colId="acceptanceYear" minWidth="80px" {...headerProps} />

@@ -2,12 +2,16 @@ import type { FormErrors } from './types.js';
 
 const FIELD_ELEMENT_IDS: Partial<Record<keyof FormErrors, string>> = {
   contractNumber: 'contract-number',
+  contractSignedAt: 'contract-signed-at',
+  contractAppendix: 'contract-appendix',
+  contractAppendixSignedAt: 'contract-appendix-signed-at',
   projectCode: 'project-code',
   title: 'title',
   principalInvestigator: 'leaders-editor',
   leaders: 'leaders-editor',
   categoryTags: 'category-tags',
   facultyUnits: 'faculty-units',
+  reviewBatch: 'review-batch',
 };
 
 export function scrollToFirstFormError(errors: FormErrors): void {

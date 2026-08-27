@@ -22,6 +22,7 @@ function formatMemberDetails(members?: ProjectMember[]): string {
         m.nationalId && `CCCD: ${m.nationalId}`,
         m.email && `Email: ${m.email}`,
         m.workUnit && `ĐV: ${m.workUnit}`,
+        m.department && `BM: ${m.department}`,
         m.projectRole && `Vai trò: ${m.projectRole}`,
       ].filter(Boolean);
       return parts.join(' | ');
@@ -157,6 +158,12 @@ const EXPORT_COLUMNS: ExportColumn[] = [
     value: (p) => p.budgetOtherSources || 0,
   },
   {
+    columnId: 'budgetSettled',
+    header: 'Kinh phí được quyết toán',
+    ml: 16,
+    value: (p) => p.budgetSettled || 0,
+  },
+  {
     columnId: 'budgetBatch1',
     header: 'Kinh phí Cấp đợt 1',
     ml: 12,
@@ -245,6 +252,13 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   // §6
   { columnId: 'outputProduct', header: 'Đầu ra', ml: 20, value: (p) => p.outputProduct || '' },
   { columnId: 'status', header: 'Tình trạng', ml: 14, value: (p) => p.status },
+  {
+    columnId: 'registrationSequenceNumber',
+    header: 'Số thứ tự',
+    ml: 10,
+    value: (p) =>
+      p.registrationSequenceNumber != null ? String(p.registrationSequenceNumber) : '',
+  },
   {
     columnId: 'acceptanceYear',
     header: 'Năm nghiệm thu',

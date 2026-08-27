@@ -31,7 +31,7 @@ export type DuplicateFilterState = {
 
 export type LocTrungDeTaiPageProps = {
   projects: ResearchProject[];
-  onUpdateProject: (project: ResearchProject) => void;
+  onUpdateProject: (project: ResearchProject) => void | Promise<void | ResearchProject>;
   onNavigateHome?: () => void;
   onNavigateDeTaiKhcn?: () => void;
 };

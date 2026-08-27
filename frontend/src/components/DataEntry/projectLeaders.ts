@@ -13,22 +13,32 @@ export type ProjectLeader = {
   nationalId: string;
   email: string;
   workUnit: string;
+  department: string;
   projectRole: string;
   birthYear: string;
   /** Required when this is an additional leader (index > 0). */
   addReason: LeaderAddReason;
 };
 
-export function createEmptyLeader(options?: { requireReason?: boolean }): ProjectLeader {
+export function createEmptyLeader(options?: {
+  requireReason?: boolean;
+  addReason?: LeaderAddReason;
+}): ProjectLeader {
+  const addReason: LeaderAddReason = options?.requireReason
+    ? options.addReason === 'replacement'
+      ? 'replacement'
+      : 'co_leader'
+    : '';
   const base = {
     fullName: '',
     academicTitle: '',
     nationalId: '',
     email: '',
     workUnit: '',
+    department: '',
     projectRole: '',
     birthYear: '',
-    addReason: (options?.requireReason ? 'co_leader' : '') as LeaderAddReason,
+    addReason,
   };
   try {
     return { id: crypto.randomUUID(), ...base };
@@ -47,6 +57,7 @@ export function isLeaderEmpty(leader: ProjectLeader): boolean {
     !leader.nationalId.trim() &&
     !leader.email.trim() &&
     !leader.workUnit.trim() &&
+    !leader.department.trim() &&
     !leader.projectRole.trim() &&
     !leader.birthYear.trim()
   );
@@ -62,6 +73,7 @@ export function normalizeLeaders(leaders: ProjectLeader[]): ProjectLeader[] {
       nationalId: l.nationalId.trim(),
       email: l.email.trim(),
       workUnit: l.workUnit.trim(),
+      department: l.department.trim(),
       projectRole: l.projectRole.trim(),
       birthYear: l.birthYear.trim(),
       addReason: index === 0 ? '' : l.addReason || 'co_leader',
@@ -83,6 +95,11 @@ export function primaryLeaderEmail(leaders: ProjectLeader[]): string {
   return normalized[0]?.email.trim() ?? '';
 }
 
+export function primaryLeaderDepartment(leaders: ProjectLeader[]): string {
+  const normalized = normalizeLeaders(leaders);
+  return normalized[0]?.department ?? '';
+}
+
 export function leaderAddReasonLabel(reason: LeaderAddReason): string {
   if (reason === 'co_leader') return 'Đồng chủ nhiệm';
   if (reason === 'replacement') return 'Thay đổi chủ nhiệm';
@@ -100,6 +117,7 @@ function coerceLeader(raw: unknown, index: number): ProjectLeader | null {
   const nationalId = String(raw.nationalId ?? raw.cccd ?? '').trim();
   const email = String(raw.email ?? '').trim();
   const workUnit = String(raw.workUnit ?? raw.unit ?? '').trim();
+  const department = String(raw.department ?? raw.subDepartment ?? '').trim();
   const projectRole = String(raw.projectRole ?? raw.role ?? '').trim();
   const birthYear = String(raw.birthYear ?? '').trim();
   const rawReason = String(raw.addReason ?? '').trim();
@@ -116,6 +134,7 @@ function coerceLeader(raw: unknown, index: number): ProjectLeader | null {
     !nationalId &&
     !email &&
     !workUnit &&
+    !department &&
     !projectRole &&
     !birthYear
   ) {
@@ -129,6 +148,7 @@ function coerceLeader(raw: unknown, index: number): ProjectLeader | null {
     nationalId,
     email,
     workUnit,
+    department,
     projectRole,
     birthYear,
     addReason,

@@ -110,6 +110,20 @@ CREATE TABLE IF NOT EXISTS research_projects (
 
 CREATE INDEX IF NOT EXISTS idx_research_projects_created_at ON research_projects (created_at DESC);
 
+-- Yearly registration sequence (Đợt 1/2026 and Đợt 2/2026 share the same counter).
+CREATE TABLE IF NOT EXISTS project_year_sequences (
+  year         INTEGER PRIMARY KEY,
+  last_number  INTEGER NOT NULL DEFAULT 0 CHECK (last_number >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_research_projects_seq_year_number
+  ON research_projects (
+    ((data->>'registrationSequenceYear')::integer),
+    ((data->>'registrationSequenceNumber')::integer)
+  )
+  WHERE (data->>'registrationSequenceYear') ~ '^[0-9]+$'
+    AND (data->>'registrationSequenceNumber') ~ '^[0-9]+$';
+
 DROP TRIGGER IF EXISTS trg_research_projects_updated_at ON research_projects;
 CREATE TRIGGER trg_research_projects_updated_at
   BEFORE UPDATE ON research_projects
