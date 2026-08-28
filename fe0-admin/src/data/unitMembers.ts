@@ -15,6 +15,19 @@ export type UnitMember = {
   allowedUnits: string[];
 };
 
+/** Loại đề tài dùng để phân quyền xem (cùng danh sách form đăng ký đề tài). */
+export const PROJECT_TYPE_TAGS = [
+  'Loại A',
+  'Loại B',
+  'Loại C',
+  'Loại D',
+  'Tự túc kinh phí',
+  'Sinh viên',
+  'Khác',
+] as const;
+
+export type ProjectTypeTag = (typeof PROJECT_TYPE_TAGS)[number];
+
 /** Nhóm đơn vị / trung tâm / khoa dùng để phân quyền xem đề tài. */
 export const ORG_UNIT_GROUPS: { label: string; units: string[] }[] = [
   {

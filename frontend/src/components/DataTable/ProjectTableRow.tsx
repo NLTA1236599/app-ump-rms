@@ -97,7 +97,9 @@ export function ProjectTableRow({
         </td>
       </Col>
       <Col id="contractAppendix" visible={visibleColumns}>
-        <td className="px-2 py-1.5 align-top text-xs text-slate-700">{p.contractAppendix}</td>
+        <td className="max-w-[18rem] px-2 py-1.5 align-top text-xs whitespace-pre-wrap break-words text-slate-700">
+          {p.contractAppendix}
+        </td>
       </Col>
       <Col id="projectCode" visible={visibleColumns}>
         <td className="px-2 py-1.5 align-top font-mono text-xs font-bold text-slate-700">

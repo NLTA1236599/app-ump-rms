@@ -7,13 +7,14 @@ import {
   buildDepartmentBudgetTop5,
   buildDynamicChartData,
   buildProjectTypeData,
+  buildStackedChartData,
   buildStats,
   filterProjects,
   filterProjectsByYear,
   getChartYears,
 } from './projectAnalytics.js';
 import { StatsRow } from './StatsRow.js';
-import type { DynChartType, DynYAxis, ResearchProject } from './types.js';
+import type { DynChartType, DynStackBy, DynYAxis, ResearchProject } from './types.js';
 
 /** Equal spacing between overview sections. */
 const SECTION_GAP = 'gap-1.5';
@@ -29,6 +30,7 @@ export type ProjectOverviewViewProps = {
 export function ProjectOverviewView({ projects }: ProjectOverviewViewProps) {
   const [startYear, setStartYear] = useState('all');
   const [academicYear, setAcademicYear] = useState('all');
+  const [acceptanceYear, setAcceptanceYear] = useState('all');
   const [status, setStatus] = useState('all');
   const [researchField, setResearchField] = useState('all');
   const [projectType, setProjectType] = useState('all');
@@ -38,6 +40,7 @@ export function ProjectOverviewView({ projects }: ProjectOverviewViewProps) {
   const [dynChartType, setDynChartType] = useState<DynChartType>('bar');
   const [dynXAxis, setDynXAxis] = useState('department');
   const [dynYAxis, setDynYAxis] = useState<DynYAxis>('count');
+  const [dynStackBy, setDynStackBy] = useState<DynStackBy>('status');
   const [dynChartYear, setDynChartYear] = useState('all');
 
   const [expandedChart, setExpandedChart] = useState<ExpandedChartKind>(null);
@@ -51,13 +54,14 @@ export function ProjectOverviewView({ projects }: ProjectOverviewViewProps) {
       filterProjects(projects, {
         startYear,
         academicYear,
+        acceptanceYear,
         status,
         researchField,
         projectType,
         department,
         reviewBatch,
       }),
-    [projects, startYear, academicYear, status, researchField, projectType, department, reviewBatch],
+    [projects, startYear, academicYear, acceptanceYear, status, researchField, projectType, department, reviewBatch],
   );
 
   const chartYears = useMemo(() => getChartYears(projects), [projects]);
@@ -71,11 +75,16 @@ export function ProjectOverviewView({ projects }: ProjectOverviewViewProps) {
     () => buildDynamicChartData(chartFiltered, dynXAxis, dynYAxis),
     [chartFiltered, dynXAxis, dynYAxis],
   );
+  const stackedChartData = useMemo(
+    () => buildStackedChartData(chartFiltered, dynXAxis, dynYAxis, dynStackBy),
+    [chartFiltered, dynXAxis, dynYAxis, dynStackBy],
+  );
   const stats = useMemo(() => buildStats(filtered), [filtered]);
 
   const resetFilters = () => {
     setStartYear('all');
     setAcademicYear('all');
+    setAcceptanceYear('all');
     setStatus('all');
     setResearchField('all');
     setProjectType('all');
@@ -90,6 +99,7 @@ export function ProjectOverviewView({ projects }: ProjectOverviewViewProps) {
         filteredCount={filtered.length}
         startYear={startYear}
         academicYear={academicYear}
+        acceptanceYear={acceptanceYear}
         status={status}
         researchField={researchField}
         projectType={projectType}
@@ -97,6 +107,7 @@ export function ProjectOverviewView({ projects }: ProjectOverviewViewProps) {
         reviewBatch={reviewBatch}
         onStartYear={setStartYear}
         onAcademicYear={setAcademicYear}
+        onAcceptanceYear={setAcceptanceYear}
         onStatus={setStatus}
         onResearchField={setResearchField}
         onProjectType={setProjectType}
@@ -120,14 +131,17 @@ export function ProjectOverviewView({ projects }: ProjectOverviewViewProps) {
         <DynamicStatisticChart
           dynamicChartRef={dynamicChartRef}
           dynamicChartData={dynamicChartData}
+          stackedChartData={stackedChartData}
           availableYears={chartYears}
           dynChartType={dynChartType}
           dynXAxis={dynXAxis}
           dynYAxis={dynYAxis}
+          dynStackBy={dynStackBy}
           dynChartYear={dynChartYear}
           onDynChartType={setDynChartType}
           onDynXAxis={setDynXAxis}
           onDynYAxis={setDynYAxis}
+          onDynStackBy={setDynStackBy}
           onDynChartYear={setDynChartYear}
           onExpand={() => setExpandedChart('dynamic')}
         />
@@ -139,8 +153,12 @@ export function ProjectOverviewView({ projects }: ProjectOverviewViewProps) {
         projectTypeData={projectTypeData}
         departmentDonutData={departmentBudgetData}
         dynamicChartData={dynamicChartData}
+        stackedChartData={stackedChartData}
         dynChartType={dynChartType}
         dynYAxis={dynYAxis}
+        dynXAxis={dynXAxis}
+        dynStackBy={dynStackBy}
+        dynChartYear={dynChartYear}
       />
     </div>
   );

@@ -20,6 +20,16 @@ ALTER TABLE users ALTER COLUMN email_verified SET DEFAULT FALSE;
 
 -- Unit-scoped topic access (empty = see all departments). Managed by fe0-admin.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS allowed_units TEXT[] NOT NULL DEFAULT '{}';
+-- Topic-type access (empty = see all project types: Loại A/B/C/D, Tự túc, Sinh viên, Khác).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS allowed_project_types TEXT[] NOT NULL DEFAULT '{}';
+
+-- Registration profile collected on the public signup form (port 5173).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS staff_id VARCHAR(64);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(32);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS academic_rank VARCHAR(32);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS work_unit VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS job_title VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS requested_roles TEXT[] NOT NULL DEFAULT '{}';
 
 CREATE TABLE IF NOT EXISTS registration_otp_codes (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),

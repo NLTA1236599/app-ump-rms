@@ -1,6 +1,7 @@
 import { httpClient } from './httpClient.js';
 import type {
   IAuthService,
+  RegisterProfile,
   RegisterResponse,
   ResendOtpResponse,
 } from '../interfaces/IAuthService.js';
@@ -14,11 +15,17 @@ export class ApiAuthService implements IAuthService {
     });
   }
 
-  async register(username: string, password: string, displayName?: string) {
+  async register(username: string, password: string, displayName?: string, profile?: RegisterProfile) {
     return httpClient.post<RegisterResponse>('/auth/register', {
       username,
       password,
       displayName,
+      staffId: profile?.staffId,
+      phone: profile?.phone,
+      academicRank: profile?.academicRank,
+      workUnit: profile?.workUnit,
+      jobTitle: profile?.jobTitle,
+      requestedRoles: profile?.requestedRoles,
     });
   }
 

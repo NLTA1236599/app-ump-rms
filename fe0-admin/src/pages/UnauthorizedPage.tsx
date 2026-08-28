@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 export function UnauthorizedPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+    <div className="flex h-full min-h-0 items-center justify-center overflow-auto bg-gray-100">
       <div className="max-w-md rounded-xl bg-white p-8 text-center shadow-md">
         <h1 className="mb-2 text-xl font-bold text-gray-800">Không có quyền truy cập</h1>
         <p className="mb-6 text-sm text-gray-600">

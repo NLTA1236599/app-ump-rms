@@ -71,6 +71,12 @@ export function RegisterForm({ onSwitchToLogin, onRegistered }: RegisterFormProp
       email: emailOk.normalized,
       password,
       displayName: fullName.trim(),
+      staffId: staffId.trim() || undefined,
+      phone: phone.trim() || undefined,
+      academicRank: academic || undefined,
+      workUnit: workUnit || undefined,
+      jobTitle: jobTitle.trim() || undefined,
+      requestedRoles: [...roles],
     });
   };
 

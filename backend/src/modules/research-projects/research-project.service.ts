@@ -4,6 +4,7 @@ import {
   expandAllowedDepartments,
   projectMatchesAllowedUnits,
 } from './departmentAccess.js';
+import { projectMatchesAllowedTypes } from './projectTypeAccess.js';
 import { httpError, isUniqueViolation } from './pgErrors.js';
 import { normalizeProjectContactFields } from './projectContactFields.js';
 import { ResearchProjectRepository } from './research-project.repository.js';
@@ -34,13 +35,19 @@ export class ResearchProjectService {
       return all;
     }
 
-    // Empty allowed_units = see all (same semantics as fe0-admin UI).
-    if (access.allowed_units.length === 0) {
-      return all;
+    // Empty allowed_units = see all departments; empty allowed_project_types = see all types.
+    let visible = all;
+    if (access.allowed_units.length > 0) {
+      const allowed = new Set(expandAllowedDepartments(access.allowed_units));
+      visible = visible.filter((project) => projectMatchesAllowedUnits(project.department, allowed));
     }
-
-    const allowed = new Set(expandAllowedDepartments(access.allowed_units));
-    return all.filter((project) => projectMatchesAllowedUnits(project.department, allowed));
+    if (access.allowed_project_types.length > 0) {
+      const allowedTypes = new Set(access.allowed_project_types);
+      visible = visible.filter((project) =>
+        projectMatchesAllowedTypes(project.categories, allowedTypes),
+      );
+    }
+    return visible;
   }
 
   list() {

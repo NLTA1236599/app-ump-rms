@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { authService } from '../../backend/compositionRoot.js';
 import { PermissionRepository } from '../admin/permission.repository.js';
 import { mapAuthDatabaseError } from './mapAuthDatabaseError.js';
+import { parseRegisterProfile } from './registerProfile.js';
 
 const permissionRepo = new PermissionRepository();
 
@@ -19,10 +20,12 @@ export async function postRegister(req: Request, res: Response, next: NextFuncti
     if (!username || !password) {
       return res.status(400).json({ error: 'username và password là bắt buộc' });
     }
+    const profile = parseRegisterProfile((req.body ?? {}) as Record<string, unknown>);
     const result = await authService.register(
       String(username),
       String(password),
-      displayName ? String(displayName) : undefined
+      displayName ? String(displayName) : undefined,
+      profile
     );
     res.status(201).json(result);
   } catch (e) {

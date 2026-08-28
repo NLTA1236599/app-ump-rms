@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { authService } from '../services/index.js';
 import { ApiHttpError } from '../services/api/httpClient.js';
 import type { OtpDeliveryChannel } from '../components/auth/registration/constants.js';
+import type { RegisterProfile } from '../services/interfaces/IAuthService.js';
 import type { User } from '../types/index.js';
 
 export type AuthLoginResult =
@@ -68,10 +69,11 @@ export function useAuth() {
     async (
       username: string,
       password: string,
-      displayName?: string
+      displayName?: string,
+      profile?: RegisterProfile
     ): Promise<AuthRegisterResult> => {
       try {
-        const result = await authService.register(username, password, displayName);
+        const result = await authService.register(username, password, displayName, profile);
         return {
           ok: true,
           email: username,

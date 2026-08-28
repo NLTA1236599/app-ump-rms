@@ -29,6 +29,7 @@ export type ResearchProject = {
   categories?: string;
   startDate?: string | null;
   endDate?: string | null;
+  acceptanceYear?: string;
   acceptanceAcademicYear?: string;
   /** Review round, e.g. `Đợt 1/2025`. */
   reviewBatch?: string;
@@ -47,6 +48,7 @@ export type ResearchProject = {
 export type ProjectFilterState = {
   startYear: string;
   academicYear: string;
+  acceptanceYear: string;
   status: string;
   researchField: string;
   projectType: string;
@@ -54,5 +56,6 @@ export type ProjectFilterState = {
   reviewBatch: string;
 };
 
-export type DynChartType = 'bar' | 'line' | 'pie';
+export type DynChartType = 'bar' | 'stacked' | 'line' | 'pie';
 export type DynYAxis = 'count' | 'budget';
+export type DynStackBy = 'status' | 'categories';

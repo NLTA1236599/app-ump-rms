@@ -10,6 +10,13 @@ import type { ProjectMember } from './projectMembers.js';
 
 export type { ProjectLeader, ProjectMember };
 
+export type ContractAppendixItem = {
+  id: string;
+  seq: string;
+  year: string;
+  signedAt: string;
+};
+
 export type DataEntryFormData = {
   /** §1 */
   contractNumber: string;
@@ -20,6 +27,7 @@ export type DataEntryFormData = {
   contractAppendixSeq: string;
   contractAppendixYear: string;
   contractAppendixSignedAt: string;
+  contractAppendices: ContractAppendixItem[];
   projectCode: string;
   gcnNumber: string;
   gcnIssuedAt: string;

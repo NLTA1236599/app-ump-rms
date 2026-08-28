@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { deleteUser, getUsers, grantAccess, updateRole } from '../api/userService.js';
+import { RegistrationDetailsTable } from '../components/users/RegistrationDetailsTable.js';
 import type { AdminUserRow, UserRole } from '../types/index.js';
 
 const ROLES: UserRole[] = ['admin', 'leader', 'specialist', 'user'];
@@ -175,6 +176,8 @@ export function UsersPage() {
           </tbody>
         </table>
       </div>
+
+      <RegistrationDetailsTable users={users} />
     </div>
   );
 }

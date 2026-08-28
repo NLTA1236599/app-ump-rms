@@ -7,10 +7,19 @@ services:
       POSTGRES_PASSWORD: change_me
       POSTGRES_DB: ump_rms_db
       TZ: Asia/Ho_Chi_Minh
+    # Bind loopback only — never 0.0.0.0. Backend reaches Postgres on the Docker network
+    # (DB_HOST=postgres). Local `npm run dev` still uses 127.0.0.1:5432.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - ump_rms_pgdata:/var/lib/postgresql/data
+      - ./deploy/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    command:
+      - postgres
+      - -c
+      - hba_file=/etc/postgresql/pg_hba.conf
+      - -c
+      - password_encryption=scram-sha-256
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ump_rms_user -d ump_rms_db"]
       interval: 5s

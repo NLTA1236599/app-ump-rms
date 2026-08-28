@@ -83,6 +83,8 @@ export type DepartmentDatum = { name: string; count: number; budget: number };
 export type DynamicDatum = { name: string; value: number };
 export type DonutDatum = { name: string; value: number };
 export type TrendDatum = { period: string; registered: number; completed: number };
+export type StackedDatum = { name: string } & Record<string, string | number>;
+export type StackedChartModel = { data: StackedDatum[]; series: string[] };
 
 export const DONUT_TYPE_COLORS = ['#1a6ec2', '#06b6d4', '#8b5cf6', '#f59e0b', '#10b981', '#64748b'];
 export const DONUT_BUDGET_COLORS = ['#1a6ec2', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe'];
@@ -185,6 +187,19 @@ export function getChartYears(projects: ResearchProject[]): string[] {
   ).sort((a, b) => Number(b) - Number(a));
 }
 
+/** Calendar year of acceptance (`acceptanceYear` / Năm NT). */
+export function extractAcceptanceYear(project: ResearchProject): string | null {
+  const raw = project.acceptanceYear?.trim();
+  if (!raw) return null;
+  return extractYearFromDate(raw);
+}
+
+export function getAcceptanceYears(projects: ResearchProject[]): string[] {
+  return Array.from(
+    new Set(projects.map((p) => extractAcceptanceYear(p)).filter((y): y is string => Boolean(y))),
+  ).sort((a, b) => Number(b) - Number(a));
+}
+
 export function filterProjectsByYear(
   projects: ResearchProject[],
   year: string,
@@ -201,6 +216,7 @@ export function filterProjects(
   filters: {
     startYear: string;
     academicYear: string;
+    acceptanceYear: string;
     status: string;
     researchField: string;
     projectType: string;
@@ -221,6 +237,8 @@ export function filterProjects(
     const matchAcademicYear =
       filters.academicYear === 'all' ||
       (p.acceptanceAcademicYear?.trim() ?? '') === filters.academicYear;
+    const matchAcceptanceYear =
+      filters.acceptanceYear === 'all' || extractAcceptanceYear(p) === filters.acceptanceYear;
     const matchResearchField =
       filters.researchField === 'all' || p.researchField === filters.researchField;
     const matchStatus = filters.status === 'all' || p.status === filters.status;
@@ -235,6 +253,7 @@ export function filterProjects(
     return (
       matchYear &&
       matchAcademicYear &&
+      matchAcceptanceYear &&
       matchStatus &&
       matchDepartment &&
       matchResearchField &&
@@ -338,6 +357,98 @@ export function buildDynamicChartData(
     .sort((a, b) => b.value - a.value);
 }
 
+function normalizeStatusStackLabel(status: string): string {
+  const statusName = (status || 'Khác').toString().trim();
+  const lower = statusName.toLowerCase();
+  if (lower.includes('đang thực hiện')) return 'Đang thực hiện';
+  if (lower.includes('nghiệm thu') || lower.includes('hoàn thành')) return 'Đã nghiệm thu';
+  if (lower.includes('gia hạn')) return 'Gia hạn';
+  if (lower.includes('trễ hạn') || lower.includes('quá hạn')) return 'Trễ hạn';
+  if (lower.includes('thanh lý')) return 'Thanh lý';
+  if (lower.includes('đăng ký')) return 'Đăng ký mới';
+  return statusName.charAt(0).toUpperCase() + statusName.slice(1);
+}
+
+function projectCategoryKeys(project: ResearchProject): string[] {
+  const tags = parseProjectCategories(project.categories);
+  return tags.length > 0 ? tags : ['Chưa phân loại'];
+}
+
+function projectXKeys(project: ResearchProject, dynXAxis: string): string[] {
+  if (dynXAxis === 'categories') return projectCategoryKeys(project);
+  if (dynXAxis === 'products') {
+    let actual = project.actualProducts;
+    let prods: unknown[] = [];
+    if (typeof actual === 'string') {
+      try {
+        prods = JSON.parse(actual) as unknown[];
+      } catch {
+        prods = [];
+      }
+    } else if (Array.isArray(actual)) {
+      prods = actual;
+    }
+    if (prods.length === 0) return ['Chưa có sản phẩm'];
+    return prods
+      .map((prod) => {
+        if (prod && typeof prod === 'object' && 'type' in prod) {
+          return String((prod as { type: string }).type).split(' (')[0];
+        }
+        return '';
+      })
+      .filter(Boolean);
+  }
+  const raw = (project as Record<string, unknown>)[dynXAxis];
+  if (raw == null || raw === '') return ['Khác'];
+  if (Array.isArray(raw)) return raw.length ? raw.map(String) : ['Khác'];
+  return [String(raw)];
+}
+
+function projectStackKeys(project: ResearchProject, stackBy: 'status' | 'categories'): string[] {
+  if (stackBy === 'categories') return projectCategoryKeys(project);
+  return [normalizeStatusStackLabel(String(project.status ?? ''))];
+}
+
+export function buildStackedChartData(
+  filtered: ResearchProject[],
+  dynXAxis: string,
+  dynYAxis: 'count' | 'budget',
+  stackBy: 'status' | 'categories',
+): StackedChartModel {
+  const seriesSet = new Set<string>();
+  const grouped: Record<string, Record<string, number>> = {};
+
+  filtered.forEach((project) => {
+    const xKeys = projectXKeys(project, dynXAxis);
+    const stackKeys = projectStackKeys(project, stackBy);
+    const amount = dynYAxis === 'count' ? 1 : (Number(project.budget) || 0) / 1_000_000;
+    xKeys.forEach((xKey) => {
+      if (!grouped[xKey]) grouped[xKey] = {};
+      stackKeys.forEach((series) => {
+        seriesSet.add(series);
+        grouped[xKey][series] = (grouped[xKey][series] || 0) + amount;
+      });
+    });
+  });
+
+  const series = [...seriesSet];
+  const data: StackedDatum[] = Object.entries(grouped)
+    .map(([name, stacks]) => {
+      const row: StackedDatum = { name };
+      series.forEach((key) => {
+        row[key] = stacks[key] || 0;
+      });
+      return row;
+    })
+    .sort((a, b) => {
+      const sum = (row: StackedDatum) =>
+        series.reduce((acc, key) => acc + Number(row[key] || 0), 0);
+      return sum(b) - sum(a);
+    });
+
+  return { data, series };
+}
+
 export type StatCardModel = {
   label: string;
   value: string | number;
@@ -357,9 +468,17 @@ function umpBudgetOf(project: ResearchProject): number {
   return Math.max(0, total - other);
 }
 
+function otherBudgetOf(project: ResearchProject): number {
+  const explicit = Number(project.budgetOtherSources) || 0;
+  if (explicit > 0) return explicit;
+  const total = Number(project.budget) || 0;
+  return Math.max(0, total - umpBudgetOf(project));
+}
+
 export function buildStats(filtered: ResearchProject[]): StatCardModel[] {
   const totalBudget = filtered.reduce((acc, curr) => acc + (Number(curr.budget) || 0), 0);
   const umpBudget = filtered.reduce((acc, curr) => acc + umpBudgetOf(curr), 0);
+  const otherBudget = filtered.reduce((acc, curr) => acc + otherBudgetOf(curr), 0);
 
   const newRegistrationCount = filtered.filter((p) => {
     const s = String(p.status).toLowerCase();
@@ -431,6 +550,14 @@ export function buildStats(filtered: ResearchProject[]): StatCardModel[] {
       icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
     },
     {
+      label: 'Tổng kinh phí từ Nguồn khác',
+      value: `${formatBudgetShort(otherBudget)} VNĐ`,
+      color: 'bg-teal-600',
+      iconBg: 'bg-teal-100',
+      iconColor: 'text-teal-700',
+      icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
+    },
+    {
       label: 'Đề tài đăng ký mới',
       value: newRegistrationCount,
       color: 'bg-sky-500',
@@ -486,6 +613,11 @@ export const DYN_X_OPTIONS = [
 export const DYN_Y_OPTIONS = [
   { value: 'count' as const, label: 'Số lượng đề tài' },
   { value: 'budget' as const, label: 'Kinh phí (Triệu VNĐ)' },
+];
+
+export const DYN_STACK_OPTIONS = [
+  { value: 'status' as const, label: 'Trạng thái' },
+  { value: 'categories' as const, label: 'Loại đề tài' },
 ];
 
 export const BAR_COLOR_ROTATION = [

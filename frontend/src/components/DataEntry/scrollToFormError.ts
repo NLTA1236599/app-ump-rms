@@ -4,7 +4,7 @@ const FIELD_ELEMENT_IDS: Partial<Record<keyof FormErrors, string>> = {
   contractNumber: 'contract-number',
   contractSignedAt: 'contract-signed-at',
   contractAppendix: 'contract-appendix',
-  contractAppendixSignedAt: 'contract-appendix-signed-at',
+  contractAppendixSignedAt: 'contract-appendix',
   projectCode: 'project-code',
   title: 'title',
   principalInvestigator: 'leaders-editor',

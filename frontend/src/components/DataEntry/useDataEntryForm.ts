@@ -6,7 +6,7 @@ import { cloneFormData } from './cloneFormData.js';
 import { mapFormToTableProject } from './mapFormToTableProject.js';
 import { mapTableToFormData } from './mapTableToFormData.js';
 import { extractReviewYear } from './reviewYear.js';
-import { resolveAppendixYear } from './contractNumberFormat.js';
+import { defaultAppendixYear, getFormAppendices } from './contractNumberFormat.js';
 import { scrollToFirstFormError } from './scrollToFormError.js';
 import type { DataEntryFormData, FormErrors } from './types.js';
 import { allowsCoPrincipal, type ProjectStatus } from './constants.js';
@@ -39,15 +39,16 @@ function validate(form: DataEntryFormData): FormErrors {
   if (!form.categoryTags.length) errors.categoryTags = 'Vui lòng chọn ít nhất 1 loại đề tài';
   if (!form.facultyUnits.length) errors.facultyUnits = 'Vui lòng chọn đơn vị chủ trì';
 
-  if (form.contractAppendixSeq.trim()) {
-    const appendixYear = resolveAppendixYear(form);
+  getFormAppendices(form).forEach((item, index) => {
+    if (!item.seq.trim()) return;
+    const appendixYear = item.year.trim() || defaultAppendixYear(form);
     if (!/^\d{4}$/.test(appendixYear)) {
-      errors.contractAppendix = 'Vui lòng nhập năm trên phụ lục hợp đồng';
+      errors.contractAppendix = `Phụ lục ${index + 1}: Vui lòng nhập năm trên phụ lục hợp đồng`;
     }
-    if (!form.contractAppendixSignedAt.trim()) {
-      errors.contractAppendixSignedAt = 'Vui lòng nhập ngày ký phụ lục';
+    if (!item.signedAt.trim()) {
+      errors.contractAppendixSignedAt = `Phụ lục ${index + 1}: Vui lòng nhập ngày ký phụ lục`;
     }
-  }
+  });
 
   if (form.projectStatus === 'new_registration' && !extractReviewYear(form.reviewBatch)) {
     errors.reviewBatch = 'Vui lòng chọn đợt xét duyệt để lấy số thứ tự';
@@ -106,6 +107,10 @@ export function useDataEntryForm({
     setErrors((prev) => {
       const next = { ...prev };
       delete next[key];
+      if (key === 'contractAppendices') {
+        delete next.contractAppendix;
+        delete next.contractAppendixSignedAt;
+      }
       return next;
     });
   }, []);

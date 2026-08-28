@@ -1,11 +1,17 @@
 import type { ResearchProject } from './types.js';
-import { extractYearFromDate, getProjectTypeOptions, getReviewBatchOptions } from './projectAnalytics.js';
+import {
+  extractYearFromDate,
+  getAcceptanceYears,
+  getProjectTypeOptions,
+  getReviewBatchOptions,
+} from './projectAnalytics.js';
 
 export type GlobalFilterBarProps = {
   projects: ResearchProject[];
   filteredCount: number;
   startYear: string;
   academicYear: string;
+  acceptanceYear: string;
   status: string;
   researchField: string;
   projectType: string;
@@ -13,6 +19,7 @@ export type GlobalFilterBarProps = {
   reviewBatch: string;
   onStartYear: (v: string) => void;
   onAcademicYear: (v: string) => void;
+  onAcceptanceYear: (v: string) => void;
   onStatus: (v: string) => void;
   onResearchField: (v: string) => void;
   onProjectType: (v: string) => void;
@@ -40,6 +47,7 @@ export function GlobalFilterBar({
   filteredCount,
   startYear,
   academicYear,
+  acceptanceYear,
   status,
   researchField,
   projectType,
@@ -47,6 +55,7 @@ export function GlobalFilterBar({
   reviewBatch,
   onStartYear,
   onAcademicYear,
+  onAcceptanceYear,
   onStatus,
   onResearchField,
   onProjectType,
@@ -71,6 +80,7 @@ export function GlobalFilterBar({
       ),
     ),
   );
+  const acceptanceYears = getAcceptanceYears(projects);
 
   const departments = Array.from(new Set(projects.map((p) => p.department)))
     .filter(Boolean)
@@ -161,6 +171,20 @@ export function GlobalFilterBar({
           >
             <option value="all">Năm bắt đầu</option>
             {years.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className={`${selectClass} min-w-[7rem]`}
+            value={acceptanceYear}
+            onChange={(e) => onAcceptanceYear(e.target.value)}
+            aria-label="Năm nghiệm thu"
+          >
+            <option value="all">Năm nghiệm thu</option>
+            {acceptanceYears.map((y) => (
               <option key={y} value={y}>
                 {y}
               </option>

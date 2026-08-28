@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useAuthContext } from '../../contexts/AuthContext.js';
+import type { RegisterProfile } from '../../services/interfaces/IAuthService.js';
 import type { OtpDeliveryChannel } from './registration/constants.js';
 import { DEFAULT_OTP_TTL_SECONDS } from './registration/constants.js';
 
@@ -21,10 +22,17 @@ export function useRegisterFlow(onRegistered?: (payload: RegisterSuccessPayload)
   const [banner, setBanner] = useState<RegisterBanner | null>(null);
 
   const submit = useCallback(
-    async (input: { email: string; password: string; displayName: string }) => {
+    async (input: { email: string; password: string; displayName: string } & RegisterProfile) => {
       setBanner(null);
       setPhase('submitting');
-      const result = await register(input.email, input.password, input.displayName.trim());
+      const result = await register(input.email, input.password, input.displayName.trim(), {
+        staffId: input.staffId,
+        phone: input.phone,
+        academicRank: input.academicRank,
+        workUnit: input.workUnit,
+        jobTitle: input.jobTitle,
+        requestedRoles: input.requestedRoles,
+      });
       setPhase('idle');
 
       if (result.ok) {

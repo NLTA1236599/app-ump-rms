@@ -9,9 +9,17 @@ import {
   resolveProjectCodeUnit,
   resolveProjectCodeYear,
 } from './projectCodeFormat.js';
-import { CONTRACT_FIXED_PART, resolveAppendixYear, resolveContractSeq, resolveContractYear } from './contractNumberFormat.js';
+import {
+  CONTRACT_FIXED_PART,
+  createEmptyAppendix,
+  defaultAppendixYear,
+  getFormAppendices,
+  nextAppendixSeq,
+  resolveContractSeq,
+  resolveContractYear,
+} from './contractNumberFormat.js';
 import { inputBase, inputError } from './formStyles.js';
-import type { DataEntryFormData, FormErrors } from './types.js';
+import type { ContractAppendixItem, DataEntryFormData, FormErrors } from './types.js';
 
 type Props = {
   form: DataEntryFormData;
@@ -33,8 +41,28 @@ export function ContractSection({ form, errors, setField, setFacultyUnit }: Prop
   const codeYear = resolveProjectCodeYear(form);
   const codeUnit = resolveProjectCodeUnit(form);
   const codeSeq = formatProjectCodeSeq(resolveProjectCodeSeq(form));
-  const appendixYear = resolveAppendixYear(form);
-  const appendixError = Boolean(errors.contractAppendix);
+  const appendices = getFormAppendices(form);
+  const defaultYear = defaultAppendixYear(form);
+
+  const setAppendices = (next: ContractAppendixItem[]) => {
+    setField('contractAppendices', next.length > 0 ? next : [createEmptyAppendix()]);
+  };
+
+  const updateAppendix = (id: string, patch: Partial<Omit<ContractAppendixItem, 'id'>>) => {
+    setAppendices(appendices.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  };
+
+  const addAppendix = () => {
+    setAppendices([...appendices, createEmptyAppendix(nextAppendixSeq(appendices))]);
+  };
+
+  const removeAppendix = (id: string) => {
+    if (appendices.length <= 1) {
+      setAppendices([createEmptyAppendix()]);
+      return;
+    }
+    setAppendices(appendices.filter((item) => item.id !== id));
+  };
 
   return (
     <section>
@@ -101,59 +129,102 @@ export function ContractSection({ form, errors, setField, setFacultyUnit }: Prop
           </div>
 
           <div className="mt-3" id="contract-appendix">
-            <FieldLabel htmlFor="contract-appendix-seq">Phụ lục hợp đồng</FieldLabel>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span
-                className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs font-bold text-slate-700"
-                title="Tiền tố cố định"
+            <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+              <FieldLabel htmlFor={`contract-appendix-seq-${appendices[0]?.id ?? '0'}`}>
+                Phụ lục hợp đồng
+              </FieldLabel>
+              <button
+                type="button"
+                onClick={addAppendix}
+                className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-[11px]
+                           font-semibold uppercase tracking-wide text-blue-700 transition-colors
+                           hover:bg-blue-100"
               >
-                PL
-              </span>
-              <input
-                id="contract-appendix-seq"
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                value={form.contractAppendixSeq}
-                placeholder="01"
-                title="Số phụ lục"
-                onChange={(e) => setField('contractAppendixSeq', e.target.value.replace(/\D/g, ''))}
-                className={`${partInput} ${appendixError ? inputError : ''}`}
-                aria-invalid={appendixError}
-                aria-label="Số phụ lục hợp đồng"
-              />
-              <span className="text-sm font-bold text-slate-400">/</span>
-              <input
-                id="contract-appendix-year"
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                value={appendixYear}
-                placeholder="Năm"
-                title="Năm trên phụ lục — có thể chỉnh"
-                maxLength={4}
-                onChange={(e) =>
-                  setField('contractAppendixYear', e.target.value.replace(/\D/g, '').slice(0, 4))
-                }
-                className={`${partInput} ${appendixError ? inputError : ''}`}
-                aria-invalid={appendixError}
-                aria-label="Năm trên phụ lục hợp đồng"
-              />
-              <span className="text-sm font-bold text-slate-400">/</span>
-              <span className="whitespace-nowrap rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700">
-                {CONTRACT_FIXED_PART}
-              </span>
-              <span className="whitespace-nowrap px-1 text-xs font-medium text-slate-500">ký ngày</span>
-              <div className="min-w-[9.5rem] flex-1">
-                <DateField
-                  id="contract-appendix-signed-at"
-                  label="Ngày ký phụ lục"
-                  noLabel
-                  valueIso={form.contractAppendixSignedAt}
-                  onChangeIso={(v) => setField('contractAppendixSignedAt', v)}
-                  error={errors.contractAppendixSignedAt}
-                />
-              </div>
+                + Thêm Phụ lục
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {appendices.map((item, index) => {
+                const yearValue = item.year.trim() || defaultYear;
+                const rowYearError = Boolean(item.seq.trim() && errors.contractAppendix);
+                const rowDateError = Boolean(item.seq.trim() && !item.signedAt.trim() && errors.contractAppendixSignedAt);
+                return (
+                  <div key={item.id}>
+                    {appendices.length > 1 ? (
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                          Phụ lục {index + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeAppendix(item.id)}
+                          className="rounded-md px-2 py-0.5 text-[11px] font-medium text-red-600
+                                     transition-colors hover:bg-red-50"
+                          aria-label={`Xóa phụ lục ${index + 1}`}
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    ) : null}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span
+                        className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-xs font-bold text-slate-700"
+                        title="Tiền tố cố định"
+                      >
+                        PL
+                      </span>
+                      <input
+                        id={`contract-appendix-seq-${item.id}`}
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        value={item.seq}
+                        placeholder="01"
+                        title="Số phụ lục"
+                        onChange={(e) => updateAppendix(item.id, { seq: e.target.value.replace(/\D/g, '') })}
+                        className={`${partInput} ${rowYearError ? inputError : ''}`}
+                        aria-invalid={rowYearError}
+                        aria-label={`Số phụ lục hợp đồng ${index + 1}`}
+                      />
+                      <span className="text-sm font-bold text-slate-400">/</span>
+                      <input
+                        id={`contract-appendix-year-${item.id}`}
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        value={yearValue}
+                        placeholder="Năm"
+                        title="Năm trên phụ lục — có thể chỉnh"
+                        maxLength={4}
+                        onChange={(e) =>
+                          updateAppendix(item.id, {
+                            year: e.target.value.replace(/\D/g, '').slice(0, 4),
+                          })
+                        }
+                        className={`${partInput} ${rowYearError ? inputError : ''}`}
+                        aria-invalid={rowYearError}
+                        aria-label={`Năm trên phụ lục hợp đồng ${index + 1}`}
+                      />
+                      <span className="text-sm font-bold text-slate-400">/</span>
+                      <span className="whitespace-nowrap rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700">
+                        {CONTRACT_FIXED_PART}
+                      </span>
+                      <span className="whitespace-nowrap px-1 text-xs font-medium text-slate-500">ký ngày</span>
+                      <div className="min-w-[9.5rem] flex-1">
+                        <DateField
+                          id={`contract-appendix-signed-at-${item.id}`}
+                          label="Ngày ký phụ lục"
+                          noLabel
+                          valueIso={item.signedAt}
+                          onChangeIso={(v) => updateAppendix(item.id, { signedAt: v })}
+                          error={rowDateError ? errors.contractAppendixSignedAt : undefined}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             <p className="mt-1 text-[10px] text-slate-500">
               Định dạng: PL + số phụ lục / năm / {CONTRACT_FIXED_PART} ký ngày dd/mm/yyyy

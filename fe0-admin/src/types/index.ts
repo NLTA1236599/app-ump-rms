@@ -17,8 +17,15 @@ export type AdminUserRow = {
   full_name: string;
   role: string;
   allowed_units: string[];
+  allowed_project_types: string[];
   email_verified: boolean;
   created_at: string;
+  staff_id: string | null;
+  phone: string | null;
+  academic_rank: string | null;
+  work_unit: string | null;
+  job_title: string | null;
+  requested_roles: string[];
 };
 
 export type FeaturePermission = {

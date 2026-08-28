@@ -31,6 +31,8 @@ import type { AuthUserRow, IAuthUserRepository } from '../contracts/authUserRepo
 import type { IPasswordHasher } from '../contracts/passwordHasher.js';
 import type { IRegistrationOtpRepository } from '../contracts/registrationOtpRepository.js';
 import type { ITokenSigner } from '../contracts/tokenSigner.js';
+import type { RegisterProfileInput } from '../../modules/auth/registerProfile.js';
+import { emptyRegisterProfile } from '../../modules/auth/registerProfile.js';
 
 function httpError(message: string, status: number): Error {
   const err = new Error(message);
@@ -66,7 +68,12 @@ export class AuthApplicationService implements IAuthService {
     private readonly mail: IEmailSender
   ) {}
 
-  async register(username: string, password: string, displayName?: string): Promise<RegisterResult> {
+  async register(
+    username: string,
+    password: string,
+    displayName?: string,
+    profile?: RegisterProfileInput
+  ): Promise<RegisterResult> {
     const emailResult = validateInstitutionalEmail(username);
     if (!emailResult.ok) {
       throw httpError(emailResult.message, 400);
@@ -83,6 +90,7 @@ export class AuthApplicationService implements IAuthService {
     const otpHash = hashOtp(plaintextOtp);
     const expiresAt = new Date(Date.now() + ttlMinutes * 60_000);
     const passwordHash = await this.passwords.hash(password);
+    const registration = profile ?? emptyRegisterProfile();
 
     const client = await this.pool.connect();
     let user: User;
@@ -95,6 +103,12 @@ export class AuthApplicationService implements IAuthService {
           role: 'user',
           displayName: displayName?.trim() || email,
           emailVerified: false,
+          staffId: registration.staffId,
+          phone: registration.phone,
+          academicRank: registration.academicRank,
+          workUnit: registration.workUnit,
+          jobTitle: registration.jobTitle,
+          requestedRoles: registration.requestedRoles,
         },
         client
       );

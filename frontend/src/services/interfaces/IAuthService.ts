@@ -8,6 +8,15 @@ export type RegisterResponse = {
   otpDeliveryChannel: OtpDeliveryChannel;
 };
 
+export type RegisterProfile = {
+  staffId?: string;
+  phone?: string;
+  academicRank?: string;
+  workUnit?: string;
+  jobTitle?: string;
+  requestedRoles?: string[];
+};
+
 export type ResendOtpResponse = {
   emailVerificationRequired: boolean;
   otpTtlSeconds: number;
@@ -20,7 +29,8 @@ export interface IAuthService {
   register(
     username: string,
     password: string,
-    displayName?: string
+    displayName?: string,
+    profile?: RegisterProfile
   ): Promise<RegisterResponse>;
   verifyOtp(email: string, otp: string): Promise<{ ok: boolean }>;
   resendOtp(email: string): Promise<ResendOtpResponse>;

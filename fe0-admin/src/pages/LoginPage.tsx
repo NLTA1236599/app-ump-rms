@@ -37,7 +37,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+    <div className="flex h-full min-h-0 items-center justify-center overflow-auto bg-gray-100">
       <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-md">
         <h1 className="mb-2 text-center text-2xl font-bold text-blue-700">RMS Admin</h1>
         <p className="mb-6 text-center text-sm text-gray-500">Trang quản trị hệ thống (fe0-admin)</p>

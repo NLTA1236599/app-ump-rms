@@ -3,6 +3,7 @@ import { asPathParam } from '../../utils/pathParams.js';
 import { AdminUserRepository } from './admin-user.repository.js';
 import { isCatalogFeature } from './featureCatalog.js';
 import { PermissionRepository } from './permission.repository.js';
+import { sanitizeProjectTypes } from '../research-projects/projectTypeAccess.js';
 
 const ALLOWED_ROLES = ['admin', 'user', 'specialist', 'leader'] as const;
 
@@ -23,8 +24,15 @@ export async function getAllUsers(_req: Request, res: Response, next: NextFuncti
         full_name: row.display_name ?? row.username,
         role: row.role,
         allowed_units: row.allowed_units,
+        allowed_project_types: row.allowed_project_types,
         email_verified: row.email_verified,
         created_at: row.created_at,
+        staff_id: row.staff_id,
+        phone: row.phone,
+        academic_rank: row.academic_rank,
+        work_unit: row.work_unit,
+        job_title: row.job_title,
+        requested_roles: row.requested_roles,
       })),
     });
   } catch (e) {
@@ -64,6 +72,25 @@ export async function updateUserAllowedUnits(req: Request, res: Response, next: 
     if (!ok) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
 
     res.json({ message: 'Allowed units updated', allowed_units: units });
+  } catch (e) {
+    next(e);
+  }
+}
+
+export async function updateUserAllowedProjectTypes(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = asPathParam(req.params.id);
+    const { allowed_project_types } = req.body ?? {};
+
+    if (!Array.isArray(allowed_project_types)) {
+      return res.status(400).json({ error: 'allowed_project_types phải là mảng' });
+    }
+
+    const types = sanitizeProjectTypes(allowed_project_types);
+    const ok = await userRepo.updateAllowedProjectTypes(id, types);
+    if (!ok) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+
+    res.json({ message: 'Allowed project types updated', allowed_project_types: types });
   } catch (e) {
     next(e);
   }

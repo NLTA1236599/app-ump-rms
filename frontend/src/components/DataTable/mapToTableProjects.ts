@@ -20,6 +20,7 @@ export function mapTableToPmProjects(projects: ResearchProject[]): PmProject[] {
     categories: categoriesToPmValue(p.categories),
     startDate: p.startDate != null ? String(p.startDate) : null,
     endDate: p.endDate != null ? String(p.endDate) : null,
+    acceptanceYear: p.acceptanceYear != null ? String(p.acceptanceYear) : undefined,
     acceptanceAcademicYear: p.acceptanceAcademicYear,
     reviewBatch: p.reviewBatch,
     budget: p.budget,

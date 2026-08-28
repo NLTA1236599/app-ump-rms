@@ -12,8 +12,9 @@ import {
 import { membersToDisplayString, normalizeMembers } from './projectMembers.js';
 import {
   composeContractAppendix,
+  defaultAppendixYear,
+  getFormAppendices,
   composeContractNumber,
-  resolveAppendixYear,
   resolveContractSeq,
   resolveContractYear,
 } from './contractNumberFormat.js';
@@ -88,16 +89,18 @@ function composeProjectCodeValue(form: DataEntryFormData, existing?: string): st
 }
 
 function composeAppendixValue(form: DataEntryFormData): string | undefined {
-  if (!form.contractAppendixSeq.trim()) return undefined;
-  return (
-    composeContractAppendix({
-      seq: form.contractAppendixSeq,
-      year: resolveAppendixYear(form),
-      dateIso: form.contractAppendixSignedAt,
-    }) ||
-    form.contractAppendix.trim() ||
-    undefined
-  );
+  const parts = getFormAppendices(form)
+    .filter((item) => item.seq.trim())
+    .map((item) =>
+      composeContractAppendix({
+        seq: item.seq,
+        year: item.year.trim() || defaultAppendixYear(form),
+        dateIso: item.signedAt,
+      }),
+    )
+    .filter(Boolean);
+  if (parts.length > 0) return parts.join('; ');
+  return form.contractAppendix.trim() || undefined;
 }
 
 export function mapFormToTableProject(

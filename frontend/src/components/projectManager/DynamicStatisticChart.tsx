@@ -17,25 +17,31 @@ import { ChartLegendList } from './ChartLegendList.js';
 import { PIE_INNER_PCT, PIE_OUTER_PCT } from './chartPieLayout.js';
 import { exportChartToExcel } from './exportChartToExcel.js';
 import { formatTooltipDynamic } from './chartTooltipFormat.js';
+import { OverviewStackedBarChart } from './OverviewStackedBarChart.js';
 import {
   BAR_COLOR_ROTATION,
+  DYN_STACK_OPTIONS,
   DYN_X_OPTIONS,
   DYN_Y_OPTIONS,
   type DynamicDatum,
+  type StackedChartModel,
 } from './projectAnalytics.js';
-import type { DynChartType, DynYAxis } from './types.js';
+import type { DynChartType, DynStackBy, DynYAxis } from './types.js';
 
 export type DynamicStatisticChartProps = {
   dynamicChartRef: RefObject<HTMLDivElement | null>;
   dynamicChartData: DynamicDatum[];
+  stackedChartData: StackedChartModel;
   availableYears: string[];
   dynChartType: DynChartType;
   dynXAxis: string;
   dynYAxis: DynYAxis;
+  dynStackBy: DynStackBy;
   dynChartYear: string;
   onDynChartType: (v: DynChartType) => void;
   onDynXAxis: (v: string) => void;
   onDynYAxis: (v: DynYAxis) => void;
+  onDynStackBy: (v: DynStackBy) => void;
   onDynChartYear: (v: string) => void;
   onExpand: () => void;
 };
@@ -43,18 +49,24 @@ export type DynamicStatisticChartProps = {
 export function DynamicStatisticChart({
   dynamicChartRef,
   dynamicChartData,
+  stackedChartData,
   availableYears,
   dynChartType,
   dynXAxis,
   dynYAxis,
+  dynStackBy,
   dynChartYear,
   onDynChartType,
   onDynXAxis,
   onDynYAxis,
+  onDynStackBy,
   onDynChartYear,
   onExpand,
 }: DynamicStatisticChartProps) {
   const yLabel = dynYAxis === 'budget' ? 'Kinh phí' : 'Số lượng';
+  const categoryLabel = DYN_X_OPTIONS.find((opt) => opt.value === dynXAxis)?.label ?? 'Đơn vị';
+  const stackLabel = DYN_STACK_OPTIONS.find((opt) => opt.value === dynStackBy)?.label ?? 'Trạng thái';
+  const yearLabel = dynChartYear === 'all' ? 'Tất cả các năm' : `Năm ${dynChartYear}`;
 
   return (
     <div className="group relative overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -84,11 +96,21 @@ export function DynamicStatisticChart({
             onClick={() =>
               void exportChartToExcel({
                 chartRef: dynamicChartRef,
-                data: dynamicChartData,
-                columns: [
-                  { header: 'Tên', key: 'name', width: 40 },
-                  { header: dynYAxis === 'count' ? 'Số lượng' : 'Kinh phí', key: 'value', width: 25 },
-                ],
+                data: dynChartType === 'stacked' ? stackedChartData.data : dynamicChartData,
+                columns:
+                  dynChartType === 'stacked'
+                    ? [
+                        { header: 'Tên', key: 'name', width: 40 },
+                        ...stackedChartData.series.map((key) => ({
+                          header: key,
+                          key,
+                          width: 18,
+                        })),
+                      ]
+                    : [
+                        { header: 'Tên', key: 'name', width: 40 },
+                        { header: dynYAxis === 'count' ? 'Số lượng' : 'Kinh phí', key: 'value', width: 25 },
+                      ],
                 filename: 'Bieu_do_thong_ke',
                 sheetName: 'Thống kê',
               })
@@ -107,7 +129,7 @@ export function DynamicStatisticChart({
           </button>
         </div>
       </div>
-      <div className="p-1.5">
+      <div className={dynChartType === 'stacked' ? 'p-2.5' : 'p-1.5'}>
 
       <div className="mb-1.5 flex flex-wrap items-center gap-1.5 rounded-md border border-slate-100 bg-slate-50 p-1.5">
         <div className="min-w-[140px] flex-1">
@@ -120,6 +142,7 @@ export function DynamicStatisticChart({
             className="block w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 outline-none transition focus:border-[#1a6ec2] focus:ring-1 focus:ring-[#1a6ec2]"
           >
             <option value="bar">Biểu đồ Cột (Bar)</option>
+            <option value="stacked">Biểu đồ Cột chồng (Stacked)</option>
             <option value="line">Biểu đồ Đường (Line)</option>
             <option value="pie">Biểu đồ Tròn (Pie)</option>
           </select>
@@ -178,6 +201,25 @@ export function DynamicStatisticChart({
           </select>
         </div>
 
+        {dynChartType === 'stacked' ? (
+          <div className="min-w-[140px] flex-1">
+            <label className="mb-0.5 block text-[9px] font-bold uppercase tracking-wider text-slate-500">
+              Chồng theo
+            </label>
+            <select
+              value={dynStackBy}
+              onChange={(e) => onDynStackBy(e.target.value as DynStackBy)}
+              className="block w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 outline-none transition focus:border-[#1a6ec2] focus:ring-1 focus:ring-[#1a6ec2]"
+            >
+              {DYN_STACK_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+
         <div className="min-w-[140px] flex-1">
           <label className="mb-0.5 block text-[9px] font-bold uppercase tracking-wider text-slate-500">
             Chọn năm
@@ -197,8 +239,13 @@ export function DynamicStatisticChart({
         </div>
       </div>
 
-      <div className="relative h-[clamp(140px,24vh,200px)] overflow-hidden rounded-md bg-white" ref={dynamicChartRef as Ref<HTMLDivElement>}>
-        {dynamicChartData.length > 0 ? (
+      <div
+        className={`relative overflow-hidden rounded-md bg-white ${
+          dynChartType === 'stacked' ? 'h-[clamp(280px,42vh,440px)] p-2' : 'h-[clamp(140px,24vh,200px)]'
+        }`}
+        ref={dynamicChartRef as Ref<HTMLDivElement>}
+      >
+        {(dynChartType === 'stacked' ? stackedChartData.data.length > 0 : dynamicChartData.length > 0) ? (
           dynChartType === 'pie' ? (
               <div className="flex h-full min-h-0 flex-col gap-1 lg:flex-row lg:items-center">
                 <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
@@ -241,6 +288,15 @@ export function DynamicStatisticChart({
                   className="max-h-[64px] overflow-y-auto px-1 lg:max-h-full lg:w-[36%] lg:flex-col lg:flex-nowrap"
                 />
               </div>
+          ) : dynChartType === 'stacked' ? (
+            <OverviewStackedBarChart
+              model={stackedChartData}
+              dynYAxis={dynYAxis}
+              compact
+              categoryLabel={categoryLabel}
+              stackLabel={stackLabel}
+              yearLabel={yearLabel}
+            />
           ) : (
           <ResponsiveContainer width="100%" height="100%">
             {dynChartType === 'bar' ? (

@@ -22,6 +22,12 @@ export interface IAuthUserRepository {
       role: string;
       displayName: string | null;
       emailVerified: boolean;
+      staffId: string | null;
+      phone: string | null;
+      academicRank: string | null;
+      workUnit: string | null;
+      jobTitle: string | null;
+      requestedRoles: string[];
     },
     client?: PoolClient
   ): Promise<User>;

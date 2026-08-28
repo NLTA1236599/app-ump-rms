@@ -14,12 +14,16 @@ import {
 } from 'recharts';
 import { ChartLegendList } from './ChartLegendList.js';
 import { PIE_INNER_PCT, PIE_OUTER_PCT } from './chartPieLayout.js';
+import { OverviewStackedBarChart } from './OverviewStackedBarChart.js';
 import {
   BAR_COLOR_ROTATION,
   DONUT_BUDGET_COLORS,
   DONUT_TYPE_COLORS,
+  DYN_STACK_OPTIONS,
+  DYN_X_OPTIONS,
   type DonutDatum,
   type DynamicDatum,
+  type StackedChartModel,
 } from './projectAnalytics.js';
 import type { DynChartType, DynYAxis } from './types.js';
 import { formatTooltipDynamic } from './chartTooltipFormat.js';
@@ -32,8 +36,12 @@ export type ChartFullscreenModalProps = {
   projectTypeData: DonutDatum[];
   departmentDonutData: DonutDatum[];
   dynamicChartData: DynamicDatum[];
+  stackedChartData: StackedChartModel;
   dynChartType: DynChartType;
   dynYAxis: DynYAxis;
+  dynXAxis?: string;
+  dynStackBy?: string;
+  dynChartYear?: string;
 };
 
 function FullscreenPie({
@@ -89,12 +97,19 @@ export function ChartFullscreenModal({
   projectTypeData,
   departmentDonutData,
   dynamicChartData,
+  stackedChartData,
   dynChartType,
   dynYAxis,
+  dynXAxis = 'department',
+  dynStackBy = 'status',
+  dynChartYear = 'all',
 }: ChartFullscreenModalProps) {
   if (!expanded) return null;
 
   const yLabel = dynYAxis === 'budget' ? 'Kinh phí' : 'Số lượng';
+  const categoryLabel = DYN_X_OPTIONS.find((opt) => opt.value === dynXAxis)?.label ?? 'Đơn vị';
+  const stackLabel = DYN_STACK_OPTIONS.find((opt) => opt.value === dynStackBy)?.label ?? 'Trạng thái';
+  const yearLabel = dynChartYear === 'all' ? 'Tất cả các năm' : `Năm ${dynChartYear}`;
 
   return (
     <div
@@ -104,8 +119,15 @@ export function ChartFullscreenModal({
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
-        style={{ height: 'min(88vh, 40rem)' }}
+        className={`flex w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ${
+          expanded === 'dynamic' && dynChartType === 'stacked' ? 'max-w-6xl' : 'max-w-5xl'
+        }`}
+        style={{
+          height:
+            expanded === 'dynamic' && dynChartType === 'stacked'
+              ? 'min(92vh, 52rem)'
+              : 'min(88vh, 40rem)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-6 sm:py-4">
@@ -117,6 +139,10 @@ export function ChartFullscreenModal({
             ) : expanded === 'department' ? (
               <>
                 <span className="mr-3 h-7 w-1.5 rounded-full bg-[#1558a8]" /> Kinh phí theo Đơn vị (Top 5)
+              </>
+            ) : dynChartType === 'stacked' ? (
+              <>
+                <span className="mr-3 h-7 w-1.5 rounded-full bg-purple-600" /> Phân bổ đề tài theo {categoryLabel}
               </>
             ) : (
               <>
@@ -152,6 +178,14 @@ export function ChartFullscreenModal({
                 data={dynamicChartData}
                 colors={BAR_COLOR_ROTATION}
                 tooltipFormatter={(v) => formatTooltipDynamic(v, dynYAxis, yLabel)}
+              />
+            ) : dynChartType === 'stacked' ? (
+              <OverviewStackedBarChart
+                model={stackedChartData}
+                dynYAxis={dynYAxis}
+                categoryLabel={categoryLabel}
+                stackLabel={stackLabel}
+                yearLabel={yearLabel}
               />
             ) : (
               <ResponsiveContainer width="100%" height="100%">

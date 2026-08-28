@@ -24,15 +24,36 @@ export class PgAuthUserRepository implements IAuthUserRepository {
       role: string;
       displayName: string | null;
       emailVerified: boolean;
+      staffId: string | null;
+      phone: string | null;
+      academicRank: string | null;
+      workUnit: string | null;
+      jobTitle: string | null;
+      requestedRoles: string[];
     },
     client?: PoolClient
   ): Promise<User> {
     const db: Queryable = client ?? this.pool;
     const { rows } = await db.query(
-      `INSERT INTO users (username, password, role, display_name, email_verified)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO users (
+         username, password, role, display_name, email_verified,
+         staff_id, phone, academic_rank, work_unit, job_title, requested_roles
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::text[])
        RETURNING id, username, role, display_name`,
-      [input.username, input.passwordHash, input.role, input.displayName, input.emailVerified]
+      [
+        input.username,
+        input.passwordHash,
+        input.role,
+        input.displayName,
+        input.emailVerified,
+        input.staffId,
+        input.phone,
+        input.academicRank,
+        input.workUnit,
+        input.jobTitle,
+        input.requestedRoles,
+      ]
     );
     return rowToUser(rows[0]);
   }

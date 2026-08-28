@@ -1,5 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { useAuth, type AuthLoginResult, type AuthRegisterResult } from '../hooks/useAuth.js';
+import type { RegisterProfile } from '../services/interfaces/IAuthService.js';
 
 interface AuthContextValue {
   user: ReturnType<typeof useAuth>['user'];
@@ -8,7 +9,8 @@ interface AuthContextValue {
   register: (
     username: string,
     password: string,
-    displayName?: string
+    displayName?: string,
+    profile?: RegisterProfile
   ) => Promise<AuthRegisterResult>;
   verifyOtp: ReturnType<typeof useAuth>['verifyOtp'];
   resendOtp: ReturnType<typeof useAuth>['resendOtp'];

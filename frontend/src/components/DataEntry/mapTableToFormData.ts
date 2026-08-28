@@ -2,7 +2,7 @@ import { formatDate } from '../DataTable/formatDate.js';
 import { ProjectStatus as TableProjectStatus, type ResearchProject } from '../DataTable/types.js';
 
 import { cloneFormData } from './cloneFormData.js';
-import { parseContractAppendix, parseContractNumber } from './contractNumberFormat.js';
+import { createEmptyAppendix, parseContractAppendices, parseContractNumber } from './contractNumberFormat.js';
 import { extractReviewYear } from './reviewYear.js';
 import { looseDdMmYyyyToIso } from './dateHelpers.js';
 import type { ExecutionProgress, Gender, ProjectStatus } from './constants.js';
@@ -148,7 +148,17 @@ export function mapTableToFormData(project: ResearchProject): DataEntryFormData 
   }
 
   const parsed = parseContractNumber(project.contractId);
-  const parsedAppendix = parseContractAppendix(project.contractAppendix);
+  const parsedAppendices = parseContractAppendices(project.contractAppendix);
+  const contractAppendices =
+    parsedAppendices.length > 0
+      ? parsedAppendices.map((item) => ({
+          ...createEmptyAppendix(item.seq),
+          seq: item.seq,
+          year: item.year,
+          signedAt: looseDdMmYyyyToIso(item.dateDisplay),
+        }))
+      : [createEmptyAppendix()];
+  const firstAppendix = contractAppendices[0];
   const sequenceNumber =
     project.registrationSequenceNumber != null ? String(project.registrationSequenceNumber) : '';
   const sequenceYear =
@@ -164,9 +174,10 @@ export function mapTableToFormData(project: ResearchProject): DataEntryFormData 
     contractYear: sequenceYear || (reviewYear ? String(reviewYear) : parsed.year),
     contractSignedAt: signedIso,
     contractAppendix: project.contractAppendix ?? '',
-    contractAppendixSeq: parsedAppendix.seq,
-    contractAppendixYear: parsedAppendix.year,
-    contractAppendixSignedAt: looseDdMmYyyyToIso(parsedAppendix.dateDisplay),
+    contractAppendixSeq: firstAppendix?.seq ?? '',
+    contractAppendixYear: firstAppendix?.year ?? '',
+    contractAppendixSignedAt: firstAppendix?.signedAt ?? '',
+    contractAppendices,
     projectCode: project.projectCode ?? '',
     gcnNumber: project.certificateResultNumber ?? '',
     gcnIssuedAt: toFormIsoDate(project.certificateResultDate),

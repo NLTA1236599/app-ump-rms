@@ -1,4 +1,5 @@
 import { PRODUCT_ROWS } from './constants.js';
+import { createEmptyAppendix } from './contractNumberFormat.js';
 import { defaultProductDetailFields } from './productDetailTypes.js';
 import { createEmptyLeader } from './projectLeaders.js';
 import { createEmptyMember } from './projectMembers.js';
@@ -20,6 +21,7 @@ export const defaultFormData: DataEntryFormData = {
   contractAppendixSeq: '',
   contractAppendixYear: '',
   contractAppendixSignedAt: '',
+  contractAppendices: [createEmptyAppendix()],
   projectCode: '',
   gcnNumber: '',
   gcnIssuedAt: '',
