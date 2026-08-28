@@ -81,7 +81,7 @@ export function UsersPage() {
       <h1 className="mb-2 text-2xl font-bold text-gray-800">Quản lý người dùng</h1>
       <p className="mb-6 text-sm text-gray-500">
         Cột <strong>Email</strong> của tài khoản vai trò <strong>specialist</strong> là địa chỉ gửi
-        mail nhắc cho các đề tài thuộc đơn vị được phân quyền (tab Phân quyền đề tài). Tài khoản mới
+        mail nhắc cho các đề tài thuộc đơn vị được phân quyền (tab Phân quyền theo đơn vị). Tài khoản mới
         đăng ký chờ OTP: dùng <strong>Cấp quyền truy cập</strong> để cho phép đăng nhập ngay, không
         cần đợi mã OTP tới email.
         {pendingCount > 0 ? ` Đang có ${pendingCount} tài khoản chờ cấp quyền.` : ''}

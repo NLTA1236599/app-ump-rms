@@ -1,20 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 
 import { getUsers, updateAllowedUnits } from '../api/userService.js';
 import { ALL_ORG_UNITS, ORG_UNIT_GROUPS, UNIT_MEMBERS, type UnitMember } from '../data/unitMembers.js';
 import type { AdminUserRow } from '../types/index.js';
 
-type PanelMode = 'grant' | 'units';
-
 type MemberRow = Omit<UnitMember, 'role'> & {
   userId: string | null;
   role: string;
 };
-
-function isInstitutionalEmail(email: string): boolean {
-  const normalized = email.trim().toLowerCase();
-  return normalized.endsWith('@ump.edu.vn') || normalized.endsWith('@umc.edu.vn');
-}
 
 function normalizeEmail(email: string | null | undefined): string {
   return (email ?? '').trim().toLowerCase();
@@ -30,12 +23,6 @@ function normalizePersonName(value: string): string {
 }
 
 const GENERIC_ROSTER_NAMES = new Set(['lanh dao', 'quan tri vien', 'admin']);
-
-function accessSummary(member: MemberRow): string {
-  if (member.allowedUnits.length === 0) return 'tất cả đơn vị';
-  if (member.allowedUnits.length === 1) return member.allowedUnits[0]!;
-  return `${member.allowedUnits.length} đơn vị`;
-}
 
 function roleLabel(role: string): string {
   const normalized = role.trim().toLowerCase();
@@ -101,23 +88,22 @@ function mergeMembers(seed: UnitMember[], users: AdminUserRow[]): MemberRow[] {
   return rows;
 }
 
+function seesAllUnits(member: MemberRow): boolean {
+  return member.allowedUnits.length === 0;
+}
+
+function unitChecked(member: MemberRow, unit: string): boolean {
+  return seesAllUnits(member) || member.allowedUnits.includes(unit);
+}
+
 export function TopicPermissionsPage() {
   const [members, setMembers] = useState<MemberRow[]>(() =>
     UNIT_MEMBERS.map((member) => ({ ...member, userId: null })),
   );
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [panelMode, setPanelMode] = useState<PanelMode>('grant');
-  const [emailDraft, setEmailDraft] = useState('');
-  const [selectedUnits, setSelectedUnits] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  const accountCount = useMemo(
-    () => members.filter((member) => Boolean(member.userId)).length,
-    [members],
-  );
+  const [savedId, setSavedId] = useState<string | null>(null);
 
   const refreshMembers = useCallback(async () => {
     setError(null);
@@ -136,116 +122,57 @@ export function TopicPermissionsPage() {
     void refreshMembers();
   }, [refreshMembers]);
 
-  const closePanel = () => {
-    setExpandedId(null);
-    setError(null);
+  const markSaved = (id: string) => {
+    setSavedId(id);
+    window.setTimeout(() => setSavedId((current) => (current === id ? null : current)), 2000);
   };
 
-  const openGrant = (member: MemberRow) => {
-    if (expandedId === member.id && panelMode === 'grant') {
-      closePanel();
-      return;
-    }
-    setExpandedId(member.id);
-    setPanelMode('grant');
-    setEmailDraft('');
-    setError(null);
-    setSuccessMessage(null);
+  const toggleUnit = (memberId: string, unit: string) => {
+    setMembers((prev) =>
+      prev.map((member) => {
+        if (member.id !== memberId) return member;
+        const current = member.allowedUnits.length === 0 ? ALL_ORG_UNITS : member.allowedUnits;
+        const next = current.includes(unit)
+          ? current.filter((item) => item !== unit)
+          : [...current, unit];
+        return {
+          ...member,
+          allowedUnits: next.length === ALL_ORG_UNITS.length ? [] : next,
+        };
+      }),
+    );
   };
 
-  const openUnits = (member: MemberRow) => {
-    if (expandedId === member.id && panelMode === 'units') {
-      closePanel();
-      return;
-    }
-    setExpandedId(member.id);
-    setPanelMode('units');
-    setSelectedUnits(member.allowedUnits);
-    setError(null);
-    setSuccessMessage(null);
+  const toggleAllUnits = (memberId: string) => {
+    setMembers((prev) =>
+      prev.map((member) => {
+        if (member.id !== memberId) return member;
+        return {
+          ...member,
+          allowedUnits: member.allowedUnits.length === 0 ? [member.homeUnit] : [],
+        };
+      }),
+    );
   };
 
-  const seesAllUnits = selectedUnits.length === 0;
-
-  const toggleUnit = (unit: string) => {
-    setSelectedUnits((prev) => {
-      // Empty list means every unit is allowed — unchecking one leaves the rest.
-      const current = prev.length === 0 ? ALL_ORG_UNITS : prev;
-      const next = current.includes(unit)
-        ? current.filter((item) => item !== unit)
-        : [...current, unit];
-      return next.length === ALL_ORG_UNITS.length ? [] : next;
-    });
-  };
-
-  const selectHomeOnly = (member: MemberRow) => {
-    setSelectedUnits([member.homeUnit]);
-  };
-
-  const selectAllUnits = () => {
-    setSelectedUnits([]);
-  };
-
-  const handleGrant = async (member: MemberRow) => {
-    if (!isInstitutionalEmail(emailDraft)) {
-      setError('Email phải thuộc miền @ump.edu.vn hoặc @umc.edu.vn.');
-      return;
-    }
-
-    setError(null);
-    setSavingId(member.id);
-    const email = emailDraft.trim().toLowerCase();
-
-    try {
-      const users = await getUsers();
-      const linked = users.find((user) => normalizeEmail(user.email) === email);
-      if (!linked) {
-        setError(
-          'Chưa tìm thấy tài khoản đã đăng ký với email này. Thành viên cần tự đăng ký (OTP) trước.',
-        );
-        return;
-      }
-
-      const nextUnits =
-        linked.allowed_units.length > 0 ? linked.allowed_units : [member.homeUnit];
-      await updateAllowedUnits(linked.id, nextUnits);
-
-      const refreshed = await getUsers();
-      setMembers(mergeMembers(UNIT_MEMBERS, refreshed));
-      setSuccessMessage(`Đã liên kết tài khoản ${linked.email} với ${member.fullName}.`);
-      setExpandedId(null);
-      window.setTimeout(() => setSuccessMessage(null), 2500);
-    } catch {
-      setError('Không thể cấp quyền. Thử lại sau.');
-    } finally {
-      setSavingId(null);
-    }
-  };
-
-  const handleSaveUnits = async (member: MemberRow) => {
-    if (!member.userId) {
+  const handleSaveRow = async (rowId: string) => {
+    const linked = members.filter((member) => member.userId);
+    if (linked.length === 0) {
       setError(
-        'Thành viên chưa liên kết tài khoản hệ thống. Cấp quyền bằng email đã đăng ký trước.',
+        'Chưa có thành viên liên kết tài khoản hệ thống. Liên kết tài khoản ở tab Quản lý người dùng trước.',
       );
       return;
     }
 
     setError(null);
-    setSavingId(member.id);
+    setSavingId(rowId);
     try {
-      await updateAllowedUnits(member.userId, selectedUnits);
-      // Re-read from API so UI matches what the data portal will enforce.
+      for (const member of linked) {
+        await updateAllowedUnits(member.userId as string, member.allowedUnits);
+      }
       const users = await getUsers();
-      const linked = users.find((user) => user.id === member.userId);
-      const savedUnits = linked?.allowed_units ?? selectedUnits;
       setMembers(mergeMembers(UNIT_MEMBERS, users));
-      setSuccessMessage(
-        savedUnits.length === 0
-          ? `${member.fullName}: đã lưu — xem đề tài của tất cả đơn vị.`
-          : `${member.fullName}: đã lưu ${savedUnits.length} đơn vị vào hệ thống.`,
-      );
-      setExpandedId(null);
-      window.setTimeout(() => setSuccessMessage(null), 3000);
+      markSaved(rowId);
     } catch {
       setError('Không thể lưu phân quyền đơn vị vào hệ thống. Kiểm tra lại và thử Lưu lần nữa.');
     } finally {
@@ -255,24 +182,11 @@ export function TopicPermissionsPage() {
 
   if (loading) return <p className="text-gray-500">Đang tải…</p>;
 
+  const colCount = members.length + 2;
+
   return (
     <div>
-      <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Phân quyền đề tài</h1>
-        <button
-          type="button"
-          className="rounded-full p-2 text-gray-400 transition hover:bg-white hover:text-gray-600"
-          aria-label="Thông báo"
-        >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
-            />
-          </svg>
-        </button>
-      </header>
+      <h1 className="mb-6 text-2xl font-bold text-gray-800">Phân quyền theo đơn vị</h1>
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -280,202 +194,121 @@ export function TopicPermissionsPage() {
         </div>
       )}
 
-      {successMessage && (
-        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {successMessage}
-        </div>
-      )}
+      <div className="overflow-hidden rounded-xl bg-white shadow">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-max text-sm">
+            <thead className="bg-gray-50 text-xs uppercase text-gray-600">
+              <tr>
+                <th className="sticky left-0 z-20 bg-gray-50 px-6 py-3 text-left shadow-[1px_0_0_#e5e7eb]">
+                  Đơn vị
+                </th>
+                {members.map((member) => (
+                  <th
+                    key={member.id}
+                    title={member.fullName}
+                    className="w-10 px-0 py-3 align-bottom text-[10px] font-medium normal-case text-gray-600"
+                  >
+                    <span className="inline-block h-36 overflow-hidden whitespace-nowrap px-1 [writing-mode:vertical-rl] rotate-180">
+                      {member.fullName}
+                    </span>
+                  </th>
+                ))}
+                <th className="px-6 py-3 text-left">Lưu</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              <tr className="hover:bg-gray-50">
+                <td className="sticky left-0 z-10 bg-white px-6 py-4 font-medium text-gray-800 shadow-[1px_0_0_#e5e7eb]">
+                  Tất cả
+                </td>
+                {members.map((member) => (
+                  <td key={`${member.id}-all`} className="px-2 py-4 text-center">
+                    <input
+                      type="checkbox"
+                      checked={seesAllUnits(member)}
+                      disabled={!member.userId}
+                      onChange={() => toggleAllUnits(member.id)}
+                      className="h-4 w-4 accent-blue-600 disabled:opacity-40"
+                      title={`${member.fullName}: xem đề tài của tất cả đơn vị`}
+                    />
+                  </td>
+                ))}
+                <td className="px-6 py-4">
+                  <button
+                    type="button"
+                    disabled={savingId === '__all__'}
+                    onClick={() => void handleSaveRow('__all__')}
+                    className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
+                  >
+                    {savingId === '__all__'
+                      ? 'Đang lưu…'
+                      : savedId === '__all__'
+                        ? '✓ Đã lưu'
+                        : 'Lưu'}
+                  </button>
+                </td>
+              </tr>
 
-      <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
-        <div className="space-y-3 border-b border-gray-100 px-6 py-5">
-          <p className="text-sm leading-relaxed text-gray-500">
-            Danh sách thành viên đơn vị được ghép với tài khoản đã đăng ký theo email hoặc họ tên.
-            Cấp quyền truy cập ở tab Quản lý người dùng chỉ cho phép đăng nhập (bỏ OTP), không tự
-            hiện ở đây nếu chưa khớp họ tên/email. Thành viên chưa liên kết: nhập email ump.edu.vn
-            đã đăng ký để gắn tài khoản. Sau khi có tài khoản, chọn đơn vị được xem đề tài (bỏ trống
-            = thấy tất cả). Phân quyền được lưu vào hệ thống và dùng khi gửi mail nhắc.
-          </p>
-          <p className="text-sm text-gray-600">
-            {members.length} thành viên · {accountCount} đã có tài khoản
-          </p>
-        </div>
-
-        <ul className="divide-y divide-gray-100">
-          {members.map((member) => {
-            const hasAccount = Boolean(member.userId);
-            const isExpanded = expandedId === member.id;
-            const statusText = hasAccount ? member.email : 'chưa có tài khoản';
-
-            return (
-              <li key={member.id} className="px-6 py-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="truncate text-base font-semibold text-gray-900">{member.fullName}</p>
-                    <p className="mt-0.5 text-sm text-gray-500">
-                      {member.role} · {statusText}
-                    </p>
-                    {hasAccount && (
-                      <p className="mt-0.5 text-xs text-gray-400">
-                        Đơn vị công tác: {member.homeUnit} · Quyền xem đề tài: {accessSummary(member)}
-                      </p>
-                    )}
-                  </div>
-
-                  {hasAccount ? (
-                    <button
-                      type="button"
-                      onClick={() => openUnits(member)}
-                      className={[
-                        'shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition',
-                        isExpanded && panelMode === 'units'
-                          ? 'border-gray-300 bg-gray-50 text-gray-800'
-                          : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50',
-                      ].join(' ')}
+              {ORG_UNIT_GROUPS.map((group) => (
+                <Fragment key={group.label}>
+                  <tr className="bg-gray-50">
+                    <td
+                      colSpan={colCount}
+                      className="sticky left-0 px-6 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500"
                     >
-                      Phân quyền đơn vị
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => openGrant(member)}
-                      className={[
-                        'shrink-0 rounded-full px-5 py-2 text-sm font-medium text-white transition',
-                        isExpanded && panelMode === 'grant'
-                          ? 'bg-blue-700 hover:bg-blue-800'
-                          : 'bg-blue-600 hover:bg-blue-700',
-                      ].join(' ')}
-                    >
-                      Cấp quyền
-                    </button>
-                  )}
-                </div>
+                      {group.label}
+                    </td>
+                  </tr>
+                  {group.units.map((unit) => {
+                    const saving = savingId === unit;
+                    const saved = savedId === unit;
+                    return (
+                      <tr key={unit} className="hover:bg-gray-50">
+                        <td className="sticky left-0 z-10 bg-white px-6 py-4 font-medium text-gray-800 shadow-[1px_0_0_#e5e7eb]">
+                          {unit}
+                        </td>
+                        {members.map((member) => (
+                          <td key={`${member.id}-${unit}`} className="px-2 py-4 text-center">
+                            <input
+                              type="checkbox"
+                              checked={unitChecked(member, unit)}
+                              disabled={!member.userId}
+                              onChange={() => toggleUnit(member.id, unit)}
+                              className="h-4 w-4 accent-blue-600 disabled:opacity-40"
+                              title={
+                                unit === member.homeUnit
+                                  ? `${member.fullName} (đơn vị công tác)`
+                                  : member.fullName
+                              }
+                            />
+                          </td>
+                        ))}
+                        <td className="px-6 py-4">
+                          <button
+                            type="button"
+                            disabled={saving}
+                            onClick={() => void handleSaveRow(unit)}
+                            className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
+                          >
+                            {saving ? 'Đang lưu…' : saved ? '✓ Đã lưu' : 'Lưu'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </Fragment>
+              ))}
 
-                {isExpanded && panelMode === 'grant' && (
-                  <div className="mt-4 space-y-3 border-t border-gray-50 pt-4">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                      <label
-                        htmlFor={`topic-email-${member.id}`}
-                        className="shrink-0 text-sm text-gray-600 sm:max-w-[280px]"
-                      >
-                        Email ump.edu.vn (đã đăng ký) của {member.fullName}
-                      </label>
-                      <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-                        <input
-                          id={`topic-email-${member.id}`}
-                          type="email"
-                          value={emailDraft}
-                          onChange={(e) => setEmailDraft(e.target.value)}
-                          placeholder="vd: hoten@ump.edu.vn"
-                          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                        />
-                        <button
-                          type="button"
-                          disabled={savingId === member.id}
-                          onClick={() => void handleGrant(member)}
-                          className="shrink-0 rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {savingId === member.id ? 'Đang lưu…' : 'Cấp quyền'}
-                        </button>
-                      </div>
-                    </div>
-                    <p className="text-xs leading-relaxed text-gray-400">
-                      Thành viên cần tự đăng ký tài khoản ump.edu.vn (xác thực OTP) trước; tại đây
-                      quản trị viên chỉ xác nhận cấp quyền xem đề tài theo đơn vị / trung tâm / khoa
-                      được chọn.
-                    </p>
-                  </div>
-                )}
-
-                {isExpanded && panelMode === 'units' && (
-                  <div className="mt-4 space-y-4 border-t border-gray-50 pt-4">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-sm text-gray-600">
-                        Chọn đơn vị / trung tâm / khoa {member.fullName} được xem đề tài (bỏ trống =
-                        thấy tất cả).
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => selectHomeOnly(member)}
-                          className={[
-                            'rounded-full border px-3 py-1 text-xs font-medium transition',
-                            selectedUnits.length === 1 && selectedUnits[0] === member.homeUnit
-                              ? 'border-blue-600 bg-blue-50 text-blue-700'
-                              : 'border-gray-200 text-gray-600 hover:bg-gray-50',
-                          ].join(' ')}
-                        >
-                          Chỉ đơn vị công tác
-                        </button>
-                        <button
-                          type="button"
-                          onClick={selectAllUnits}
-                          className={[
-                            'rounded-full border px-3 py-1 text-xs font-medium transition',
-                            seesAllUnits
-                              ? 'border-blue-600 bg-blue-50 text-blue-700'
-                              : 'border-gray-200 text-gray-600 hover:bg-gray-50',
-                          ].join(' ')}
-                        >
-                          Tất cả đơn vị
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="max-h-80 space-y-4 overflow-y-auto pr-1">
-                      {ORG_UNIT_GROUPS.map((group) => (
-                        <div key={group.label}>
-                          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                            {group.label}
-                          </p>
-                          <div className="grid gap-1 sm:grid-cols-2">
-                            {group.units.map((unit) => {
-                              const checked = seesAllUnits || selectedUnits.includes(unit);
-                              const isHome = unit === member.homeUnit;
-                              return (
-                                <label
-                                  key={unit}
-                                  className="flex cursor-pointer items-start gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={() => toggleUnit(unit)}
-                                    className="mt-0.5 h-4 w-4 shrink-0 accent-blue-600"
-                                  />
-                                  <span>
-                                    {unit}
-                                    {isHome && (
-                                      <span className="ml-1 text-xs text-blue-600">(công tác)</span>
-                                    )}
-                                  </span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs text-gray-400">
-                        Đang chọn:{' '}
-                        {selectedUnits.length === 0 ? 'tất cả đơn vị' : `${selectedUnits.length} đơn vị`}
-                      </p>
-                      <button
-                        type="button"
-                        disabled={savingId === member.id}
-                        onClick={() => void handleSaveUnits(member)}
-                        className="rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {savingId === member.id ? 'Đang lưu…' : 'Lưu phân quyền'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+              {members.length === 0 && (
+                <tr>
+                  <td colSpan={colCount} className="px-6 py-8 text-center text-gray-500">
+                    Chưa có thành viên để phân quyền.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
