@@ -2,13 +2,17 @@
 # Install/sync on VPS: sudo cp deploy/Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy
 #
 # CSP is set by frontend/admin/submitter nginx (and Helmet on /api).
-# Sensitive paths (/.env, /.git, …) → branded 404.html via frontend/nginx.conf.
+# HSTS must be set here (TLS terminator). Sensitive paths → branded 404.html via frontend/nginx.conf.
+
+{
+	email admin@ump-khcn.com
+}
 
 www.ump-khcn.com, ump-khcn.com {
 	encode gzip zstd
 
 	header {
-		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Frame-Options DENY
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
