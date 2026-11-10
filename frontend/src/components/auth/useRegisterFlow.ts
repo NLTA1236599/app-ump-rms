@@ -1,8 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useAuthContext } from '../../contexts/AuthContext.js';
 import type { RegisterProfile } from '../../services/interfaces/IAuthService.js';
-import type { OtpDeliveryChannel } from './registration/constants.js';
-import { DEFAULT_OTP_TTL_SECONDS } from './registration/constants.js';
 
 export type RegisterSubmitPhase = 'idle' | 'submitting';
 
@@ -12,8 +10,6 @@ export type RegisterBanner =
 
 export type RegisterSuccessPayload = {
   email: string;
-  otpTtlSeconds: number;
-  otpDeliveryChannel: OtpDeliveryChannel;
 };
 
 export function useRegisterFlow(onRegistered?: (payload: RegisterSuccessPayload) => void) {
@@ -36,18 +32,7 @@ export function useRegisterFlow(onRegistered?: (payload: RegisterSuccessPayload)
       setPhase('idle');
 
       if (result.ok) {
-        if (result.emailVerificationRequired) {
-          onRegistered?.({
-            email: result.email,
-            otpTtlSeconds: result.otpTtlSeconds || DEFAULT_OTP_TTL_SECONDS,
-            otpDeliveryChannel: result.otpDeliveryChannel,
-          });
-          return;
-        }
-        setBanner({
-          kind: 'success',
-          message: 'Đăng ký thành công. Bạn có thể đăng nhập.',
-        });
+        onRegistered?.({ email: result.email });
         return;
       }
       setBanner({ kind: 'error', message: result.message });

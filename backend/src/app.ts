@@ -1,7 +1,6 @@
 import express from 'express';
 import cors, { type CorsOptions } from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { workspaceRoutes } from './modules/workspaces/workspace.routes.js';
 import { workspaceIssueRoutes } from './modules/issues/issue.routes.js';
@@ -11,10 +10,13 @@ import { researchProjectRoutes } from './modules/research-projects/research-proj
 import { adminRoutes } from './modules/admin/admin.routes.js';
 import { reminderTestRoutes } from './modules/dev/reminderTest.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { apiLimiter } from './middleware/rateLimits.js';
 
 const app = express();
 
-// Behind Docker/nginx reverse proxy (X-Forwarded-For). Required by express-rate-limit.
+app.disable('x-powered-by');
+
+// Behind Caddy/Docker reverse proxy (X-Forwarded-For). Required by express-rate-limit.
 app.set('trust proxy', 1);
 
 /** Comma-separated list in FRONTEND_ORIGIN (e.g. local Vite + Docker UI hostnames). */
@@ -49,16 +51,8 @@ app.use(
     credentials: true,
   })
 );
-app.use(
-  '/api/v1/auth',
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 40,
-    standardHeaders: true,
-    legacyHeaders: false,
-  }),
-);
 app.use(express.json({ limit: '10mb' }));
+app.use('/api/v1', apiLimiter);
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workspaces', workspaceRoutes);
@@ -73,6 +67,12 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 if (process.env.NODE_ENV !== 'production') {
   app.use('/api/v1/dev/reminders', reminderTestRoutes);
 }
+
+app.use('/api', (_req, res) => {
+  res.status(404).json({
+    error: { code: 'NOT_FOUND', message: 'Không tìm thấy tài nguyên.' },
+  });
+});
 
 app.use(errorHandler);
 

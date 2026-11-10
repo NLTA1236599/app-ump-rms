@@ -18,6 +18,7 @@ www.ump-khcn.com, ump-khcn.com {
 		Referrer-Policy strict-origin-when-cross-origin
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"
 		-Server
+		-X-Powered-By
 	}
 
 	reverse_proxy localhost:5173

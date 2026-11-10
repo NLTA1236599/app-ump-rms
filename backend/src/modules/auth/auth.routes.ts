@@ -8,24 +8,26 @@ import {
   postVerifyOtp,
 } from './auth.controller.js';
 import { requireAuth } from '../../middleware/auth.js';
+import { loginLimiter, otpLimiter } from '../../middleware/rateLimits.js';
 
 export const authRoutes = Router();
 
 function methodNotAllowed(allowed: string[]) {
   return (_req: Request, res: Response) => {
     res.set('Allow', allowed.join(', '));
-    res.status(405).json({ error: 'Method Not Allowed' });
+    res.status(405).json({
+      error: { code: 'METHOD_NOT_ALLOWED', message: 'Phương thức không được hỗ trợ.' },
+    });
   };
 }
 
 authRoutes.post('/register', postRegister);
-authRoutes.post('/verify-otp', postVerifyOtp);
-authRoutes.post('/resend-otp', postResendOtp);
+authRoutes.post('/verify-otp', otpLimiter, postVerifyOtp);
+authRoutes.post('/resend-otp', otpLimiter, postResendOtp);
 
-// BUG-021: wrong verbs must be 405 (not Express default 404 "Cannot GET …").
 authRoutes
   .route('/login')
-  .post(postLogin)
+  .post(loginLimiter, postLogin)
   .all(methodNotAllowed(['POST']));
 
 authRoutes.get('/me', requireAuth, getMe);

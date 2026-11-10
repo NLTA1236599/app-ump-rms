@@ -4,6 +4,16 @@ import { formatDate } from './formatDate.js';
 import { ProjectStatus, type ProjectLeader, type ResearchProject } from './types.js';
 
 const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const MAX_SHEETS = 1;
+const MAX_ROWS = 5_000;
+
+function safeHeader(raw: unknown): string | null {
+  const key = String(raw ?? '').trim();
+  if (!key) return '';
+  if (FORBIDDEN_KEYS.has(key.toLowerCase())) return null;
+  return key;
+}
 
 function parseLeaderDetailsCell(raw: string): {
   leaderDetails?: ProjectLeader[];
@@ -53,6 +63,7 @@ function mapRow(headers: string[], row: unknown[]): Partial<ResearchProject> {
   const p: Partial<ResearchProject> = {};
 
   headers.forEach((h, index) => {
+    if (h == null || FORBIDDEN_KEYS.has(h.toLowerCase())) return;
     const header = h.toLowerCase();
     const val = row[index];
     if (val === undefined) return;
@@ -184,20 +195,39 @@ function readWorkbook(data: string | ArrayBuffer) {
 }
 
 export function parseExcelFile(data: string | ArrayBuffer): Partial<ResearchProject>[] {
-  const workbook = readWorkbook(data);
-  const sheetName = workbook.SheetNames[0];
-  if (!sheetName) return [];
+  try {
+    const workbook = readWorkbook(data);
+    if (workbook.SheetNames.length > MAX_SHEETS) {
+      throw new Error('File Excel chỉ được chứa 1 sheet.');
+    }
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) return [];
 
-  const firstSheet = workbook.Sheets[sheetName];
-  if (!firstSheet) return [];
+    const firstSheet = workbook.Sheets[sheetName];
+    if (!firstSheet) return [];
 
-  const rows = XLSX.utils.sheet_to_json<unknown[]>(firstSheet, { header: 1 });
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(firstSheet, {
+      header: 1,
+      defval: '',
+      blankrows: false,
+    });
 
-  if (rows.length < 2) return [];
+    if (rows.length > MAX_ROWS + 1) {
+      throw new Error(`File Excel vượt quá ${MAX_ROWS} dòng dữ liệu.`);
+    }
+    if (rows.length < 2) return [];
 
-  const headers = (rows[0] ?? []).map((h) => String(h ?? ''));
-  return rows
-    .slice(1)
-    .filter((row) => row.some((cell) => cell != null && cell !== ''))
-    .map((row) => mapRow(headers, row));
+    const headers = (rows[0] ?? [])
+      .map((h) => safeHeader(h))
+      .map((h) => h ?? '');
+    return rows
+      .slice(1)
+      .filter((row) => Array.isArray(row) && row.some((cell) => cell != null && cell !== ''))
+      .map((row) => mapRow(headers, row));
+  } catch (e) {
+    if (e instanceof Error && (e.message.includes('Excel') || e.message.includes('dòng'))) {
+      throw e;
+    }
+    throw new Error('Không đọc được file Excel. Vui lòng dùng file .xlsx hợp lệ.');
+  }
 }

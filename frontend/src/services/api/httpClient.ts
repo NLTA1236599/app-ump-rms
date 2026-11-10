@@ -42,10 +42,18 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     return undefined as T;
   }
 
-  const body = (await response.json().catch(() => ({}))) as { error?: string };
+  const body = (await response.json().catch(() => ({}))) as {
+    error?: string | { code?: string; message?: string };
+    message?: string;
+  };
 
   if (!response.ok) {
-    throw new ApiHttpError(body.error ?? response.statusText, response.status);
+    const nested = typeof body.error === 'object' && body.error ? body.error.message : undefined;
+    const message =
+      (typeof body.error === 'string' ? body.error : nested) ||
+      body.message ||
+      response.statusText;
+    throw new ApiHttpError(message, response.status);
   }
 
   return body as T;

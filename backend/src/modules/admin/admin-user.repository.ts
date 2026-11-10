@@ -68,6 +68,18 @@ export class AdminUserRepository {
     };
   }
 
+  async findRoleById(id: string): Promise<string | null> {
+    const { rows } = await pool.query<{ role: string }>('SELECT role FROM users WHERE id = $1', [id]);
+    return rows[0]?.role ?? null;
+  }
+
+  async countAdmins(): Promise<number> {
+    const { rows } = await pool.query<{ n: string }>(
+      `SELECT COUNT(*)::text AS n FROM users WHERE role = 'admin'`
+    );
+    return Number(rows[0]?.n ?? 0);
+  }
+
   async updateRole(id: string, role: string): Promise<boolean> {
     const r = await pool.query('UPDATE users SET role = $2 WHERE id = $1', [id, role]);
     return (r.rowCount ?? 0) > 0;

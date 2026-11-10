@@ -44,15 +44,50 @@ export async function updateUserRole(req: Request, res: Response, next: NextFunc
   try {
     const id = asPathParam(req.params.id);
     const { role } = req.body ?? {};
+    const actor = (req as Request & { user?: { id: string } }).user;
 
     if (!role || !ALLOWED_ROLES.includes(role)) {
-      return res.status(400).json({ error: 'Invalid role' });
+      return res.status(400).json({
+        error: { code: 'REQUEST_ERROR', message: 'Vai trò không hợp lệ' },
+      });
+    }
+
+    const currentRole = await userRepo.findRoleById(id);
+    if (!currentRole) {
+      return res.status(404).json({
+        error: { code: 'NOT_FOUND', message: 'Không tìm thấy người dùng' },
+      });
+    }
+
+    if (currentRole === 'admin' && role !== 'admin') {
+      const admins = await userRepo.countAdmins();
+      if (admins <= 1) {
+        return res.status(400).json({
+          error: {
+            code: 'REQUEST_ERROR',
+            message: 'Không thể hạ quyền quản trị viên cuối cùng của hệ thống.',
+          },
+        });
+      }
+    }
+
+    if (actor?.id === id && role !== 'admin') {
+      return res.status(400).json({
+        error: {
+          code: 'REQUEST_ERROR',
+          message: 'Không thể tự hạ quyền tài khoản đang đăng nhập.',
+        },
+      });
     }
 
     const ok = await userRepo.updateRole(id, role);
-    if (!ok) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+    if (!ok) {
+      return res.status(404).json({
+        error: { code: 'NOT_FOUND', message: 'Không tìm thấy người dùng' },
+      });
+    }
 
-    res.json({ message: 'Role updated' });
+    res.json({ message: 'Đã cập nhật vai trò' });
   } catch (e) {
     next(e);
   }
@@ -115,9 +150,41 @@ export async function grantUserAccess(req: Request, res: Response, next: NextFun
 export async function deleteUser(req: Request, res: Response, next: NextFunction) {
   try {
     const id = asPathParam(req.params.id);
+    const actor = (req as Request & { user?: { id: string } }).user;
+    if (actor?.id === id) {
+      return res.status(400).json({
+        error: {
+          code: 'REQUEST_ERROR',
+          message: 'Không thể tự xóa tài khoản đang đăng nhập.',
+        },
+      });
+    }
+
+    const currentRole = await userRepo.findRoleById(id);
+    if (!currentRole) {
+      return res.status(404).json({
+        error: { code: 'NOT_FOUND', message: 'Không tìm thấy người dùng' },
+      });
+    }
+    if (currentRole === 'admin') {
+      const admins = await userRepo.countAdmins();
+      if (admins <= 1) {
+        return res.status(400).json({
+          error: {
+            code: 'REQUEST_ERROR',
+            message: 'Không thể xóa quản trị viên cuối cùng của hệ thống.',
+          },
+        });
+      }
+    }
+
     const ok = await userRepo.deleteById(id);
-    if (!ok) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
-    res.json({ message: 'User deleted' });
+    if (!ok) {
+      return res.status(404).json({
+        error: { code: 'NOT_FOUND', message: 'Không tìm thấy người dùng' },
+      });
+    }
+    res.json({ message: 'Đã xóa người dùng' });
   } catch (e) {
     next(e);
   }

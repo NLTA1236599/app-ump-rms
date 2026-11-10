@@ -31,6 +31,10 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS work_unit VARCHAR(255);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS job_title VARCHAR(255);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS requested_roles TEXT[] NOT NULL DEFAULT '{}';
 
+-- Login lockout (T08).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ;
+
 CREATE TABLE IF NOT EXISTS registration_otp_codes (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

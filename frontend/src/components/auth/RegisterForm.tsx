@@ -10,6 +10,7 @@ import { RegisterRoleToggleGroup } from './RegisterRoleToggleGroup.js';
 import { RegisterFormSectionHeader } from './RegisterFormSectionHeader.js';
 import { RegisterLoginRedirectLink } from './RegisterLoginRedirectLink.js';
 import { useRegisterFlow, type RegisterSuccessPayload } from './useRegisterFlow.js';
+import { isPasswordStrong, passwordRequirements } from './passwordPolicy.js';
 
 type RegisterFormProps = {
   onSwitchToLogin: () => void;
@@ -38,20 +39,21 @@ export function RegisterForm({ onSwitchToLogin, onRegistered }: RegisterFormProp
   const [roles, setRoles] = useState<ReadonlySet<RegisterRoleId>>(DEFAULT_ROLES);
 
   const emailOk = validateInstitutionalEmail(email);
-  const pwdLenOk = password.length >= 8;
+  const pwdRules = passwordRequirements(password, email);
+  const pwdStrong = isPasswordStrong(password, email);
   const pwdMatch = password === password2 && password2.length > 0;
   const nameOk = fullName.trim().length > 0;
   const rolesOk = roles.size >= 1;
 
   const emailInvalid = email.length > 0 && !emailOk.ok;
-  const pwdInvalid = password.length > 0 && !pwdLenOk;
+  const pwdInvalid = password.length > 0 && !pwdStrong;
   const pwd2Invalid = password2.length > 0 && !pwdMatch;
 
   const canSubmit = useMemo(() => {
     const ev = validateInstitutionalEmail(email);
     return (
       ev.ok &&
-      password.length >= 8 &&
+      isPasswordStrong(password, email) &&
       password === password2 &&
       password2.length > 0 &&
       fullName.trim().length > 0 &&
@@ -65,7 +67,7 @@ export function RegisterForm({ onSwitchToLogin, onRegistered }: RegisterFormProp
     clearBanner();
 
     if (!emailOk.ok) return;
-    if (!pwdLenOk || !pwdMatch || !nameOk || !rolesOk) return;
+    if (!pwdStrong || !pwdMatch || !nameOk || !rolesOk) return;
 
     await submit({
       email: emailOk.normalized,
@@ -139,7 +141,7 @@ export function RegisterForm({ onSwitchToLogin, onRegistered }: RegisterFormProp
             id="reg-password"
             type="password"
             autoComplete="new-password"
-            placeholder="Tối thiểu 8 ký tự"
+            placeholder="Chữ hoa, chữ thường, số và ký tự đặc biệt"
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);
@@ -147,16 +149,24 @@ export function RegisterForm({ onSwitchToLogin, onRegistered }: RegisterFormProp
             }}
             invalid={pwdInvalid}
             aria-invalid={pwdInvalid}
-            aria-describedby={pwdInvalid ? errPwd : undefined}
+            aria-describedby={errPwd}
             aria-required
             required
             minLength={8}
+            maxLength={128}
           />
-          {pwdInvalid ? (
-            <p id={errPwd} className="mt-1 text-[12px] text-[#ef4444]">
-              Mật khẩu cần tối thiểu 8 ký tự.
-            </p>
-          ) : null}
+          <ul id={errPwd} className="mt-2 space-y-0.5 text-[12px]">
+            {pwdRules
+              .filter((r) => r.id !== 'maxLength')
+              .map((r) => (
+                <li
+                  key={r.id}
+                  className={r.ok ? 'text-emerald-700' : password.length > 0 ? 'text-[#ef4444]' : 'text-[#9ca3af]'}
+                >
+                  {r.ok ? '✓' : '○'} {r.label}
+                </li>
+              ))}
+          </ul>
         </div>
         <div>
           <RegisterFieldLabel htmlFor="reg-password2" required>

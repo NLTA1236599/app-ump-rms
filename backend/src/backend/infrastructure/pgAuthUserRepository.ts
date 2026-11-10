@@ -60,7 +60,9 @@ export class PgAuthUserRepository implements IAuthUserRepository {
 
   async findByUsername(username: string): Promise<AuthUserRow | null> {
     const { rows } = await this.pool.query(
-      `SELECT id, username, password, role, display_name, email_verified
+      `SELECT id, username, password, role, display_name, email_verified,
+              COALESCE(failed_login_attempts, 0) AS failed_login_attempts,
+              locked_until
        FROM users WHERE username = $1`,
       [username]
     );
@@ -73,6 +75,8 @@ export class PgAuthUserRepository implements IAuthUserRepository {
       role: r.role as string,
       display_name: r.display_name as string | null,
       email_verified: Boolean(r.email_verified),
+      failed_login_attempts: Number(r.failed_login_attempts ?? 0),
+      locked_until: r.locked_until ? new Date(r.locked_until as string) : null,
     };
   }
 
@@ -89,5 +93,26 @@ export class PgAuthUserRepository implements IAuthUserRepository {
   async markEmailVerified(userId: string, client?: PoolClient): Promise<void> {
     const db: Queryable = client ?? this.pool;
     await db.query(`UPDATE users SET email_verified = TRUE WHERE id = $1`, [userId]);
+  }
+
+  async recordFailedLogin(userId: string, maxFailures: number, lockoutMinutes: number): Promise<void> {
+    await this.pool.query(
+      `UPDATE users
+       SET failed_login_attempts = COALESCE(failed_login_attempts, 0) + 1,
+           locked_until = CASE
+             WHEN COALESCE(failed_login_attempts, 0) + 1 >= $2
+             THEN NOW() + ($3::int * INTERVAL '1 minute')
+             ELSE locked_until
+           END
+       WHERE id = $1`,
+      [userId, maxFailures, lockoutMinutes]
+    );
+  }
+
+  async resetFailedLogin(userId: string): Promise<void> {
+    await this.pool.query(
+      `UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE id = $1`,
+      [userId]
+    );
   }
 }

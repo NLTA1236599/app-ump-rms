@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { authService } from '../services/index.js';
 import { ApiHttpError } from '../services/api/httpClient.js';
-import type { OtpDeliveryChannel } from '../components/auth/registration/constants.js';
 import type { RegisterProfile } from '../services/interfaces/IAuthService.js';
 import type { User } from '../types/index.js';
 
@@ -13,9 +12,8 @@ export type AuthRegisterResult =
   | {
       ok: true;
       email: string;
-      emailVerificationRequired: boolean;
-      otpTtlSeconds: number;
-      otpDeliveryChannel: OtpDeliveryChannel;
+      emailVerificationRequired: true;
+      message: string;
     }
   | { ok: false; message: string };
 
@@ -77,9 +75,10 @@ export function useAuth() {
         return {
           ok: true,
           email: username,
-          emailVerificationRequired: result.emailVerificationRequired,
-          otpTtlSeconds: result.otpTtlSeconds,
-          otpDeliveryChannel: result.otpDeliveryChannel,
+          emailVerificationRequired: true,
+          message:
+            result.message ||
+            'Nếu thông tin hợp lệ, mã OTP đã được gửi tới email của bạn.',
         };
       } catch (e) {
         const message = e instanceof Error ? e.message : 'Đăng ký thất bại.';

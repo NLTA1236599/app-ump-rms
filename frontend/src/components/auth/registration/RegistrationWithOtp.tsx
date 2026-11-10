@@ -1,17 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { RegisterForm } from '../RegisterForm.js';
-import {
-  DEFAULT_OTP_TTL_SECONDS,
-  type OtpDeliveryChannel,
-  type RegistrationWizardStep,
-} from './constants.js';
+import { type RegistrationWizardStep } from './constants.js';
 import { OtpStep } from './OtpStep.js';
 import { SuccessStep } from './SuccessStep.js';
 import type { RegisterSuccessPayload } from '../useRegisterFlow.js';
 
 export type ResumeOtpRequest = {
   email: string;
-  otpTtlSeconds?: number;
 };
 
 type RegistrationWithOtpProps = {
@@ -28,15 +23,11 @@ export function RegistrationWithOtp({
 }: RegistrationWithOtpProps) {
   const [step, setStep] = useState<RegistrationWizardStep>('form');
   const [email, setEmail] = useState('');
-  const [otpTtlSeconds, setOtpTtlSeconds] = useState(DEFAULT_OTP_TTL_SECONDS);
-  const [otpDeliveryChannel, setOtpDeliveryChannel] = useState<OtpDeliveryChannel>('smtp');
   const [autoResendOnMount, setAutoResendOnMount] = useState(false);
 
   useEffect(() => {
     if (!resumeOtp?.email) return;
     setEmail(resumeOtp.email);
-    setOtpTtlSeconds(resumeOtp.otpTtlSeconds ?? DEFAULT_OTP_TTL_SECONDS);
-    setOtpDeliveryChannel('smtp');
     setAutoResendOnMount(true);
     setStep('otp');
     onResumeConsumed?.();
@@ -44,8 +35,6 @@ export function RegistrationWithOtp({
 
   const onRegistered = useCallback((payload: RegisterSuccessPayload) => {
     setEmail(payload.email);
-    setOtpTtlSeconds(payload.otpTtlSeconds);
-    setOtpDeliveryChannel(payload.otpDeliveryChannel);
     setAutoResendOnMount(false);
     setStep('otp');
   }, []);
@@ -54,8 +43,6 @@ export function RegistrationWithOtp({
     return (
       <OtpStep
         email={email}
-        otpTtlSeconds={otpTtlSeconds}
-        otpDeliveryChannel={otpDeliveryChannel}
         autoResendOnMount={autoResendOnMount}
         onVerified={() => setStep('success')}
         onBackToForm={() => {

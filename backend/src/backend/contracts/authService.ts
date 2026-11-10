@@ -3,10 +3,7 @@ import type { OtpDeliveryChannel } from '../../modules/auth/otpConfig.js';
 import type { RegisterProfileInput } from '../../modules/auth/registerProfile.js';
 
 export type RegisterResult = {
-  user: User;
-  emailVerificationRequired: true;
-  otpTtlSeconds: number;
-  otpDeliveryChannel: OtpDeliveryChannel;
+  message: string;
 };
 
 export type ResendOtpResult = {

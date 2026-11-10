@@ -9,3 +9,4 @@ fe0-admin/dist
 .DS_Store
 uploads/*
 !uploads/.gitkeep
+certs/

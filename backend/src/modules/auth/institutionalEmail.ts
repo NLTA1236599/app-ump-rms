@@ -20,8 +20,7 @@ export function validateInstitutionalEmail(input: string): InstitutionalEmailRes
   if (at <= 0 || at === normalized.length - 1) {
     return {
       ok: false,
-      message:
-        'Cần email đầy đủ (@ump.edu.vn hoặc @umc.edu.vn). Nếu form đã nhập đúng email mà vẫn lỗi: rebuild frontend (`docker compose up -d --build frontend`).',
+      message: 'Cần email đầy đủ (@ump.edu.vn hoặc @umc.edu.vn).',
     };
   }
 

@@ -9,6 +9,8 @@ export type AuthUserRow = {
   role: string;
   display_name: string | null;
   email_verified: boolean;
+  failed_login_attempts: number;
+  locked_until: Date | null;
 };
 
 /**
@@ -34,4 +36,6 @@ export interface IAuthUserRepository {
   findByUsername(username: string): Promise<AuthUserRow | null>;
   findProfileById(userId: string): Promise<User | null>;
   markEmailVerified(userId: string, client?: PoolClient): Promise<void>;
+  recordFailedLogin(userId: string, maxFailures: number, lockoutMinutes: number): Promise<void>;
+  resetFailedLogin(userId: string): Promise<void>;
 }

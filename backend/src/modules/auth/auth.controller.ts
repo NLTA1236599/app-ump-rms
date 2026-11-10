@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { authService } from '../../backend/compositionRoot.js';
+import { GENERIC_REGISTER_MSG } from '../../backend/application/authApplicationService.js';
 import { PermissionRepository } from '../admin/permission.repository.js';
 import { mapAuthDatabaseError } from './mapAuthDatabaseError.js';
 import { parseRegisterProfile } from './registerProfile.js';
@@ -18,7 +19,9 @@ export async function postRegister(req: Request, res: Response, next: NextFuncti
   try {
     const { username, password, displayName } = req.body ?? {};
     if (!username || !password) {
-      return res.status(400).json({ error: 'username và password là bắt buộc' });
+      return res.status(400).json({
+        error: { code: 'REQUEST_ERROR', message: 'username và password là bắt buộc' },
+      });
     }
     const profile = parseRegisterProfile((req.body ?? {}) as Record<string, unknown>);
     const result = await authService.register(
@@ -27,7 +30,7 @@ export async function postRegister(req: Request, res: Response, next: NextFuncti
       displayName ? String(displayName) : undefined,
       profile
     );
-    res.status(201).json(result);
+    res.status(202).json({ message: result.message || GENERIC_REGISTER_MSG });
   } catch (e) {
     next(mapAuthDatabaseError(e));
   }
@@ -37,7 +40,9 @@ export async function postVerifyOtp(req: Request, res: Response, next: NextFunct
   try {
     const { email, otp } = req.body ?? {};
     if (!email || !otp) {
-      return res.status(400).json({ error: 'email và otp là bắt buộc' });
+      return res.status(400).json({
+        error: { code: 'REQUEST_ERROR', message: 'email và otp là bắt buộc' },
+      });
     }
     await authService.verifyOtp(String(email), String(otp));
     res.json({ ok: true });
@@ -50,10 +55,15 @@ export async function postResendOtp(req: Request, res: Response, next: NextFunct
   try {
     const { email } = req.body ?? {};
     if (!email) {
-      return res.status(400).json({ error: 'email là bắt buộc' });
+      return res.status(400).json({
+        error: { code: 'REQUEST_ERROR', message: 'email là bắt buộc' },
+      });
     }
     const result = await authService.resendOtp(String(email), clientIp(req));
-    res.json(result);
+    res.json({
+      emailVerificationRequired: result.emailVerificationRequired,
+      alreadyVerified: result.alreadyVerified,
+    });
   } catch (e) {
     next(mapAuthDatabaseError(e));
   }
@@ -63,7 +73,9 @@ export async function postLogin(req: Request, res: Response, next: NextFunction)
   try {
     const { username, password } = req.body ?? {};
     if (!username || !password) {
-      return res.status(400).json({ error: 'username và password là bắt buộc' });
+      return res.status(400).json({
+        error: { code: 'REQUEST_ERROR', message: 'username và password là bắt buộc' },
+      });
     }
     const { token, user } = await authService.login(String(username), String(password));
     res.json({ token, user });
@@ -76,7 +88,11 @@ export async function getMe(req: Request, res: Response, next: NextFunction) {
   try {
     const u = (req as Request & { user: { id: string } }).user;
     const user = await authService.getProfile(u.id);
-    if (!user) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+    if (!user) {
+      return res.status(404).json({
+        error: { code: 'NOT_FOUND', message: 'Không tìm thấy người dùng' },
+      });
+    }
     res.json({ user });
   } catch (e) {
     next(mapAuthDatabaseError(e));

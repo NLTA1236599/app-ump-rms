@@ -6,8 +6,14 @@ import {
   registrationOtpSubject,
   registrationOtpText,
 } from '../../services/email/templates/registrationOtpTemplate.js';
+import {
+  duplicateRegisterHtml,
+  duplicateRegisterSubject,
+  duplicateRegisterText,
+} from '../../services/email/templates/duplicateRegisterTemplate.js';
 import { checkResendRateLimit } from '../../modules/auth/authRateLimit.js';
 import { validateInstitutionalEmail } from '../../modules/auth/institutionalEmail.js';
+import { validatePassword } from '../../modules/auth/passwordPolicy.js';
 import {
   getOtpMaxFailedAttempts,
   getOtpTtlMinutes,
@@ -49,11 +55,19 @@ const OTP_MAIL_FAILED_MSG =
   'Không gửi được email OTP. Kiểm tra hộp thư rác hoặc thử lại sau ít phút.';
 const UNVERIFIED_LOGIN_MSG =
   'Email chưa được xác minh. Vui lòng nhập mã OTP từ email hoặc gửi lại mã trong quy trình đăng ký.';
-/** Same message for unknown user and wrong password — prevents user enumeration (BUG-018). */
+/** Same message for unknown user, wrong password, and lockout — prevents user enumeration (BUG-018 / T08). */
 const INVALID_CREDENTIALS_MSG = 'Tên đăng nhập hoặc mật khẩu không đúng';
+export const GENERIC_REGISTER_MSG =
+  'Nếu thông tin hợp lệ, mã OTP đã được gửi tới email của bạn.';
 /** Precomputed bcrypt hash used only to keep login timing similar when the user is missing. */
 const DUMMY_PASSWORD_HASH =
   '$2a$12$QiILhFxpAoP7LUFd5Qm6o.JbNWZH4aTquq3smrsf4AjdFqcy10ftK';
+const LOCKOUT_AFTER_FAILURES = 5;
+const LOCKOUT_MINUTES = 15;
+
+function isUniqueViolation(e: unknown): boolean {
+  return Boolean(e && typeof e === 'object' && 'code' in e && (e as { code: unknown }).code === '23505');
+}
 
 /**
  * Auth use-cases only — coordinates ports (guide §3 S: one reason to change = business rules for auth).
@@ -80,23 +94,28 @@ export class AuthApplicationService implements IAuthService {
     }
     const email = emailResult.normalized;
 
-    if (!password || password.length < 8) {
-      throw httpError('Mật khẩu phải có ít nhất 8 ký tự.', 400);
+    const passwordResult = validatePassword(password, email);
+    if (!passwordResult.ok) {
+      throw httpError(passwordResult.message, 400);
+    }
+
+    const passwordHash = await this.passwords.hash(password);
+    const existing = await this.users.findByUsername(email);
+    if (existing) {
+      void this.notifyExistingAccount(email);
+      return { message: GENERIC_REGISTER_MSG };
     }
 
     const ttlMinutes = getOtpTtlMinutes();
-    const ttlSeconds = getOtpTtlSeconds();
     const plaintextOtp = generateOtpCode();
     const otpHash = hashOtp(plaintextOtp);
     const expiresAt = new Date(Date.now() + ttlMinutes * 60_000);
-    const passwordHash = await this.passwords.hash(password);
     const registration = profile ?? emptyRegisterProfile();
 
     const client = await this.pool.connect();
-    let user: User;
     try {
       await client.query('BEGIN');
-      user = await this.users.insertUser(
+      const user = await this.users.insertUser(
         {
           username: email,
           passwordHash,
@@ -116,25 +135,22 @@ export class AuthApplicationService implements IAuthService {
       await client.query('COMMIT');
     } catch (e) {
       await client.query('ROLLBACK');
+      if (isUniqueViolation(e)) {
+        void this.notifyExistingAccount(email);
+        return { message: GENERIC_REGISTER_MSG };
+      }
       throw e;
     } finally {
       client.release();
     }
 
-    const channel = await this.deliverOtp(email, plaintextOtp, ttlMinutes);
-    if (channel === 'smtp_failed') {
-      // Account exists; client can retry via resend once SMTP recovers.
-      console.warn(`[Auth] OTP email failed after register for ${email}; user can resend`);
-    } else {
-      console.log(`[Auth] OTP delivered via ${channel} to ${email}`);
-    }
+    void this.deliverOtp(email, plaintextOtp, ttlMinutes).then((channel) => {
+      if (channel === 'smtp_failed') {
+        console.warn('[Auth] OTP email failed after register; user can resend');
+      }
+    });
 
-    return {
-      user,
-      emailVerificationRequired: true,
-      otpTtlSeconds: ttlSeconds,
-      otpDeliveryChannel: channel,
-    };
+    return { message: GENERIC_REGISTER_MSG };
   }
 
   async verifyOtp(email: string, otp: string): Promise<void> {
@@ -253,8 +269,18 @@ export class AuthApplicationService implements IAuthService {
       throw httpError(INVALID_CREDENTIALS_MSG, 401);
     }
 
+    if (row.locked_until && row.locked_until.getTime() > Date.now()) {
+      await this.passwords.compare(password, DUMMY_PASSWORD_HASH).catch(() => false);
+      throw httpError(INVALID_CREDENTIALS_MSG, 401);
+    }
+
     const valid = await this.passwords.compare(password, row.password);
-    if (!valid) throw httpError(INVALID_CREDENTIALS_MSG, 401);
+    if (!valid) {
+      await this.users.recordFailedLogin(row.id, LOCKOUT_AFTER_FAILURES, LOCKOUT_MINUTES);
+      throw httpError(INVALID_CREDENTIALS_MSG, 401);
+    }
+
+    await this.users.resetFailedLogin(row.id);
 
     if (!row.email_verified) {
       throw httpError(UNVERIFIED_LOGIN_MSG, 403);
@@ -285,6 +311,21 @@ export class AuthApplicationService implements IAuthService {
     return row;
   }
 
+  private notifyExistingAccount(to: string): void {
+    void this.mail
+      .send({
+        to,
+        subject: duplicateRegisterSubject(),
+        html: duplicateRegisterHtml(),
+        text: duplicateRegisterText(),
+        transactional: true,
+        headers: { 'X-UMP-RMS-Notification': 'duplicate-register' },
+      })
+      .catch((e) => {
+        console.error('[Auth] duplicate-register notice failed', e);
+      });
+  }
+
   private async deliverOtp(
     to: string,
     otp: string,
@@ -302,7 +343,10 @@ export class AuthApplicationService implements IAuthService {
       });
       return configured;
     } catch (e) {
-      console.error('[Auth] OTP email delivery failed', e);
+      console.error('[Auth] OTP email delivery failed');
+      if (e instanceof Error) {
+        console.error('[Auth] OTP email error:', e.message);
+      }
       return configured === 'smtp' ? 'smtp_failed' : configured;
     }
   }

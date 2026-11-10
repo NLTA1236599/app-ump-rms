@@ -135,6 +135,25 @@ export function useDataTable({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const maxBytes = 5 * 1024 * 1024;
+    const name = file.name.toLowerCase();
+    if (!name.endsWith('.xlsx')) {
+      onImportFeedback?.({
+        ok: false,
+        message: 'Chỉ chấp nhận file Excel định dạng .xlsx (tối đa 5 MB).',
+      });
+      e.target.value = '';
+      return;
+    }
+    if (file.size > maxBytes) {
+      onImportFeedback?.({
+        ok: false,
+        message: 'File Excel vượt quá 5 MB. Hãy chia nhỏ dữ liệu rồi nhập lại.',
+      });
+      e.target.value = '';
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (evt) => {
       void (async () => {
@@ -161,7 +180,7 @@ export function useDataTable({
           const message =
             err instanceof Error
               ? err.message
-              : 'Lỗi khi nhập dữ liệu từ Excel. Vui lòng kiểm tra định dạng file (.xlsx, .xls).';
+              : 'Lỗi khi nhập dữ liệu từ Excel. Vui lòng kiểm tra định dạng file (.xlsx).';
           onImportFeedback?.({ ok: false, message });
         }
       })();

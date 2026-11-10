@@ -10,16 +10,13 @@ import {
 import { useAuthContext } from '../../../contexts/AuthContext.js';
 import {
   DEFAULT_OTP_TTL_SECONDS,
+  OTP_GENERIC_HELP,
   OTP_LENGTH,
   RESEND_COOLDOWN_SECONDS,
-  deliveryChannelHelp,
-  type OtpDeliveryChannel,
 } from './constants.js';
 
 type OtpStepProps = {
   email: string;
-  otpTtlSeconds: number;
-  otpDeliveryChannel: OtpDeliveryChannel;
   onVerified: () => void;
   onBackToForm: () => void;
   onGoToLogin?: () => void;
@@ -52,8 +49,6 @@ function useCountdown(initial: number) {
 
 export function OtpStep({
   email,
-  otpTtlSeconds,
-  otpDeliveryChannel,
   onVerified,
   onBackToForm,
   onGoToLogin,
@@ -63,17 +58,14 @@ export function OtpStep({
   const [digits, setDigits] = useState<string[]>(() => Array.from({ length: OTP_LENGTH }, () => ''));
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(() =>
-    autoResendOnMount
-      ? 'Đang gửi mã OTP mới tới email của bạn…'
-      : deliveryChannelHelp(otpDeliveryChannel)
+    autoResendOnMount ? 'Đang gửi mã OTP mới tới email của bạn…' : OTP_GENERIC_HELP
   );
   const [busy, setBusy] = useState(false);
   const [alreadyVerified, setAlreadyVerified] = useState(false);
-  const [ttlLeft, setTtlLeft] = useCountdown(otpTtlSeconds || DEFAULT_OTP_TTL_SECONDS);
+  const [ttlLeft, setTtlLeft] = useCountdown(DEFAULT_OTP_TTL_SECONDS);
   const [cooldown, setCooldown] = useCountdown(
     autoResendOnMount ? 0 : RESEND_COOLDOWN_SECONDS
   );
-  const [channel, setChannel] = useState(otpDeliveryChannel);
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
   const autoResendDone = useRef(false);
   const busyRef = useRef(false);
@@ -145,12 +137,8 @@ export function OtpStep({
       setInfo(null);
       return;
     }
-    setChannel(result.otpDeliveryChannel);
-    setInfo(
-      deliveryChannelHelp(result.otpDeliveryChannel) ??
-        'Đã gửi mã mới. Mã cũ không còn hiệu lực. Kiểm tra cả hộp thư rác.'
-    );
-    setTtlLeft(result.otpTtlSeconds || DEFAULT_OTP_TTL_SECONDS);
+    setInfo('Đã gửi mã mới. Mã có hiệu lực 10 phút. Mã cũ không còn hiệu lực. Kiểm tra cả hộp thư rác.');
+    setTtlLeft(DEFAULT_OTP_TTL_SECONDS);
     setCooldown(RESEND_COOLDOWN_SECONDS);
     setDigits(Array.from({ length: OTP_LENGTH }, () => ''));
     inputsRef.current[0]?.focus();
@@ -163,7 +151,7 @@ export function OtpStep({
     try {
       const last = Number(sessionStorage.getItem(key) || '0');
       if (Date.now() - last < 20_000) {
-        setInfo(deliveryChannelHelp('smtp'));
+        setInfo(OTP_GENERIC_HELP);
         return;
       }
       sessionStorage.setItem(key, String(Date.now()));
@@ -216,7 +204,7 @@ export function OtpStep({
 
         <p className="mb-4 text-center text-[12px] text-[#6b7280]">
           Mã hết hạn sau <span className="font-semibold text-[#374151]">{formatMmSs(ttlLeft)}</span>
-          {channel === 'smtp' ? ' · đã gửi qua email' : null}
+          {' · đã gửi qua email'}
         </p>
 
         {error ? (

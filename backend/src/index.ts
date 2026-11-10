@@ -1,6 +1,9 @@
 import './config/env.js';
 import app from './app.js';
 import { registerReminderJobs } from './jobs/reminderJob.js';
+import { assertOtpLoggingSafe } from './services/email/otpLoggingGuard.js';
+
+assertOtpLoggingSafe();
 
 const port = Number(process.env.PORT) || 3001;
 const host = process.env.LISTEN_HOST ?? '0.0.0.0';

@@ -4,18 +4,16 @@ export function mapAuthDatabaseError(error: unknown): unknown {
   const code = 'code' in error ? (error as { code: unknown }).code : undefined;
 
   if (code === '23505') {
-    const err = new Error(
-      'Tài khoản với email này đã tồn tại. Vui lòng chuyển sang tab Đăng nhập hoặc dùng email khác.'
-    );
-    (err as Error & { status?: number }).status = 409;
+    const err = new Error('Không thể xử lý yêu cầu lúc này. Vui lòng thử lại sau.');
+    (err as Error & { status?: number }).status = 500;
+    console.error('[Auth] unique constraint collision');
     return err;
   }
 
   if (code === '42P01') {
-    const err = new Error(
-      'Cơ sở dữ liệu chưa được khởi tạo. Chạy: npm run migrate (từ thư mục gốc dự án).'
-    );
+    const err = new Error('Không thể xử lý yêu cầu lúc này. Vui lòng thử lại sau.');
     (err as Error & { status?: number }).status = 503;
+    console.error('[Auth] missing relation — run migrations');
     return err;
   }
 

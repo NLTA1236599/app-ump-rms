@@ -25,6 +25,15 @@ httpClient.interceptors.response.use(
         : `${import.meta.env.BASE_URL}/`;
       window.location.href = `${base}login`;
     }
+    const payload = error.response?.data as
+      | { error?: string | { message?: string }; message?: string }
+      | undefined;
+    const nested = typeof payload?.error === 'object' ? payload.error?.message : undefined;
+    const message =
+      (typeof payload?.error === 'string' ? payload.error : nested) || payload?.message;
+    if (message && error instanceof Error) {
+      error.message = message;
+    }
     return Promise.reject(error);
   },
 );

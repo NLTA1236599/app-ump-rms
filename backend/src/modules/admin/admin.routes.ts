@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth, requireRole } from '../../middleware/auth.js';
+import { requireAuth, requireAdmin } from '../../middleware/auth.js';
 import {
   deleteUser,
   getAllUsers,
@@ -13,7 +13,7 @@ import {
 
 export const adminRoutes = Router();
 
-adminRoutes.use(requireAuth, requireRole('admin'));
+adminRoutes.use(requireAuth, requireAdmin);
 
 adminRoutes.get('/users', getAllUsers);
 adminRoutes.patch('/users/:id/role', updateUserRole);

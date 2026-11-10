@@ -1,11 +1,7 @@
 import type { User } from '../../types/index.js';
-import type { OtpDeliveryChannel } from '../../components/auth/registration/constants.js';
 
 export type RegisterResponse = {
-  user: User;
-  emailVerificationRequired: boolean;
-  otpTtlSeconds: number;
-  otpDeliveryChannel: OtpDeliveryChannel;
+  message: string;
 };
 
 export type RegisterProfile = {
@@ -19,8 +15,6 @@ export type RegisterProfile = {
 
 export type ResendOtpResponse = {
   emailVerificationRequired: boolean;
-  otpTtlSeconds: number;
-  otpDeliveryChannel: OtpDeliveryChannel;
   alreadyVerified?: boolean;
 };
 

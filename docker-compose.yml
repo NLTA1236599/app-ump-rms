@@ -14,6 +14,8 @@ services:
     volumes:
       - ump_rms_pgdata:/var/lib/postgresql/data
       - ./deploy/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      # Optional internal TLS (do not commit certs/ — see assets/docs/vps-security-ops.md):
+      # - ./certs/db:/certs:ro
     command:
       - postgres
       - -c
@@ -31,10 +33,11 @@ services:
     container_name: rms-be
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     volumes:
       - ./uploads:/app/uploads
     environment:
+      NODE_ENV: production
       PORT: "3001"
       DB_HOST: postgres
       DB_PORT: "5432"
@@ -90,7 +93,7 @@ services:
     container_name: rms-fe
     restart: unless-stopped
     ports:
-      - "5173:80"
+      - "127.0.0.1:5173:80"
     volumes:
       - ./assets-test:/usr/share/nginx/html/assets-test:ro
     depends_on:
@@ -112,7 +115,7 @@ services:
     container_name: rms-admin
     restart: unless-stopped
     ports:
-      - "5174:80"
+      - "127.0.0.1:5174:80"
     depends_on:
       - backend
 
@@ -126,7 +129,7 @@ services:
     container_name: rms-submitter
     restart: unless-stopped
     ports:
-      - "5175:80"
+      - "127.0.0.1:5175:80"
     depends_on:
       - backend
 
